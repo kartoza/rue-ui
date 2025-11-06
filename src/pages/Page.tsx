@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { Box } from '@chakra-ui/react';
 
 interface Props {

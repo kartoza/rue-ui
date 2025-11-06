@@ -1,6 +1,5 @@
-import React from 'react';
 import { waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import MapLibre from './Map';
 import maplibregl from 'maplibre-gl';
 import { render } from '../../test/render';

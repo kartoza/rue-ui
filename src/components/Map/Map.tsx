@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { Box } from '@chakra-ui/react';
 
