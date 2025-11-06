@@ -7,13 +7,14 @@ A modern, standardized React application built with **Vite**, **TypeScript**, an
 - ⚡️ **Vite** - Next generation frontend tooling for fast development
 - ⚛️ **React 19** - Latest version of React with modern features
 - 🔷 **TypeScript** - Type-safe code for better developer experience
-- 🎨 **ESLint** - Code linting with React-specific rules
+- 🎨 **Chakra UI** - theming (custom theme in src/theme/Theme.tsx)
 - 💅 **Prettier** - Consistent code formatting
-- 🏗️ **Modern Build Setup** - Optimized production builds
+- 🧪 **Vitest + Testing Library** setup
 
 ## 📋 Prerequisites
 
 Before you begin, ensure you have the following installed:
+
 - **Node.js** (version 18 or higher)
 - **npm** (comes with Node.js)
 
@@ -72,24 +73,46 @@ npm run preview
 - `npm run format` - Format code with Prettier
 - `npm run format:check` - Check if code is formatted correctly
 
+## Test
+
+- `npm test` - run Vitest once
+- `npm run test:watch` - watch mode
+- `npm run coverage` - if configured in vitest
+
 ## 📁 Project Structure
 
 ```
 rue-ui/
-├── public/           # Static assets
-├── src/              # Source files
-│   ├── assets/       # Images, fonts, etc.
-│   ├── App.tsx       # Main App component
-│   ├── App.css       # App styles
-│   ├── main.tsx      # Application entry point
-│   └── index.css     # Global styles
-├── .eslintrc.js      # ESLint configuration
-├── .prettierrc       # Prettier configuration
-├── index.html        # HTML entry point
-├── package.json      # Project dependencies and scripts
-├── tsconfig.json     # TypeScript configuration
-├── vite.config.ts    # Vite configuration
-└── README.md         # Project documentation
+├── public/                          # Static assets served as-is
+├── src/
+│   ├── assets/
+│   │   └── react.svg
+│   ├── components/                  # Reusable UI blocks (each folder = one component)
+│   │   └── NavBar/                  # Example component structure
+│   │       ├── NavBar.tsx           # component implementation
+│   │       ├── NavBar.test.tsx      # component unit tests
+│   │       └── style.scss           # component-scoped styles
+│   ├── pages/                       # Route-level views (compose components)
+│   │   ├── About/
+│   │   │   ├── About.tsx            # page implementation
+│   │   │   └── style.scss           # page-scoped styles
+│   │   ├── Home/                    # (reserved for Home page files)
+│   ├── test/
+│   │   ├── render.tsx               # RTL render wrapper (Chakra + Router)
+│   │   └── setup.ts                 # Vitest setup (JSDOM config, mocks, etc.)
+│   ├── theme/
+│   │   ├── Button.tsx               # Example themed component
+│   │   └── Theme.tsx                # Chakra theme config
+│   ├── index.css                    # Global (Vite) CSS
+│   ├── main.tsx                     # App entry
+│   ├── reportWebVitals.tsx          # Web vitals (optional)
+│   ├── routes.tsx                   # App routes
+│   └── styles.scss                  # Global SCSS
+├── index.html
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+└── README.md
 ```
 
 ## 🔧 Configuration
@@ -97,6 +120,7 @@ rue-ui/
 ### TypeScript
 
 TypeScript is configured with strict mode enabled. Configuration files:
+
 - `tsconfig.json` - Base TypeScript configuration
 - `tsconfig.app.json` - App-specific TypeScript configuration
 - `tsconfig.node.json` - Node-specific TypeScript configuration
