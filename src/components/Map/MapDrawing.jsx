@@ -8,6 +8,7 @@ import './style.scss';
 
 export default function MapDrawing({ map }) {
   const drawRef = useRef(null);
+  const drawFeaturesSource = useRef(null);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [isPolylineMode, setIsPolylineMode] = useState(false);
 
@@ -15,10 +16,6 @@ export default function MapDrawing({ map }) {
     if (!map || drawRef.current) return;
 
     //TO-DO
-    // create new style for features created from draw control
-    // add new layers for drawn features with custom styles
-    // copy drawn features to new layers with custom styles
-    // delete drawn features after extracting their properties for line and polygon
     // update interactions from drawControl layer to new layer
 
     // Initialize MaplibreDraw with custom styles
@@ -57,35 +54,6 @@ export default function MapDrawing({ map }) {
           },
           paint: {
             'line-color': 'black',
-            'line-width': 4,
-          },
-        },
-        // Default yellow line
-        {
-          id: 'gl-draw-line-yellow',
-          type: 'line',
-          filter: ['all', ['==', '$type', 'LineString'], ['==', 'line_color', 'yellow']],
-          layout: {
-            'line-cap': 'round',
-            'line-join': 'round',
-            visibility: 'visible',
-          },
-          paint: {
-            'line-color': '#eed026ff',
-            'line-width': 4,
-          },
-        },
-        // Default red line
-        {
-          id: 'gl-draw-line-red',
-          type: 'line',
-          filter: ['all', ['==', '$type', 'LineString'], ['==', 'line_color', 'red']],
-          layout: {
-            'line-cap': 'round',
-            'line-join': 'round',
-          },
-          paint: {
-            'line-color': '#FF0000',
             'line-width': 4,
           },
         },
@@ -134,43 +102,92 @@ export default function MapDrawing({ map }) {
 
     map.addControl(drawControl);
     drawRef.current = drawControl;
+    drawFeaturesSource.current = map.getSource('drawnFeatures');
+
+    // Listen for feature selection changes
+    map.on('draw.selectionchange', (e) => {
+      const drawnSource = map.getSource('drawnFeatures');
+      if (!drawnSource || typeof drawnSource.setData !== 'function') return;
+      let existingData = drawnSource._data || { type: 'FeatureCollection', features: [] };
+      // Features selected in drawRef
+      const selectedFeatures = drawRef.current.getSelected().features;
+      // Remove selected features from drawnFeatures source and add to drawRef
+      if (selectedFeatures.length > 0) {
+        selectedFeatures.forEach((feature) => {
+          // Remove from drawnFeatures source
+          existingData.features = existingData.features.filter((f) => f.id !== feature.id);
+          drawnSource.setData(existingData);
+          // Add to drawRef (already selected, so just ensure it's present)
+          drawRef.current.add(feature);
+        });
+      }
+      // If no features are selected, move all features from drawRef back to drawnFeatures source and delete from drawRef
+      if (selectedFeatures.length === 0) {
+        // Get all features in drawRef
+        const allDrawFeatures = drawRef.current.getAll().features;
+        if (allDrawFeatures.length > 0) {
+          allDrawFeatures.forEach((feature) => {
+            // Add back to drawnFeatures source
+            existingData.features.push(feature);
+            // Remove from drawRef
+            drawRef.current.delete(feature.id);
+          });
+          drawnSource.setData(existingData);
+        }
+      }
+    });
 
     // Automatically enable simple_select mode when a polygon is clicked
     map.on('click', (e) => {
       const mode = drawRef.current.getMode();
       if (mode === 'draw_polygon' || mode === 'draw_line_string') return;
-      const features = drawRef.current.getAll();
+      const drawnSource = map.getSource('drawnFeatures');
+      let features = drawnSource?._data || { type: 'FeatureCollection', features: [] };
       const point = [e.lngLat.lng, e.lngLat.lat];
-      let selectedFeatureId = null;
+      let selectedFeature = null;
       if (features.features.length > 0) {
         for (const feature of features.features) {
           if (feature.geometry.type === 'Polygon') {
             const polygon = feature.geometry.coordinates[0];
             if (isPointInPolygon(point, polygon)) {
-              selectedFeatureId = feature.id;
+              selectedFeature = feature;
               break;
             }
           }
           if (feature.geometry.type === 'LineString') {
             const line = feature.geometry.coordinates;
             if (isPointNearLine(point, line, 0.2)) {
-              clickedFeatureId = feature.id;
+              selectedFeature = feature;
               break;
             } else {
               for (let i = 0; i < line.length; i++) {
                 if (pointToVertexDistance(point, line[i]) < 0.2) {
-                  clickedFeatureId = feature.id;
+                  selectedFeature = feature;
                   break;
                 }
               }
-              if (clickedFeatureId) break;
+              if (selectedFeature) break;
             }
           }
         }
       }
-      if (selectedFeatureId) {
-        drawRef.current.changeMode('simple_select', { featureIds: [selectedFeatureId] });
+      if (selectedFeature) {
+        // Remove from drawnFeatures source
+        features.features = features.features.filter((f) => f.id !== selectedFeature.id);
+        drawnSource.setData(features);
+        // Add to drawRef and select
+        drawRef.current.add(selectedFeature);
+        drawRef.current.changeMode('simple_select', { featureIds: [selectedFeature.id] });
       } else {
+        // Deselect: move all features from drawRef back to drawnFeatures source
+        const allDrawFeatures = drawRef.current.getAll().features;
+        if (allDrawFeatures.length > 0) {
+          allDrawFeatures.forEach((feature) => {
+            features.features.push(feature);
+            drawRef.current.delete(feature.id);
+          });
+          drawnSource.setData(features);
+        }
         drawRef.current.changeMode('simple_select', { featureIds: [] });
       }
     });
@@ -185,6 +202,17 @@ export default function MapDrawing({ map }) {
 
       if (mode === 'direct_select') {
         // Exit edit mode and deselect the feature entirely
+        // Move all features from drawRef back to drawnFeatures source
+        const drawnSource = map.getSource('drawnFeatures');
+        let features = drawnSource?._data || { type: 'FeatureCollection', features: [] };
+        const allDrawFeatures = drawRef.current.getAll().features;
+        if (allDrawFeatures.length > 0) {
+          allDrawFeatures.forEach((feature) => {
+            features.features.push(feature);
+            drawRef.current.delete(feature.id);
+          });
+          drawnSource.setData(features);
+        }
         drawRef.current.changeMode('simple_select', { featureIds: [] });
       } else {
         // First check if there's already a selected feature
@@ -196,40 +224,46 @@ export default function MapDrawing({ map }) {
           drawRef.current.changeMode('direct_select', { featureId: selectedFeatureId });
         } else {
           // No feature selected, check if right-click is on a feature
-          const features = drawRef.current.getAll();
+          const drawnSource = map.getSource('drawnFeatures');
+          let features = drawnSource?._data || { type: 'FeatureCollection', features: [] };
           const point = [e.lngLat.lng, e.lngLat.lat];
-          let clickedFeatureId = null;
+          let clickedFeature = null;
 
           if (features.features.length > 0) {
             for (const feature of features.features) {
               if (feature.geometry.type === 'Polygon') {
                 const polygon = feature.geometry.coordinates[0];
                 if (isPointInPolygon(point, polygon)) {
-                  clickedFeatureId = feature.id;
+                  clickedFeature = feature;
                   break;
                 }
               }
               if (feature.geometry.type === 'LineString') {
                 const line = feature.geometry.coordinates;
                 if (isPointNearLine(point, line, 0.2)) {
-                  clickedFeatureId = feature.id;
+                  clickedFeature = feature;
                   break;
                 } else {
                   for (let i = 0; i < line.length; i++) {
                     if (pointToVertexDistance(point, line[i]) < 0.2) {
-                      clickedFeatureId = feature.id;
+                      clickedFeature = feature;
                       break;
                     }
                   }
-                  if (clickedFeatureId) break;
+                  if (clickedFeature) break;
                 }
               }
             }
           }
 
           // Enter edit mode if a feature was clicked
-          if (clickedFeatureId) {
-            drawRef.current.changeMode('direct_select', { featureId: clickedFeatureId });
+          if (clickedFeature) {
+            // Remove from drawnFeatures source
+            features.features = features.features.filter((f) => f.id !== clickedFeature.id);
+            drawnSource.setData(features);
+            // Add to drawRef and select
+            drawRef.current.add(clickedFeature);
+            drawRef.current.changeMode('direct_select', { featureId: clickedFeature.id });
           }
         }
       }
@@ -298,8 +332,31 @@ export default function MapDrawing({ map }) {
   const handleDrawPolygon = () => {
     if (drawRef.current) {
       const newMode = !isDrawingMode;
+      const drawControl = drawRef.current;
       if (newMode) {
-        drawRef.current.changeMode('draw_polygon');
+        drawControl.changeMode('draw_polygon');
+        // Listen for the draw.create event
+        const onDrawCreate = (e) => {
+          if (e.features && e.features.length > 0) {
+            const feature = e.features[0];
+
+            // Remove the original feature and add the updated one
+            drawControl.delete(feature.id);
+            // Now set the data
+            const drawnSource = map.getSource('drawnFeatures');
+            if (drawnSource && typeof drawnSource.setData === 'function') {
+              const existingData = drawnSource._data || { type: 'FeatureCollection', features: [] };
+              existingData.features.push(feature);
+              drawnSource.setData(existingData);
+            } else {
+              console.error('drawnFeatures source not found or setData not available');
+            }
+          }
+          // Remove listener after one use
+          map.off('draw.create', onDrawCreate);
+        };
+
+        map.on('draw.create', onDrawCreate);
         setIsPolylineMode(false);
       } else {
         drawRef.current.changeMode('simple_select');
@@ -330,14 +387,17 @@ export default function MapDrawing({ map }) {
           feature.properties.line_color = color;
           feature.properties.line_number = String(num);
 
-          console.log('feature after adding properties:', feature);
-
           // Remove the original feature and add the updated one
           drawControl.delete(feature.id);
-          drawControl.add(feature);
-
-          // Force map style refresh after line is drawn
-          map.triggerRepaint();
+          // Now set the data
+          const drawnSource = map.getSource('drawnFeatures');
+          if (drawnSource && typeof drawnSource.setData === 'function') {
+            const existingData = drawnSource._data || { type: 'FeatureCollection', features: [] };
+            existingData.features.push(feature);
+            drawnSource.setData(existingData);
+          } else {
+            console.error('drawnFeatures source not found or setData not available');
+          }
         }
         // Remove listener after one use
         map.off('draw.create', onDrawCreate);

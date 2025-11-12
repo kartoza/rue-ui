@@ -12,25 +12,35 @@ vi.mock('./style.scss', () => ({}));
 vi.mock('./data', () => ({
   layers: [
     {
-      id: 'test-layer',
-      type: 'background',
-      paint: {
-        'background-color': '#ffffff',
-      },
+      id: 'osm-background',
+      type: 'raster',
+      source: 'osm',
+      minzoom: 0,
+      maxzoom: 19,
     },
   ],
   sources: {
-    'test-source': {
-      type: 'vector',
-      url: 'test-url',
+    osm: {
+      type: 'raster',
+      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256,
     },
   },
 }));
 
 // Mock maplibre-gl
+const mockAddSource = vi.fn();
+const mockAddLayer = vi.fn();
+const mockGetSource = vi.fn(() => ({
+  setData: vi.fn(),
+  _data: { type: 'FeatureCollection', features: [] },
+}));
 const mockAddControl = vi.fn();
 const mockMap = {
   addControl: mockAddControl,
+  addSource: mockAddSource,
+  addLayer: mockAddLayer,
+  getSource: mockGetSource,
   remove: vi.fn(),
   getContainer: vi.fn(),
   isStyleLoaded: vi.fn(() => true),
@@ -94,21 +104,23 @@ describe('MapLibre Component', () => {
           style: {
             version: 8,
             sources: {
-              'test-source': {
-                type: 'vector',
-                url: 'test-url',
+              osm: {
+                type: 'raster',
+                tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                tileSize: 256,
               },
             },
             layers: [
               {
-                id: 'test-layer',
-                type: 'background',
-                paint: {
-                  'background-color': '#ffffff',
-                },
+                id: 'osm-background',
+                type: 'raster',
+                source: 'osm',
+                minzoom: 0,
+                maxzoom: 19,
               },
             ],
             glyphs: '/static/fonts/{fontstack}/{range}.pbf',
+            sprite: '',
           },
           center: [0, 0],
           zoom: 1,
@@ -154,18 +166,19 @@ describe('MapLibre Component', () => {
       await waitFor(() => {
         const mapCall = maplibregl.Map.mock.calls[0][0];
         expect(mapCall.style.sources).toEqual({
-          'test-source': {
-            type: 'vector',
-            url: 'test-url',
+          osm: {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
           },
         });
         expect(mapCall.style.layers).toEqual([
           {
-            id: 'test-layer',
-            type: 'background',
-            paint: {
-              'background-color': '#ffffff',
-            },
+            id: 'osm-background',
+            type: 'raster',
+            source: 'osm',
+            minzoom: 0,
+            maxzoom: 19,
           },
         ]);
       });
