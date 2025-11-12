@@ -1,5 +1,5 @@
 import { waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import MapLibre from './Map';
 import maplibregl from 'maplibre-gl';
 import { render } from '../../test/render';
@@ -152,7 +152,7 @@ describe('MapLibre Component', () => {
       render(<MapLibre />);
 
       await waitFor(() => {
-        const mapCall = (maplibregl.Map as Mock).mock.calls[0][0];
+        const mapCall = maplibregl.Map.mock.calls[0][0];
         expect(mapCall.style.sources).toEqual({
           'test-source': {
             type: 'vector',

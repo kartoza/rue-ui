@@ -1,9 +1,10 @@
 // src/routes.tsx
 import { Route, Routes } from 'react-router-dom';
 import Home from './pages/Home/Home';
-import About from './pages/About/About';
 import MapPage from './pages/Map/Map';
 import Page from './pages/Page';
+import Login from './pages/Login/Login';
+import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 
 const AppRoutes = () => {
   return (
@@ -16,11 +17,12 @@ const AppRoutes = () => {
           </Page>
         }
       />
+
       <Route
-        path="/about"
+        path="/login"
         element={
-          <Page title="About">
-            <About />
+          <Page title="Login">
+            <Login />
           </Page>
         }
       />
@@ -28,9 +30,11 @@ const AppRoutes = () => {
       <Route
         path="/map"
         element={
-          <Page title="Map">
-            <MapPage />
-          </Page>
+          <ProtectedRoute>
+            <Page title="Map">
+              <MapPage />
+            </Page>
+          </ProtectedRoute>
         }
       />
     </Routes>

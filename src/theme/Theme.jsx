@@ -1,5 +1,5 @@
 import { createSystem, defaultConfig } from '@chakra-ui/react';
-import { buttonRecipe } from './Button';
+// import { buttonRecipe } from './Button';
 
 const COLORS = {
   primary: {
@@ -29,13 +29,14 @@ const COLORS = {
     950: { value: '#7A501D' },
   },
 };
-export const kartozaTheme = createSystem(defaultConfig, {
+
+export const system = createSystem(defaultConfig, {
   theme: {
     tokens: {
       colors: COLORS,
     },
-    recipes: {
-      button: buttonRecipe,
-    },
   },
 });
+
+// Keep the old export for backwards compatibility
+export const kartozaTheme = system;

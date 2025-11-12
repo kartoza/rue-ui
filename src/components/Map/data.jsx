@@ -1,11 +1,9 @@
-import type { LayerSpecification, RasterSourceSpecification } from 'maplibre-gl';
-
 export const sources = {
   osm: {
     type: 'raster',
     tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
     tileSize: 256,
-  } as RasterSourceSpecification,
+  },
 };
 export const layers = [
   {
@@ -14,5 +12,5 @@ export const layers = [
     source: 'osm',
     minzoom: 0,
     maxzoom: 19,
-  } as LayerSpecification,
+  },
 ];

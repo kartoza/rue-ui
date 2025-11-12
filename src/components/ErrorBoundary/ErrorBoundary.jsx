@@ -1,18 +1,8 @@
-import React, { type ErrorInfo, type ReactNode } from 'react';
+import React from 'react';
 import * as Sentry from '@sentry/react';
 
-interface Props {
-  children: ReactNode;
-}
-
-interface State {
-  hasError: boolean;
-  error?: Error | null;
-  errorInfo?: ErrorInfo | null;
-}
-
-export default class ErrorBoundary extends React.Component<Props, State> {
-  constructor(props: Props) {
+export default class ErrorBoundary extends React.Component {
+  constructor(props) {
     super(props);
     this.state = {
       hasError: false,
@@ -21,12 +11,12 @@ export default class ErrorBoundary extends React.Component<Props, State> {
     };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error) {
     // Update state so the next render will show the fallback UI.
     return { hasError: true, error: error, errorInfo: null };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error, errorInfo) {
     // You can also log the error to an error reporting service
     this.setState({
       error: error,

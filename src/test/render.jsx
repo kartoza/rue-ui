@@ -1,13 +1,13 @@
-// src/test/render.tsx
+// src/test/render.jsx
 import React from 'react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { MemoryRouter } from 'react-router-dom';
 import { render as rtlRender } from '@testing-library/react';
 import { kartozaTheme } from '../theme/Theme';
 
-export function render(ui: React.ReactNode) {
+export function render(ui) {
   return rtlRender(<>{ui}</>, {
-    wrapper: (props: React.PropsWithChildren) => (
+    wrapper: (props) => (
       <ChakraProvider value={kartozaTheme}>
         <MemoryRouter>{props.children}</MemoryRouter>
       </ChakraProvider>
