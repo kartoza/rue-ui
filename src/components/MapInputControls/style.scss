@@ -58,23 +58,23 @@
 }
 
 /* Remove border from entire accordion item */
-.accordion-item {
+.map-input-parent .accordion-item {
   border: none !important;
 }
 
-.accordion-body {
+.map-input-parent .accordion-body {
   border-left: 1px solid lightgray;
   margin-left: 28px;
 }
 
 /* Remove border from the active accordion header */
-.accordion-button {
+.map-input-parent .accordion-button {
   //   border: none !important;
   box-shadow: none !important; /* removes the focus shadow */
 }
 
 /* Ensure the active state also has no border */
-.accordion-button:not(.collapsed) {
+.map-input-parent .accordion-button:not(.collapsed) {
   //   border: none !important;
   box-shadow: none !important;
   background-color: white !important; /* optional: keep it white */
