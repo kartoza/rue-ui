@@ -18,12 +18,71 @@ vi.mock('./data', () => ({
       minzoom: 0,
       maxzoom: 19,
     },
+    // Drawn feature layers (simplified for test)
+    {
+      id: 'gl-draw-polygon-fill',
+      source: 'drawnFeatures',
+      type: 'fill',
+      filter: [],
+      paint: {},
+    },
+    {
+      id: 'gl-draw-polygon-stroke-active',
+      source: 'drawnFeatures',
+      type: 'line',
+      filter: [],
+      paint: {},
+    },
+    {
+      id: 'gl-draw-line-yellow',
+      source: 'drawnFeatures',
+      type: 'line',
+      filter: [],
+      layout: {},
+      paint: {},
+    },
+    {
+      id: 'gl-draw-line-red',
+      source: 'drawnFeatures',
+      type: 'line',
+      filter: [],
+      layout: {},
+      paint: {},
+    },
+    {
+      id: 'gl-draw-line-label-0',
+      source: 'drawnFeatures',
+      type: 'symbol',
+      filter: [],
+      layout: {},
+      paint: {},
+    },
+    {
+      id: 'gl-draw-line-label-50',
+      source: 'drawnFeatures',
+      type: 'symbol',
+      filter: [],
+      layout: {},
+      paint: {},
+    },
+    {
+      id: 'gl-draw-line-label-100',
+      source: 'drawnFeatures',
+      type: 'symbol',
+      filter: [],
+      layout: {},
+      paint: {},
+    },
   ],
   sources: {
     osm: {
       type: 'raster',
       tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
       tileSize: 256,
+    },
+    drawnFeatures: {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
     },
   },
 }));
@@ -36,6 +95,8 @@ const mockGetSource = vi.fn(() => ({
   _data: { type: 'FeatureCollection', features: [] },
 }));
 const mockAddControl = vi.fn();
+const mockSetLayoutProperty = vi.fn();
+let loadHandler = null;
 const mockMap = {
   addControl: mockAddControl,
   addSource: mockAddSource,
@@ -44,7 +105,12 @@ const mockMap = {
   remove: vi.fn(),
   getContainer: vi.fn(),
   isStyleLoaded: vi.fn(() => true),
-  on: vi.fn(),
+  setLayoutProperty: mockSetLayoutProperty,
+  on: vi.fn((event, handler) => {
+    if (event === 'load') {
+      loadHandler = handler;
+    }
+  }),
   off: vi.fn(),
 };
 
@@ -97,31 +163,18 @@ describe('MapLibre Component', () => {
 
     it('should initialize map with correct configuration', async () => {
       render(<MapLibre />);
-
       await waitFor(() => {
         expect(maplibregl.Map).toHaveBeenCalledWith({
           container: 'map',
-          style: {
+          style: expect.objectContaining({
             version: 8,
-            sources: {
-              osm: {
-                type: 'raster',
-                tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-                tileSize: 256,
-              },
-            },
-            layers: [
-              {
-                id: 'osm-background',
-                type: 'raster',
-                source: 'osm',
-                minzoom: 0,
-                maxzoom: 19,
-              },
-            ],
+            sources: expect.objectContaining({
+              osm: expect.any(Object),
+            }),
+            layers: expect.arrayContaining([expect.objectContaining({ id: 'osm-background' })]),
             glyphs: '/static/fonts/{fontstack}/{range}.pbf',
             sprite: '',
-          },
+          }),
           center: [0, 0],
           zoom: 1,
           attributionControl: false,
@@ -162,26 +215,45 @@ describe('MapLibre Component', () => {
   describe('data integration', () => {
     it('should use imported sources and layers in map style', async () => {
       render(<MapLibre />);
-
       await waitFor(() => {
         const mapCall = maplibregl.Map.mock.calls[0][0];
-        expect(mapCall.style.sources).toEqual({
-          osm: {
-            type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-            tileSize: 256,
-          },
-        });
-        expect(mapCall.style.layers).toEqual([
-          {
-            id: 'osm-background',
-            type: 'raster',
-            source: 'osm',
-            minzoom: 0,
-            maxzoom: 19,
-          },
-        ]);
+        expect(mapCall.style.sources).toHaveProperty('osm');
+        expect(mapCall.style.layers.some((l) => l.id === 'osm-background')).toBe(true);
       });
+    });
+
+    it('should add drawnFeatures source and drawn feature layers after map load', async () => {
+      render(<MapLibre />);
+      // Simulate map load event
+      expect(typeof loadHandler).toBe('function');
+      loadHandler();
+      // drawnFeatures source should be added
+      expect(mockAddSource).toHaveBeenCalledWith(
+        'drawnFeatures',
+        expect.objectContaining({ type: 'geojson' })
+      );
+      // All drawn feature layers should be added
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'gl-draw-polygon-fill' })
+      );
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'gl-draw-polygon-stroke-active' })
+      );
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'gl-draw-line-yellow' })
+      );
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'gl-draw-line-red' })
+      );
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'gl-draw-line-label-0' })
+      );
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'gl-draw-line-label-50' })
+      );
+      expect(mockAddLayer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'gl-draw-line-label-100' })
+      );
     });
   });
 });

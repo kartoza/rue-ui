@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  selectedTask: 'Site',
+  currentTask: 'Site',
 };
 
 const taskSlice = createSlice({
@@ -9,7 +9,7 @@ const taskSlice = createSlice({
   initialState,
   reducers: {
     setSelectedTask: (state, action) => {
-      state.selectedTask = action.payload;
+      state.currentTask = action.payload;
     },
   },
 });

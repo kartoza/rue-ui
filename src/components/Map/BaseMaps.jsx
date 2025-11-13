@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+// Import VITE_MAPBOX_TOKEN from environment
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 import './style.scss';
@@ -7,15 +9,15 @@ export default function BaseMaps({ map }) {
   const basemaps = [
     {
       label: 'Light',
-      value: 'https://api.maptiler.com/maps/bright/style.json?key=UX8NBCf53PxSRrfgezxL',
+      value: `https://api.maptiler.com/maps/bright/style.json?key=${MAPBOX_TOKEN}`,
     },
     {
       label: 'Satellite',
-      value: 'https://api.maptiler.com/maps/hybrid/style.json?key=UX8NBCf53PxSRrfgezxL',
+      value: `https://api.maptiler.com/maps/hybrid/style.json?key=${MAPBOX_TOKEN}`,
     },
     {
       label: 'Dark',
-      value: 'https://api.maptiler.com/maps/dataviz-dark/style.json?key=UX8NBCf53PxSRrfgezxL',
+      value: `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${MAPBOX_TOKEN}`,
     },
   ];
 

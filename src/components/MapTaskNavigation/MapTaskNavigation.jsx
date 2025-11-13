@@ -6,7 +6,7 @@ import { setSelectedTask } from '../../features/task/taskSlice';
 
 function MapTaskNavigation() {
   const dispatch = useDispatch();
-  const selectedTask = useSelector((state) => state.task.selectedTask);
+  const currentTask = useSelector((state) => state.task.currentTask);
 
   const handleTaskClick = (task) => {
     dispatch(setSelectedTask(task));
@@ -30,7 +30,7 @@ function MapTaskNavigation() {
           <li
             key={task}
             className={
-              task === selectedTask
+              task === currentTask
                 ? 'map-task-navigation-item task-active'
                 : 'map-task-navigation-item'
             }

@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  selectedDefinition: 'vmc_demo',
+  selectedDefinition: 'draw_your_own',
 };
 
 const definitionSlice = createSlice({

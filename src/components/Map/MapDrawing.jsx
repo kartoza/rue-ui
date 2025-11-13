@@ -2,11 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import MaplibreDraw from 'maplibre-gl-draw';
 import { HStack, IconButton } from '@chakra-ui/react';
 import { MdDelete, MdCropSquare, MdTimeline } from 'react-icons/md';
-
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 import './style.scss';
 
-export default function MapDrawing({ map }) {
+export default function MapDrawing({ map, currentDefinition }) {
   const drawRef = useRef(null);
   const drawFeaturesSource = useRef(null);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
@@ -16,320 +15,322 @@ export default function MapDrawing({ map }) {
   const isRightClicking = useRef(false);
 
   useEffect(() => {
-    if (!map || drawRef.current) return;
+    if (!map) return;
 
-    // Initialize MaplibreDraw with custom styles
-    const drawControl = new MaplibreDraw({
-      displayControlsDefault: false,
-      controls: {},
-      styles: [
-        // Polygon fill
-        {
-          id: 'gl-draw-polygon-fill',
-          type: 'fill',
-          filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
-          paint: {
-            'fill-color': '#FFFF00',
-            'fill-opacity': 0.4,
-          },
-        },
-        // Polygon outline
-        {
-          id: 'gl-draw-polygon-stroke-active',
-          type: 'line',
-          filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
-          paint: {
-            'line-color': '#FFFF00',
-            'line-width': 2,
-          },
-        },
-        //line default
-        {
-          id: 'gl-draw-line',
-          type: 'line',
-          filter: ['all', ['==', '$type', 'LineString']],
-          layout: {
-            'line-cap': 'round',
-            'line-join': 'round',
-          },
-          paint: {
-            'line-color': 'black',
-            'line-width': 4,
-          },
-        },
-        // Labels
-        {
-          id: 'gl-draw-line-label',
-          type: 'symbol',
-          filter: ['==', '$type', 'LineString'],
-          layout: {
-            'symbol-placement': 'line',
-            'text-field': ['get', 'line_number'],
-            'text-size': 14,
-            'text-allow-overlap': true,
-          },
-          paint: {
-            'text-color': '#000000',
-          },
-        },
-        // Vertex points (polygon and line)
-        {
-          id: 'gl-draw-polygon-and-line-vertex-active',
-          type: 'circle',
-          filter: ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point']],
-          paint: {
-            'circle-radius': 5,
-            'circle-color': '#FFFF00',
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#FFF',
-          },
-        },
-        // Midpoints (for adding vertices)
-        {
-          id: 'gl-draw-polygon-and-line-midpoint',
-          type: 'circle',
-          filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
-          paint: {
-            'circle-radius': 6,
-            'circle-color': '#00CCFF',
-            'circle-opacity': 1,
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#FFF',
-          },
-        },
-      ],
-    });
+    let drawControl;
+    let handleKeyDown;
 
-    map.addControl(drawControl);
-    drawRef.current = drawControl;
-    drawFeaturesSource.current = map.getSource('drawnFeatures');
+    if (currentDefinition === 'draw_your_own') {
+      // Initialize MaplibreDraw with custom styles
+      map.setLayoutProperty('gl-draw-polygon-fill', 'visibility', 'visible');
+      map.setLayoutProperty('gl-draw-line-red', 'visibility', 'visible');
+      map.setLayoutProperty('gl-draw-polygon-stroke-active', 'visibility', 'visible');
+      map.setLayoutProperty('gl-draw-line-yellow', 'visibility', 'visible');
+      map.setLayoutProperty('gl-draw-line-label-0', 'visibility', 'visible');
+      map.setLayoutProperty('gl-draw-line-label-50', 'visibility', 'visible');
+      map.setLayoutProperty('gl-draw-line-label-100', 'visibility', 'visible');
 
-    // Listen for feature selection changes
-    map.on('draw.selectionchange', (e) => {
-      const drawnSource = map.getSource('drawnFeatures');
-      if (!drawnSource || typeof drawnSource.setData !== 'function') return;
-      let existingData = drawnSource._data || { type: 'FeatureCollection', features: [] };
-      const selectedFeatures = drawRef.current.getSelected().features;
-      // Always ensure only the currently selected feature(s) are in drawRef, and all others are in drawnSource
-      const allDrawFeatures = drawRef.current.getAll().features;
-      // Find features in drawRef that are NOT currently selected
-      const toMoveBack = allDrawFeatures.filter(
-        (f) => !selectedFeatures.some((sf) => sf.id === f.id)
-      );
-      if (toMoveBack.length > 0) {
-        toMoveBack.forEach((feature) => {
-          // Move back to drawnSource
-          existingData.features.push(feature);
-          drawRef.current.delete(feature.id);
-        });
-        drawnSource.setData(existingData);
-      }
-      // Remove selected features from drawnSource (if present) and ensure they're in drawRef
-      if (selectedFeatures.length > 0) {
-        selectedFeatures.forEach((feature) => {
-          existingData.features = existingData.features.filter((f) => f.id !== feature.id);
-          drawnSource.setData(existingData);
-          // Add to drawRef (already selected, so just ensure it's present)
-          if (!allDrawFeatures.some((f) => f.id === feature.id)) {
-            drawRef.current.add(feature);
-          }
-        });
-      }
-      // If no features are selected, move all features from drawRef back to drawnFeatures source and delete from drawRef
-      if (selectedFeatures.length === 0) {
+      drawControl = new MaplibreDraw({
+        displayControlsDefault: false,
+        controls: {},
+        styles: [
+          {
+            id: 'gl-draw-polygon-fill',
+            type: 'fill',
+            filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+            paint: {
+              'fill-color': '#FFFF00',
+              'fill-opacity': 0.4,
+            },
+          },
+          {
+            id: 'gl-draw-polygon-stroke-active',
+            type: 'line',
+            filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+            paint: {
+              'line-color': '#FFFF00',
+              'line-width': 2,
+            },
+          },
+          {
+            id: 'gl-draw-line',
+            type: 'line',
+            filter: ['all', ['==', '$type', 'LineString']],
+            layout: {
+              'line-cap': 'round',
+              'line-join': 'round',
+            },
+            paint: {
+              'line-color': 'black',
+              'line-width': 4,
+            },
+          },
+          {
+            id: 'gl-draw-line-label',
+            type: 'symbol',
+            filter: ['==', '$type', 'LineString'],
+            layout: {
+              'symbol-placement': 'line',
+              'text-field': ['get', 'line_number'],
+              'text-size': 14,
+              'text-allow-overlap': true,
+            },
+            paint: {
+              'text-color': '#000000',
+            },
+          },
+          {
+            id: 'gl-draw-polygon-and-line-vertex-active',
+            type: 'circle',
+            filter: ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point']],
+            paint: {
+              'circle-radius': 5,
+              'circle-color': '#FFFF00',
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#FFF',
+            },
+          },
+          {
+            id: 'gl-draw-polygon-and-line-midpoint',
+            type: 'circle',
+            filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
+            paint: {
+              'circle-radius': 6,
+              'circle-color': '#00CCFF',
+              'circle-opacity': 1,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#FFF',
+            },
+          },
+        ],
+      });
+
+      map.addControl(drawControl);
+      drawRef.current = drawControl;
+      drawFeaturesSource.current = map.getSource('drawnFeatures');
+
+      // --- Event listeners ---
+      const onSelectionChange = (e) => {
+        const drawnSource = map.getSource('drawnFeatures');
+        if (!drawnSource || typeof drawnSource.setData !== 'function') return;
+        let existingData = drawnSource._data || { type: 'FeatureCollection', features: [] };
+        const selectedFeatures = drawRef.current.getSelected().features;
         const allDrawFeatures = drawRef.current.getAll().features;
-        if (allDrawFeatures.length > 0) {
-          allDrawFeatures.forEach((feature) => {
+        const toMoveBack = allDrawFeatures.filter(
+          (f) => !selectedFeatures.some((sf) => sf.id === f.id)
+        );
+        if (toMoveBack.length > 0) {
+          toMoveBack.forEach((feature) => {
             existingData.features.push(feature);
             drawRef.current.delete(feature.id);
           });
           drawnSource.setData(existingData);
         }
-      }
-    });
-
-    // Automatically enable simple_select mode when a polygon is clicked
-    map.on('click', (e) => {
-      const mode = drawRef.current.getMode();
-      if (mode === 'draw_polygon' || mode === 'draw_line_string') return;
-      const drawnSource = map.getSource('drawnFeatures');
-      let features = drawnSource?._data || { type: 'FeatureCollection', features: [] };
-      const point = [e.lngLat.lng, e.lngLat.lat];
-      let selectedFeature = null;
-      if (features.features.length > 0) {
-        for (const feature of features.features) {
-          if (feature.geometry.type === 'Polygon') {
-            const polygon = feature.geometry.coordinates[0];
-            if (isPointInPolygon(point, polygon)) {
-              selectedFeature = feature;
-              break;
+        if (selectedFeatures.length > 0) {
+          selectedFeatures.forEach((feature) => {
+            existingData.features = existingData.features.filter((f) => f.id !== feature.id);
+            drawnSource.setData(existingData);
+            if (!allDrawFeatures.some((f) => f.id === feature.id)) {
+              drawRef.current.add(feature);
             }
-          }
-          if (feature.geometry.type === 'LineString') {
-            const line = feature.geometry.coordinates;
-            if (isPointNearLine(point, line, 0.2)) {
-              selectedFeature = feature;
-              break;
-            } else {
-              for (let i = 0; i < line.length; i++) {
-                if (pointToVertexDistance(point, line[i]) < 0.2) {
-                  selectedFeature = feature;
-                  break;
-                }
-              }
-              if (selectedFeature) break;
-            }
-          }
-        }
-      }
-      if (selectedFeature) {
-        // Remove from drawnFeatures source
-        features.features = features.features.filter((f) => f.id !== selectedFeature.id);
-        drawnSource.setData(features);
-        // Add to drawRef and select
-        drawRef.current.add(selectedFeature);
-        drawRef.current.changeMode('simple_select', { featureIds: [selectedFeature.id] });
-      } else {
-        // Deselect: move all features from drawRef back to drawnFeatures source
-        const allDrawFeatures = drawRef.current.getAll().features;
-        if (allDrawFeatures.length > 0) {
-          allDrawFeatures.forEach((feature) => {
-            features.features.push(feature);
-            drawRef.current.delete(feature.id);
           });
-          drawnSource.setData(features);
         }
-        drawRef.current.changeMode('simple_select', { featureIds: [] });
-      }
-    });
-
-    // Right-click to enter direct_select mode for vertex editing (only if feature is selected)
-    // or exit direct_select mode if already in edit mode
-    map.on('contextmenu', (e) => {
-      isRightClicking.current = true;
-      // Defer logic to next event loop tick to ensure selection state is up to date
-      setTimeout(() => {
-        const mode = drawRef.current.getMode();
-        if (mode === 'draw_polygon' || mode === 'draw_line_string') {
-          isRightClicking.current = false;
-          return;
-        }
-
-        e.preventDefault(); // Prevent default context menu
-        const selectedFeatures = drawRef.current.getSelected();
-
-        if (mode === 'direct_select') {
-          if (selectedFeatures.features.length > 0) {
-            // If a feature is already selected, enter edit mode for it
-            const selectedFeatureId = selectedFeatures.features[0].id;
-            drawRef.current.changeMode('direct_select', { featureId: selectedFeatureId });
+        if (selectedFeatures.length === 0) {
+          const allDrawFeatures = drawRef.current.getAll().features;
+          if (allDrawFeatures.length > 0) {
+            allDrawFeatures.forEach((feature) => {
+              existingData.features.push(feature);
+              drawRef.current.delete(feature.id);
+            });
+            drawnSource.setData(existingData);
           }
-          // Exit edit mode and deselect the feature entirely
-          // Move all features from drawRef back to drawnFeatures source
-          else {
-            console.log('RIGHT CLICK - EXITING DIRECT SELECT MODE');
+        }
+      };
+      map.on('draw.selectionchange', onSelectionChange);
+
+      const onClick = (e) => {
+        const mode = drawRef.current.getMode();
+        if (mode === 'draw_polygon' || mode === 'draw_line_string') return;
+        removeAllDrawFeatures();
+        const drawnSource = map.getSource('drawnFeatures');
+        let features = drawnSource?._data || { type: 'FeatureCollection', features: [] };
+        const point = [e.lngLat.lng, e.lngLat.lat];
+        let selectedFeature = null;
+        if (features.features.length > 0) {
+          for (const feature of features.features) {
+            if (feature.geometry.type === 'Polygon') {
+              const polygon = feature.geometry.coordinates[0];
+              if (isPointInPolygon(point, polygon)) {
+                selectedFeature = feature;
+                break;
+              }
+            }
+            if (feature.geometry.type === 'LineString') {
+              const line = feature.geometry.coordinates;
+              if (isPointNearLine(point, line, 0.2)) {
+                selectedFeature = feature;
+                break;
+              } else {
+                for (let i = 0; i < line.length; i++) {
+                  if (pointToVertexDistance(point, line[i]) < 0.2) {
+                    selectedFeature = feature;
+                    break;
+                  }
+                }
+                if (selectedFeature) break;
+              }
+            }
+          }
+        }
+        if (selectedFeature) {
+          features.features = features.features.filter((f) => f.id !== selectedFeature.id);
+          drawnSource.setData(features);
+          drawRef.current.add(selectedFeature);
+          drawRef.current.changeMode('simple_select', { featureIds: [selectedFeature.id] });
+        }
+      };
+      map.on('click', onClick);
+
+      const onContextMenu = (e) => {
+        isRightClicking.current = true;
+        setTimeout(() => {
+          const mode = drawRef.current.getMode();
+          if (mode === 'draw_polygon' || mode === 'draw_line_string') {
+            isRightClicking.current = false;
+            return;
+          }
+          e.preventDefault();
+          const selectedFeatures = drawRef.current.getSelected();
+          if (mode === 'direct_select') {
+            if (selectedFeatures.features.length > 0) {
+              const selectedFeatureId = selectedFeatures.features[0].id;
+              drawRef.current.changeMode('direct_select', { featureId: selectedFeatureId });
+            } else {
+              const drawnSource = map.getSource('drawnFeatures');
+              let features = drawnSource?._data || { type: 'FeatureCollection', features: [] };
+              const allDrawFeatures = drawRef.current.getAll().features;
+              if (allDrawFeatures.length > 0) {
+                allDrawFeatures.forEach((feature) => {
+                  features.features.push(feature);
+                  drawRef.current.delete(feature.id);
+                });
+                drawnSource.setData(features);
+              }
+              drawRef.current.changeMode('simple_select', { featureIds: [] });
+            }
+          } else {
             const drawnSource = map.getSource('drawnFeatures');
             let features = drawnSource?._data || { type: 'FeatureCollection', features: [] };
-            const allDrawFeatures = drawRef.current.getAll().features;
-            if (allDrawFeatures.length > 0) {
-              allDrawFeatures.forEach((feature) => {
-                features.features.push(feature);
-                drawRef.current.delete(feature.id);
-              });
-              drawnSource.setData(features);
-            }
-            drawRef.current.changeMode('simple_select', { featureIds: [] });
-          }
-        } else {
-          // No feature selected, check if right-click is on a feature
-          const drawnSource = map.getSource('drawnFeatures');
-          let features = drawnSource?._data || { type: 'FeatureCollection', features: [] };
-          const point = [e.lngLat.lng, e.lngLat.lat];
-          let clickedFeature = null;
-
-          if (features.features.length > 0) {
-            for (const feature of features.features) {
-              if (feature.geometry.type === 'Polygon') {
-                const polygon = feature.geometry.coordinates[0];
-                if (isPointInPolygon(point, polygon)) {
-                  clickedFeature = feature;
-                  break;
-                }
-              }
-              if (feature.geometry.type === 'LineString') {
-                const line = feature.geometry.coordinates;
-                if (isPointNearLine(point, line, 0.2)) {
-                  clickedFeature = feature;
-                  break;
-                } else {
-                  for (let i = 0; i < line.length; i++) {
-                    if (pointToVertexDistance(point, line[i]) < 0.2) {
-                      clickedFeature = feature;
-                      break;
-                    }
+            const point = [e.lngLat.lng, e.lngLat.lat];
+            let clickedFeature = null;
+            if (features.features.length > 0) {
+              for (const feature of features.features) {
+                if (feature.geometry.type === 'Polygon') {
+                  const polygon = feature.geometry.coordinates[0];
+                  if (isPointInPolygon(point, polygon)) {
+                    clickedFeature = feature;
+                    break;
                   }
-                  if (clickedFeature) break;
+                }
+                if (feature.geometry.type === 'LineString') {
+                  const line = feature.geometry.coordinates;
+                  if (isPointNearLine(point, line, 0.2)) {
+                    clickedFeature = feature;
+                    break;
+                  } else {
+                    for (let i = 0; i < line.length; i++) {
+                      if (pointToVertexDistance(point, line[i]) < 0.2) {
+                        clickedFeature = feature;
+                        break;
+                      }
+                    }
+                    if (clickedFeature) break;
+                  }
+                }
+              }
+            }
+            if (clickedFeature) {
+              features.features = features.features.filter((f) => f.id !== clickedFeature.id);
+              drawnSource.setData(features);
+              drawRef.current.add(clickedFeature);
+              drawRef.current.changeMode('direct_select', { featureId: clickedFeature.id });
+            }
+          }
+          isRightClicking.current = false;
+        }, 0);
+      };
+      map.on('contextmenu', onContextMenu);
+
+      handleKeyDown = (e) => {
+        const mode = drawRef.current.getMode();
+        if (mode === 'direct_select' && (e.key === 'Delete' || e.key === 'Backspace')) {
+          const selectedFeatures = drawRef.current.getSelected();
+          if (selectedFeatures.features.length > 0) {
+            const feature = selectedFeatures.features[0];
+            const selectedCoordPaths = drawRef.current.getSelectedPoints();
+            if (selectedCoordPaths.features.length > 0) {
+              e.preventDefault();
+              const coordPath = selectedCoordPaths.features[0].properties.coord_path;
+              if (feature.geometry.type === 'Polygon') {
+                const coords = feature.geometry.coordinates[0];
+                if (coords.length > 4) {
+                  const pathParts = coordPath.split('.');
+                  const vertexIndex = parseInt(pathParts[pathParts.length - 1]);
+                  coords.splice(vertexIndex, 1);
+                  coords[coords.length - 1] = coords[0];
+                  feature.geometry.coordinates[0] = coords;
+                  drawRef.current.add(feature);
+                  drawRef.current.changeMode('direct_select', { featureId: feature.id });
+                }
+              } else if (feature.geometry.type === 'LineString') {
+                const coords = feature.geometry.coordinates;
+                if (coords.length > 2) {
+                  const pathParts = coordPath.split('.');
+                  const vertexIndex = parseInt(pathParts[pathParts.length - 1]);
+                  coords.splice(vertexIndex, 1);
+                  feature.geometry.coordinates = coords;
+                  drawRef.current.add(feature);
+                  drawRef.current.changeMode('direct_select', { featureId: feature.id });
                 }
               }
             }
           }
-
-          // Enter edit mode if a feature was clicked
-          if (clickedFeature) {
-            // Remove from drawnFeatures source
-            features.features = features.features.filter((f) => f.id !== clickedFeature.id);
-            drawnSource.setData(features);
-            // Add to drawRef and select
-            drawRef.current.add(clickedFeature);
-            drawRef.current.changeMode('direct_select', { featureId: clickedFeature.id });
-          }
         }
-        isRightClicking.current = false;
-      }, 0);
-    });
+      };
+      document.addEventListener('keydown', handleKeyDown);
 
-    // Handle keyboard events for vertex deletion
-    const handleKeyDown = (e) => {
-      const mode = drawRef.current.getMode();
-      if (mode === 'direct_select' && (e.key === 'Delete' || e.key === 'Backspace')) {
-        const selectedFeatures = drawRef.current.getSelected();
-        if (selectedFeatures.features.length > 0) {
-          const feature = selectedFeatures.features[0];
-          const selectedCoordPaths = drawRef.current.getSelectedPoints();
-          if (selectedCoordPaths.features.length > 0) {
-            e.preventDefault();
-            const coordPath = selectedCoordPaths.features[0].properties.coord_path;
-            if (feature.geometry.type === 'Polygon') {
-              const coords = feature.geometry.coordinates[0];
-              if (coords.length > 4) {
-                const pathParts = coordPath.split('.');
-                const vertexIndex = parseInt(pathParts[pathParts.length - 1]);
-                coords.splice(vertexIndex, 1);
-                coords[coords.length - 1] = coords[0];
-                feature.geometry.coordinates[0] = coords;
-                drawRef.current.add(feature);
-                drawRef.current.changeMode('direct_select', { featureId: feature.id });
-              }
-            } else if (feature.geometry.type === 'LineString') {
-              const coords = feature.geometry.coordinates;
-              if (coords.length > 2) {
-                const pathParts = coordPath.split('.');
-                const vertexIndex = parseInt(pathParts[pathParts.length - 1]);
-                coords.splice(vertexIndex, 1);
-                feature.geometry.coordinates = coords;
-                drawRef.current.add(feature);
-                drawRef.current.changeMode('direct_select', { featureId: feature.id });
-              }
-            }
-          }
-        }
+      // Store listeners for cleanup
+      drawRef.current._cleanup = () => {
+        map.off('draw.selectionchange', onSelectionChange);
+        map.off('click', onClick);
+        map.off('contextmenu', onContextMenu);
+        document.removeEventListener('keydown', handleKeyDown);
+        map.removeControl(drawControl);
+        drawRef.current = null;
+      };
+    } else {
+      // If not Site, remove draw control if present
+      map.setLayoutProperty('gl-draw-polygon-fill', 'visibility', 'none');
+      map.setLayoutProperty('gl-draw-line-red', 'visibility', 'none');
+      map.setLayoutProperty('gl-draw-polygon-stroke-active', 'visibility', 'none');
+      map.setLayoutProperty('gl-draw-line-yellow', 'visibility', 'none');
+      map.setLayoutProperty('gl-draw-line-label-0', 'visibility', 'none');
+      map.setLayoutProperty('gl-draw-line-label-50', 'visibility', 'none');
+      map.setLayoutProperty('gl-draw-line-label-100', 'visibility', 'none');
+      if (drawRef.current && map.hasControl && map.hasControl(drawRef.current)) {
+        map.removeControl(drawRef.current);
+        if (drawRef.current._cleanup) drawRef.current._cleanup();
+        drawRef.current = null;
+      }
+    }
+
+    // Cleanup on unmount or when currentDefinition changes
+    return () => {
+      if (drawRef.current && drawRef.current._cleanup) {
+        drawRef.current._cleanup();
       }
     };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [map]);
+  }, [map, currentDefinition]);
 
   // Point-in-polygon helper
   const isPointInPolygon = (point, polygon) => {
@@ -347,11 +348,27 @@ export default function MapDrawing({ map }) {
     return inside;
   };
 
+  const removeAllDrawFeatures = () => {
+    const drawnSource = map.getSource('drawnFeatures');
+    const allDrawFeatures = drawRef.current.getAll().features;
+    let features = drawnSource?._data || { type: 'FeatureCollection', features: [] };
+    if (allDrawFeatures.length > 0) {
+      allDrawFeatures.forEach((feature) => {
+        features.features.push(feature);
+        drawRef.current.delete(feature.id);
+      });
+      drawnSource.setData(features);
+    }
+  };
+
   // Draw polygon button
   const handleDrawPolygon = () => {
     if (drawRef.current) {
       const newMode = !isDrawingMode;
       const drawControl = drawRef.current;
+
+      removeAllDrawFeatures();
+
       if (newMode) {
         drawControl.changeMode('draw_polygon');
         // Listen for the draw.create event
@@ -371,8 +388,16 @@ export default function MapDrawing({ map }) {
               console.error('drawnFeatures source not found or setData not available');
             }
           }
+          // drawControl.changeMode('simple_select');
           // Remove listener after one use
           map.off('draw.create', onDrawCreate);
+          requestAnimationFrame(() => {
+            removeAllDrawFeatures(); // move this here
+            drawControl.changeMode('simple_select');
+            drawControl.trash(); // optional, clears any remaining selection
+            setIsDrawingMode(false);
+            setActivePolylineButton(null);
+          });
         };
 
         map.on('draw.create', onDrawCreate);
@@ -387,10 +412,11 @@ export default function MapDrawing({ map }) {
   // Draw polyline button
   const handleDrawPolyline = (color, num) => {
     if (!drawRef.current || !map) return;
-
     const drawControl = drawRef.current;
     const buttonKey = `${color}-${num}`;
     const newMode = activePolylineButton !== buttonKey;
+
+    removeAllDrawFeatures();
 
     if (newMode) {
       // Start drawing a line
@@ -419,8 +445,17 @@ export default function MapDrawing({ map }) {
             console.error('drawnFeatures source not found or setData not available');
           }
         }
+
         // Remove listener after one use
         map.off('draw.create', onDrawCreate);
+        // Clean up and exit draw mode on next frame
+        requestAnimationFrame(() => {
+          removeAllDrawFeatures(); // move this here
+          drawControl.changeMode('simple_select');
+          drawControl.trash(); // optional, clears any remaining selection
+          setIsDrawingMode(false);
+          setActivePolylineButton(null);
+        });
       };
 
       map.on('draw.create', onDrawCreate);
@@ -497,139 +532,141 @@ export default function MapDrawing({ map }) {
   }
 
   return (
-    <HStack
-      position="absolute"
-      top="10px"
-      right="10px"
-      spacing={2}
-      bg="white"
-      borderRadius="md"
-      boxShadow="md"
-      p={2}
-      zIndex={1}
-    >
-      <IconButton
-        onClick={handleDrawPolygon}
-        size="md"
-        disabled={!map}
-        bg={isDrawingMode ? '#fdf3c0' : 'white'} // active background color
-        color={isDrawingMode ? '#000' : '#cca12b'} // optional: change text/icon color
-        border="1px solid"
-        borderColor={isDrawingMode ? '#cca12b' : 'gray.300'} // optional: highlight border
-        padding={2}
-        aria-label="Draw polygon"
-        isActive={isDrawingMode}
-      >
-        <MdCropSquare />
-      </IconButton>
-
-      <IconButton
-        onClick={() => handleDrawPolyline('red', '0')}
-        size="md"
-        disabled={!map}
-        bg={activePolylineButton === 'red-0' ? '#cc362bff' : 'white'}
-        color={activePolylineButton === 'red-0' ? '#000' : '#cc362bff'}
-        border="1px solid"
-        borderColor={activePolylineButton === 'red-0' ? '#cc362bff' : 'gray.300'}
-        padding={2}
-        aria-label="Draw polyline"
-        isActive={activePolylineButton === 'red-0'}
-      >
-        0<MdTimeline />
-      </IconButton>
-
-      <IconButton
-        onClick={() => handleDrawPolyline('red', '50')}
-        size="md"
-        disabled={!map}
-        bg={activePolylineButton === 'red-50' ? '#cc362bff' : 'white'}
-        color={activePolylineButton === 'red-50' ? '#000' : '#cc362bff'}
-        border="1px solid"
-        borderColor={activePolylineButton === 'red-50' ? '#cc362bff' : 'gray.300'}
-        padding={2}
-        aria-label="Draw polyline"
-        isActive={activePolylineButton === 'red-50'}
-      >
-        50
-        <MdTimeline />
-      </IconButton>
-
-      <IconButton
-        onClick={() => handleDrawPolyline('red', '100')}
-        size="md"
-        disabled={!map}
-        bg={activePolylineButton === 'red-100' ? '#cc362bff' : 'white'}
-        color={activePolylineButton === 'red-100' ? '#000' : '#cc362bff'}
-        border="1px solid"
-        borderColor={activePolylineButton === 'red-100' ? '#cc362bff' : 'gray.300'}
-        padding={2}
-        aria-label="Draw polyline"
-        isActive={activePolylineButton === 'red-100'}
-      >
-        100
-        <MdTimeline />
-      </IconButton>
-
-      <IconButton
-        onClick={() => handleDrawPolyline('yellow', '0')}
-        size="md"
-        disabled={!map}
-        bg={activePolylineButton === 'yellow-0' ? '#fdf3c0' : 'white'}
-        color={activePolylineButton === 'yellow-0' ? '#000' : '#cca12b'}
-        border="1px solid"
-        borderColor={activePolylineButton === 'yellow-0' ? '#cca12b' : 'gray.300'}
-        padding={2}
-        aria-label="Draw polyline"
-        isActive={activePolylineButton === 'yellow-0'}
-      >
-        0<MdTimeline />
-      </IconButton>
-
-      <IconButton
-        onClick={() => handleDrawPolyline('yellow', '50')}
-        size="md"
-        disabled={!map}
-        bg={activePolylineButton === 'yellow-50' ? '#fdf3c0' : 'white'}
-        color={activePolylineButton === 'yellow-50' ? '#000' : '#cca12b'}
-        border="1px solid"
-        borderColor={activePolylineButton === 'yellow-50' ? '#cca12b' : 'gray.300'}
-        padding={2}
-        aria-label="Draw polyline"
-        isActive={activePolylineButton === 'yellow-50'}
-      >
-        50
-        <MdTimeline />
-      </IconButton>
-
-      <IconButton
-        onClick={() => handleDrawPolyline('yellow', '100')}
-        size="md"
-        disabled={!map}
-        bg={activePolylineButton === 'yellow-100' ? '#fdf3c0' : 'white'}
-        color={activePolylineButton === 'yellow-100' ? '#000' : '#cca12b'}
-        border="1px solid"
-        borderColor={activePolylineButton === 'yellow-100' ? '#cca12b' : 'gray.300'}
-        padding={2}
-        aria-label="Draw polyline"
-        isActive={activePolylineButton === 'yellow-100'}
-      >
-        100
-        <MdTimeline />
-      </IconButton>
-
-      <IconButton
-        aria-label="Delete selected features"
-        onClick={handleDeleteSelected}
-        size="md"
-        disabled={!map}
+    currentDefinition === 'draw_your_own' && (
+      <HStack
+        position="absolute"
+        top="10px"
+        right="10px"
+        spacing={2}
         bg="white"
-        color="black"
-        border="1px solid"
-        borderColor="gray.300"
-        padding={2}
+        borderRadius="md"
+        boxShadow="md"
+        p={2}
+        zIndex={1}
       >
-        <MdDelete />
-      </IconButton>
-    </HStack>
+        <IconButton
+          onClick={handleDrawPolygon}
+          size="md"
+          disabled={!map}
+          bg={isDrawingMode ? '#fdf3c0' : 'white'}
+          color={isDrawingMode ? '#000' : '#cca12b'}
+          border="1px solid"
+          borderColor={isDrawingMode ? '#cca12b' : 'gray.300'}
+          padding={2}
+          aria-label="Draw polygon"
+          isActive={isDrawingMode}
+        >
+          <MdCropSquare />
+        </IconButton>
+
+        <IconButton
+          onClick={() => handleDrawPolyline('red', '0')}
+          size="md"
+          disabled={!map}
+          bg={activePolylineButton === 'red-0' ? '#cc362bff' : 'white'}
+          color={activePolylineButton === 'red-0' ? '#000' : '#cc362bff'}
+          border="1px solid"
+          borderColor={activePolylineButton === 'red-0' ? '#cc362bff' : 'gray.300'}
+          padding={2}
+          aria-label="Draw polyline"
+          isActive={activePolylineButton === 'red-0'}
+        >
+          0<MdTimeline />
+        </IconButton>
+
+        <IconButton
+          onClick={() => handleDrawPolyline('red', '50')}
+          size="md"
+          disabled={!map}
+          bg={activePolylineButton === 'red-50' ? '#cc362bff' : 'white'}
+          color={activePolylineButton === 'red-50' ? '#000' : '#cc362bff'}
+          border="1px solid"
+          borderColor={activePolylineButton === 'red-50' ? '#cc362bff' : 'gray.300'}
+          padding={2}
+          aria-label="Draw polyline"
+          isActive={activePolylineButton === 'red-50'}
+        >
+          50
+          <MdTimeline />
+        </IconButton>
+
+        <IconButton
+          onClick={() => handleDrawPolyline('red', '100')}
+          size="md"
+          disabled={!map}
+          bg={activePolylineButton === 'red-100' ? '#cc362bff' : 'white'}
+          color={activePolylineButton === 'red-100' ? '#000' : '#cc362bff'}
+          border="1px solid"
+          borderColor={activePolylineButton === 'red-100' ? '#cc362bff' : 'gray.300'}
+          padding={2}
+          aria-label="Draw polyline"
+          isActive={activePolylineButton === 'red-100'}
+        >
+          100
+          <MdTimeline />
+        </IconButton>
+
+        <IconButton
+          onClick={() => handleDrawPolyline('yellow', '0')}
+          size="md"
+          disabled={!map}
+          bg={activePolylineButton === 'yellow-0' ? '#fdf3c0' : 'white'}
+          color={activePolylineButton === 'yellow-0' ? '#000' : '#cca12b'}
+          border="1px solid"
+          borderColor={activePolylineButton === 'yellow-0' ? '#cca12b' : 'gray.300'}
+          padding={2}
+          aria-label="Draw polyline"
+          isActive={activePolylineButton === 'yellow-0'}
+        >
+          0<MdTimeline />
+        </IconButton>
+
+        <IconButton
+          onClick={() => handleDrawPolyline('yellow', '50')}
+          size="md"
+          disabled={!map}
+          bg={activePolylineButton === 'yellow-50' ? '#fdf3c0' : 'white'}
+          color={activePolylineButton === 'yellow-50' ? '#000' : '#cca12b'}
+          border="1px solid"
+          borderColor={activePolylineButton === 'yellow-50' ? '#cca12b' : 'gray.300'}
+          padding={2}
+          aria-label="Draw polyline"
+          isActive={activePolylineButton === 'yellow-50'}
+        >
+          50
+          <MdTimeline />
+        </IconButton>
+
+        <IconButton
+          onClick={() => handleDrawPolyline('yellow', '100')}
+          size="md"
+          disabled={!map}
+          bg={activePolylineButton === 'yellow-100' ? '#fdf3c0' : 'white'}
+          color={activePolylineButton === 'yellow-100' ? '#000' : '#cca12b'}
+          border="1px solid"
+          borderColor={activePolylineButton === 'yellow-100' ? '#cca12b' : 'gray.300'}
+          padding={2}
+          aria-label="Draw polyline"
+          isActive={activePolylineButton === 'yellow-100'}
+        >
+          100
+          <MdTimeline />
+        </IconButton>
+
+        <IconButton
+          aria-label="Delete selected features"
+          onClick={handleDeleteSelected}
+          size="md"
+          disabled={!map}
+          bg="white"
+          color="black"
+          border="1px solid"
+          borderColor="gray.300"
+          padding={2}
+        >
+          <MdDelete />
+        </IconButton>
+      </HStack>
+    )
   );
 }

@@ -6,12 +6,14 @@ import MapFinanceSection from '../../components/MapFinanceSection/MapFinanceSect
 import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
+import { useCurrentDefinition } from '../../features/site_definition/definitionSelector';
 
 function MapPage() {
   const navbarRef = useRef(null);
   const [mapHeight, setMapHeight] = useState('calc(100vh - 60px)'); // Default fallback
 
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const currentDefinition = useCurrentDefinition();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -47,7 +49,7 @@ function MapPage() {
           <MapTaskNavigation />
         </div>
         <div className="map-wrapper" style={{ height: mapHeight }}>
-          <Map />
+          <Map currentDefinition={currentDefinition} />
         </div>
       </div>
 
