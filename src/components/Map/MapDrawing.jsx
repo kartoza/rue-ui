@@ -10,13 +10,13 @@ export default function MapDrawing({ map }) {
   const drawRef = useRef(null);
   const drawFeaturesSource = useRef(null);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
-  const [isPolylineMode, setIsPolylineMode] = useState(false);
+  // activePolylineButton: null | 'red-0' | 'red-50' | 'red-100' | 'yellow-0' | 'yellow-50' | 'yellow-100'
+  const [activePolylineButton, setActivePolylineButton] = useState(null);
+  // Track if a right-click is in progress
+  const isRightClicking = useRef(false);
 
   useEffect(() => {
     if (!map || drawRef.current) return;
-
-    //TO-DO
-    // update interactions from drawControl layer to new layer
 
     // Initialize MaplibreDraw with custom styles
     const drawControl = new MaplibreDraw({
@@ -109,27 +109,38 @@ export default function MapDrawing({ map }) {
       const drawnSource = map.getSource('drawnFeatures');
       if (!drawnSource || typeof drawnSource.setData !== 'function') return;
       let existingData = drawnSource._data || { type: 'FeatureCollection', features: [] };
-      // Features selected in drawRef
       const selectedFeatures = drawRef.current.getSelected().features;
-      // Remove selected features from drawnFeatures source and add to drawRef
+      // Always ensure only the currently selected feature(s) are in drawRef, and all others are in drawnSource
+      const allDrawFeatures = drawRef.current.getAll().features;
+      // Find features in drawRef that are NOT currently selected
+      const toMoveBack = allDrawFeatures.filter(
+        (f) => !selectedFeatures.some((sf) => sf.id === f.id)
+      );
+      if (toMoveBack.length > 0) {
+        toMoveBack.forEach((feature) => {
+          // Move back to drawnSource
+          existingData.features.push(feature);
+          drawRef.current.delete(feature.id);
+        });
+        drawnSource.setData(existingData);
+      }
+      // Remove selected features from drawnSource (if present) and ensure they're in drawRef
       if (selectedFeatures.length > 0) {
         selectedFeatures.forEach((feature) => {
-          // Remove from drawnFeatures source
           existingData.features = existingData.features.filter((f) => f.id !== feature.id);
           drawnSource.setData(existingData);
           // Add to drawRef (already selected, so just ensure it's present)
-          drawRef.current.add(feature);
+          if (!allDrawFeatures.some((f) => f.id === feature.id)) {
+            drawRef.current.add(feature);
+          }
         });
       }
       // If no features are selected, move all features from drawRef back to drawnFeatures source and delete from drawRef
       if (selectedFeatures.length === 0) {
-        // Get all features in drawRef
         const allDrawFeatures = drawRef.current.getAll().features;
         if (allDrawFeatures.length > 0) {
           allDrawFeatures.forEach((feature) => {
-            // Add back to drawnFeatures source
             existingData.features.push(feature);
-            // Remove from drawRef
             drawRef.current.delete(feature.id);
           });
           drawnSource.setData(existingData);
@@ -195,33 +206,40 @@ export default function MapDrawing({ map }) {
     // Right-click to enter direct_select mode for vertex editing (only if feature is selected)
     // or exit direct_select mode if already in edit mode
     map.on('contextmenu', (e) => {
-      const mode = drawRef.current.getMode();
-      if (mode === 'draw_polygon' || mode === 'draw_line_string') return;
-
-      e.preventDefault(); // Prevent default context menu
-
-      if (mode === 'direct_select') {
-        // Exit edit mode and deselect the feature entirely
-        // Move all features from drawRef back to drawnFeatures source
-        const drawnSource = map.getSource('drawnFeatures');
-        let features = drawnSource?._data || { type: 'FeatureCollection', features: [] };
-        const allDrawFeatures = drawRef.current.getAll().features;
-        if (allDrawFeatures.length > 0) {
-          allDrawFeatures.forEach((feature) => {
-            features.features.push(feature);
-            drawRef.current.delete(feature.id);
-          });
-          drawnSource.setData(features);
+      isRightClicking.current = true;
+      // Defer logic to next event loop tick to ensure selection state is up to date
+      setTimeout(() => {
+        const mode = drawRef.current.getMode();
+        if (mode === 'draw_polygon' || mode === 'draw_line_string') {
+          isRightClicking.current = false;
+          return;
         }
-        drawRef.current.changeMode('simple_select', { featureIds: [] });
-      } else {
-        // First check if there's already a selected feature
+
+        e.preventDefault(); // Prevent default context menu
         const selectedFeatures = drawRef.current.getSelected();
 
-        if (selectedFeatures.features.length > 0) {
-          // If a feature is already selected, enter edit mode for it
-          const selectedFeatureId = selectedFeatures.features[0].id;
-          drawRef.current.changeMode('direct_select', { featureId: selectedFeatureId });
+        if (mode === 'direct_select') {
+          if (selectedFeatures.features.length > 0) {
+            // If a feature is already selected, enter edit mode for it
+            const selectedFeatureId = selectedFeatures.features[0].id;
+            drawRef.current.changeMode('direct_select', { featureId: selectedFeatureId });
+          }
+          // Exit edit mode and deselect the feature entirely
+          // Move all features from drawRef back to drawnFeatures source
+          else {
+            console.log('RIGHT CLICK - EXITING DIRECT SELECT MODE');
+            const drawnSource = map.getSource('drawnFeatures');
+            let features = drawnSource?._data || { type: 'FeatureCollection', features: [] };
+            const allDrawFeatures = drawRef.current.getAll().features;
+            if (allDrawFeatures.length > 0) {
+              allDrawFeatures.forEach((feature) => {
+                features.features.push(feature);
+                drawRef.current.delete(feature.id);
+              });
+              drawnSource.setData(features);
+            }
+            drawRef.current.changeMode('simple_select', { featureIds: [] });
+          }
         } else {
           // No feature selected, check if right-click is on a feature
           const drawnSource = map.getSource('drawnFeatures');
@@ -266,7 +284,8 @@ export default function MapDrawing({ map }) {
             drawRef.current.changeMode('direct_select', { featureId: clickedFeature.id });
           }
         }
-      }
+        isRightClicking.current = false;
+      }, 0);
     });
 
     // Handle keyboard events for vertex deletion
@@ -357,7 +376,7 @@ export default function MapDrawing({ map }) {
         };
 
         map.on('draw.create', onDrawCreate);
-        setIsPolylineMode(false);
+        setActivePolylineButton(null);
       } else {
         drawRef.current.changeMode('simple_select');
       }
@@ -370,7 +389,8 @@ export default function MapDrawing({ map }) {
     if (!drawRef.current || !map) return;
 
     const drawControl = drawRef.current;
-    const newMode = !isPolylineMode;
+    const buttonKey = `${color}-${num}`;
+    const newMode = activePolylineButton !== buttonKey;
 
     if (newMode) {
       // Start drawing a line
@@ -404,12 +424,12 @@ export default function MapDrawing({ map }) {
       };
 
       map.on('draw.create', onDrawCreate);
+      setActivePolylineButton(buttonKey);
     } else {
       // Stop drawing
       drawControl.changeMode('simple_select');
+      setActivePolylineButton(null);
     }
-
-    setIsPolylineMode(newMode);
   };
 
   // Delete selected features
@@ -422,7 +442,7 @@ export default function MapDrawing({ map }) {
         });
       }
       setIsDrawingMode(false);
-      setIsPolylineMode(false);
+      setActivePolylineButton(null);
     }
   };
 
@@ -492,10 +512,10 @@ export default function MapDrawing({ map }) {
         onClick={handleDrawPolygon}
         size="md"
         disabled={!map}
-        bg="white"
-        color="#cca12b"
+        bg={isDrawingMode ? '#fdf3c0' : 'white'} // active background color
+        color={isDrawingMode ? '#000' : '#cca12b'} // optional: change text/icon color
         border="1px solid"
-        borderColor="gray.300"
+        borderColor={isDrawingMode ? '#cca12b' : 'gray.300'} // optional: highlight border
         padding={2}
         aria-label="Draw polygon"
         isActive={isDrawingMode}
@@ -507,13 +527,13 @@ export default function MapDrawing({ map }) {
         onClick={() => handleDrawPolyline('red', '0')}
         size="md"
         disabled={!map}
-        bg="white"
-        color="red"
+        bg={activePolylineButton === 'red-0' ? '#cc362bff' : 'white'}
+        color={activePolylineButton === 'red-0' ? '#000' : '#cc362bff'}
         border="1px solid"
-        borderColor="gray.300"
+        borderColor={activePolylineButton === 'red-0' ? '#cc362bff' : 'gray.300'}
         padding={2}
         aria-label="Draw polyline"
-        isActive={isPolylineMode}
+        isActive={activePolylineButton === 'red-0'}
       >
         0<MdTimeline />
       </IconButton>
@@ -522,13 +542,13 @@ export default function MapDrawing({ map }) {
         onClick={() => handleDrawPolyline('red', '50')}
         size="md"
         disabled={!map}
-        bg="white"
-        color="red"
+        bg={activePolylineButton === 'red-50' ? '#cc362bff' : 'white'}
+        color={activePolylineButton === 'red-50' ? '#000' : '#cc362bff'}
         border="1px solid"
-        borderColor="gray.300"
+        borderColor={activePolylineButton === 'red-50' ? '#cc362bff' : 'gray.300'}
         padding={2}
         aria-label="Draw polyline"
-        isActive={isPolylineMode}
+        isActive={activePolylineButton === 'red-50'}
       >
         50
         <MdTimeline />
@@ -538,13 +558,13 @@ export default function MapDrawing({ map }) {
         onClick={() => handleDrawPolyline('red', '100')}
         size="md"
         disabled={!map}
-        bg="white"
-        color="red"
+        bg={activePolylineButton === 'red-100' ? '#cc362bff' : 'white'}
+        color={activePolylineButton === 'red-100' ? '#000' : '#cc362bff'}
         border="1px solid"
-        borderColor="gray.300"
+        borderColor={activePolylineButton === 'red-100' ? '#cc362bff' : 'gray.300'}
         padding={2}
         aria-label="Draw polyline"
-        isActive={isPolylineMode}
+        isActive={activePolylineButton === 'red-100'}
       >
         100
         <MdTimeline />
@@ -554,13 +574,13 @@ export default function MapDrawing({ map }) {
         onClick={() => handleDrawPolyline('yellow', '0')}
         size="md"
         disabled={!map}
-        bg="white"
-        color="#cca12b"
+        bg={activePolylineButton === 'yellow-0' ? '#fdf3c0' : 'white'}
+        color={activePolylineButton === 'yellow-0' ? '#000' : '#cca12b'}
         border="1px solid"
-        borderColor="gray.300"
+        borderColor={activePolylineButton === 'yellow-0' ? '#cca12b' : 'gray.300'}
         padding={2}
         aria-label="Draw polyline"
-        isActive={isPolylineMode}
+        isActive={activePolylineButton === 'yellow-0'}
       >
         0<MdTimeline />
       </IconButton>
@@ -569,13 +589,13 @@ export default function MapDrawing({ map }) {
         onClick={() => handleDrawPolyline('yellow', '50')}
         size="md"
         disabled={!map}
-        bg="white"
-        color="#cca12b"
+        bg={activePolylineButton === 'yellow-50' ? '#fdf3c0' : 'white'}
+        color={activePolylineButton === 'yellow-50' ? '#000' : '#cca12b'}
         border="1px solid"
-        borderColor="gray.300"
+        borderColor={activePolylineButton === 'yellow-50' ? '#cca12b' : 'gray.300'}
         padding={2}
         aria-label="Draw polyline"
-        isActive={isPolylineMode}
+        isActive={activePolylineButton === 'yellow-50'}
       >
         50
         <MdTimeline />
@@ -585,13 +605,13 @@ export default function MapDrawing({ map }) {
         onClick={() => handleDrawPolyline('yellow', '100')}
         size="md"
         disabled={!map}
-        bg="white"
-        color="#cca12b"
+        bg={activePolylineButton === 'yellow-100' ? '#fdf3c0' : 'white'}
+        color={activePolylineButton === 'yellow-100' ? '#000' : '#cca12b'}
         border="1px solid"
-        borderColor="gray.300"
+        borderColor={activePolylineButton === 'yellow-100' ? '#cca12b' : 'gray.300'}
         padding={2}
         aria-label="Draw polyline"
-        isActive={isPolylineMode}
+        isActive={activePolylineButton === 'yellow-100'}
       >
         100
         <MdTimeline />
