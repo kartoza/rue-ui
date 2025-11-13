@@ -1,0 +1,38 @@
+.map-container-parent {
+  display: flex;
+  height: 100vh;
+}
+
+.map-left-sidebar {
+  width: 25%;
+  border: lightgray 1px solid;
+}
+
+.map-left-sidebar {
+  width: 25%;
+  border: lightgray 1px solid;
+}
+
+.map-container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: lightgray 1px solid;
+}
+
+.map-wrapper {
+  flex-grow: 1;
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+}
+
+.map-container-content {
+  flex-grow: 1;
+  display: flex;
+}
+
+.map-right-sidebar {
+  width: 25%;
+}
