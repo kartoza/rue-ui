@@ -15,7 +15,7 @@ const Login: React.FC = () => {
 
   const handleLogin = () => {
     if (username && password) {
-      dispatch(login({ username: username }));
+      dispatch(login({ username }));
       navigate('/map');
     } else {
       alert('Please enter username and password');

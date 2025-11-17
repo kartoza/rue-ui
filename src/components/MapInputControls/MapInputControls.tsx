@@ -2,7 +2,7 @@ import './style.scss';
 import { Container, Row, Col } from 'react-bootstrap';
 import Accordion from 'react-bootstrap/Accordion';
 import { useState } from 'react';
-import { setSelectedDefiniton } from '../../features/site_definition/definitionSlice';
+import { setSelectedDefinition } from '../../features/site_definition/definitionSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
 
@@ -179,7 +179,7 @@ function MapInputControls() {
                   <select
                     className="form-control"
                     value={siteDefinition}
-                    onChange={(e) => dispatch(setSelectedDefiniton(e.target.value))}
+                    onChange={(e) => dispatch(setSelectedDefinition(e.target.value))}
                   >
                     <option value="vmc_demo">VMC Demo</option>
                     <option value="draw_your_own">Draw your own</option>

@@ -13,11 +13,11 @@ const definitionSlice = createSlice({
   name: 'definition',
   initialState,
   reducers: {
-    setSelectedDefiniton: (state, action: PayloadAction<string>) => {
+    setSelectedDefinition: (state, action: PayloadAction<string>) => {
       state.selectedDefinition = action.payload;
     },
   },
 });
 
-export const { setSelectedDefiniton } = definitionSlice.actions;
+export const { setSelectedDefinition } = definitionSlice.actions;
 export default definitionSlice.reducer;

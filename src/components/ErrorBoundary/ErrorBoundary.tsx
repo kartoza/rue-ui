@@ -45,6 +45,12 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
         <div>
           <h1>Something went wrong!</h1>
           <p>{this.state.error ? this.state.error.message : null}</p>
+          {this.state.errorInfo && (
+            <details style={{ whiteSpace: 'pre-wrap', marginTop: '1em' }}>
+              <summary>Stack Trace</summary>
+              {this.state.errorInfo.componentStack}
+            </details>
+          )}
         </div>
       );
     }
