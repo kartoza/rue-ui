@@ -1,15 +1,15 @@
 import './style.scss';
-import Map from '../../components/Map/Map';
+import Map from '../../components/Map/Map.tsx';
 import MapTaskNavigation from '../../components/MapTaskNavigation/MapTaskNavigation';
-import MapInputControls from '../../components/MapInputControls/MapInputControls.jsx';
+import MapInputControls from '../../components/MapInputControls/MapInputControls.tsx';
 import MapFinanceSection from '../../components/MapFinanceSection/MapFinanceSection';
 import { useEffect, useRef, useState } from 'react';
 import { useCurrentDefinition } from '../../features/site_definition/definitionSelector';
 import { useCurrentTask } from '../../features/task/taskSelector';
 
 function MapPage() {
-  const navbarRef = useRef(null);
-  const [mapHeight, setMapHeight] = useState('calc(100vh - 60px)'); // Default fallback
+  const navbarRef = useRef<HTMLDivElement>(null);
+  const [mapHeight, setMapHeight] = useState<string>('calc(100vh - 60px)'); // Default fallback
 
   const currentDefinition = useCurrentDefinition();
   const currentTask = useCurrentTask();

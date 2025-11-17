@@ -1,0 +1,65 @@
+import { createSystem, defaultConfig } from '@chakra-ui/react';
+
+// Type definitions for color tokens
+export type ColorShade = {
+  value: string;
+};
+
+export type ColorGroup = {
+  50: ColorShade;
+  100: ColorShade;
+  200: ColorShade;
+  300: ColorShade;
+  400: ColorShade;
+  500: ColorShade;
+  600: ColorShade;
+  700: ColorShade;
+  800: ColorShade;
+  900: ColorShade;
+  950: ColorShade;
+};
+
+export type Colors = {
+  primary: ColorGroup;
+  secondary: ColorGroup;
+};
+
+const COLORS: Colors = {
+  primary: {
+    50: { value: '#E3F2FA' },
+    100: { value: '#C1E0F4' },
+    200: { value: '#9FCDEE' },
+    300: { value: '#7CB9E8' },
+    400: { value: '#5AA5E2' },
+    500: { value: '#57A0C7' },
+    600: { value: '#4F91B2' },
+    700: { value: '#477F9D' },
+    800: { value: '#3F6D88' },
+    900: { value: '#375C73' },
+    950: { value: '#2F4B5E' },
+  },
+  secondary: {
+    50: { value: '#FFF6E5' },
+    100: { value: '#FFEDC2' },
+    200: { value: '#FFE29E' },
+    300: { value: '#FFD77A' },
+    400: { value: '#FFCC56' },
+    500: { value: '#ECB44B' },
+    600: { value: '#D69F42' },
+    700: { value: '#BF8B39' },
+    800: { value: '#A97630' },
+    900: { value: '#916226' },
+    950: { value: '#7A501D' },
+  },
+};
+
+export const system = createSystem(defaultConfig, {
+  theme: {
+    tokens: {
+      colors: COLORS,
+    },
+  },
+});
+
+// Keep the old export for backwards compatibility
+export const kartozaTheme = system;
