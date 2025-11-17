@@ -145,7 +145,7 @@ export default function MapDrawing({
       map.on('draw.selectionchange', onSelectionChange);
 
       const onClick = (e: MapMouseEvent) => {
-        const mode = drawRef.current.getMode();
+        const mode = drawRef.current?.getMode();
         if (mode === 'draw_polygon' || mode === 'draw_line_string') return;
         removeAllDrawFeatures();
 
@@ -196,7 +196,7 @@ export default function MapDrawing({
       const onContextMenu = (e: MapMouseEvent) => {
         isRightClicking.current = true;
         setTimeout(() => {
-          const mode = drawRef.current.getMode();
+          const mode = drawRef.current?.getMode();
           if (mode === 'draw_polygon' || mode === 'draw_line_string') {
             isRightClicking.current = false;
             return;
@@ -208,7 +208,7 @@ export default function MapDrawing({
           if (mode === 'direct_select') {
             if (selected.features.length > 0) {
               const id = selected.features[0].id;
-              drawRef.current.changeMode('direct_select', { featureId: id });
+              drawRef.current?.changeMode('direct_select', { featureId: id });
             } else {
               const drawnSource = map.getSource('drawnFeatures') as GeoJSONSource | undefined;
               const features: FeatureCollection = (
@@ -270,7 +270,7 @@ export default function MapDrawing({
       map.on('contextmenu', onContextMenu);
 
       handleKeyDown = (e: KeyboardEvent) => {
-        const mode = drawRef.current.getMode();
+        const mode = drawRef.current?.getMode();
         if (mode === 'direct_select' && (e.key === 'Delete' || e.key === 'Backspace')) {
           const selected = drawRef.current!.getSelected();
           if (selected.features.length > 0) {
@@ -279,7 +279,7 @@ export default function MapDrawing({
             if (selectedCoordPaths.features.length > 0) {
               e.preventDefault();
 
-              const coordPath = selectedCoordPaths.features[0].properties.coord_path as string;
+              const coordPath = selectedCoordPaths?.features[0]?.properties?.coord_path as string;
               const pathParts = coordPath.split('.');
               const index = parseInt(pathParts[pathParts.length - 1]);
 

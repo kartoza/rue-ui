@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import maplibregl, { Map as MapLibreMap } from 'maplibre-gl';
 import { Box } from '@chakra-ui/react';
-import { layers, sources } from './data.ts';
+import { layers } from './data.ts';
 import MapDrawing from './MapDrawing.tsx';
 import MapLocation from './MapLocation.tsx';
 import BaseMaps from './BaseMaps';
@@ -28,22 +28,29 @@ export default function MapLibre({ currentDefinition, currentTask }: MapLibrePro
         console.error('Map container not found');
         return;
       }
-      // Create basic style with only OSM
-      const customStyle = {
-        version: 8,
-        sources: {
-          osm: sources.osm,
-        },
-        layers: [
-          layers[0], // osm-background layer
-        ],
-        glyphs: '/static/fonts/{fontstack}/{range}.pbf',
-        sprite: '',
-      };
-
       const newMap = new maplibregl.Map({
         container: 'map',
-        style: customStyle,
+        style: {
+          version: 8,
+          sources: {
+            osm: {
+              type: 'raster',
+              tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+              tileSize: 256,
+            },
+          },
+          layers: [
+            {
+              id: 'osm-background',
+              type: 'raster',
+              source: 'osm',
+              minzoom: 0,
+              maxzoom: 19,
+            }, // osm-background layer
+          ],
+          glyphs: '/static/fonts/{fontstack}/{range}.pbf',
+          sprite: '',
+        },
         center: [0, 0],
         zoom: 1,
         attributionControl: false,
@@ -66,7 +73,7 @@ export default function MapLibre({ currentDefinition, currentTask }: MapLibrePro
         // Manually add all the drawnFeatures layers
         const drawnLayers = layers.slice(1); // Skip the OSM background layer
         drawnLayers.forEach((layer) => {
-          newMap.addLayer(layer);
+          newMap.addLayer(layer as maplibregl.LayerSpecification);
         });
       });
       newMap.on('error', (e) => {

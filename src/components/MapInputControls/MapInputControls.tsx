@@ -4,13 +4,14 @@ import Accordion from 'react-bootstrap/Accordion';
 import { useState } from 'react';
 import { setSelectedDefiniton } from '../../features/site_definition/definitionSlice';
 import { useDispatch, useSelector } from 'react-redux';
+import type { RootState } from '../../app/store';
 
 function MapInputControls() {
   const dispatch = useDispatch();
   const [activeKeys, setActiveKeys] = useState<string[]>(['0', '0-0']);
 
   // City - Site Definition
-  const siteDefinition = useSelector((state) => state.definition.selectedDefinition);
+  const siteDefinition = useSelector((state: RootState) => state.definition.selectedDefinition);
 
   // City - Location
   const [latitude, setLatitude] = useState<number>(0);
