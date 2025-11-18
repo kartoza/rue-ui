@@ -1,11 +1,12 @@
-// src/routes.tsx
 import { Route, Routes } from 'react-router-dom';
 import Home from './pages/Home/Home';
-import About from './pages/About/About';
-import MapPage from './pages/Map/Map';
+import MapPage from './pages/Map/Map.tsx';
 import Page from './pages/Page';
+import Login from './pages/Login/Login';
+import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute.tsx';
+import React from 'react';
 
-const AppRoutes = () => {
+const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route
@@ -17,20 +18,21 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/about"
+        path="/login"
         element={
-          <Page title="About">
-            <About />
+          <Page title="Login">
+            <Login />
           </Page>
         }
       />
-
       <Route
         path="/map"
         element={
-          <Page title="Map">
-            <MapPage />
-          </Page>
+          <ProtectedRoute>
+            <Page title="Map">
+              <MapPage />
+            </Page>
+          </ProtectedRoute>
         }
       />
     </Routes>

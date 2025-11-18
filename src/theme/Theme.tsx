@@ -1,7 +1,30 @@
 import { createSystem, defaultConfig } from '@chakra-ui/react';
-import { buttonRecipe } from './Button';
 
-const COLORS = {
+// Type definitions for color tokens
+export type ColorShade = {
+  value: string;
+};
+
+export type ColorGroup = {
+  50: ColorShade;
+  100: ColorShade;
+  200: ColorShade;
+  300: ColorShade;
+  400: ColorShade;
+  500: ColorShade;
+  600: ColorShade;
+  700: ColorShade;
+  800: ColorShade;
+  900: ColorShade;
+  950: ColorShade;
+};
+
+export type Colors = {
+  primary: ColorGroup;
+  secondary: ColorGroup;
+};
+
+const COLORS: Colors = {
   primary: {
     50: { value: '#E3F2FA' },
     100: { value: '#C1E0F4' },
@@ -29,13 +52,14 @@ const COLORS = {
     950: { value: '#7A501D' },
   },
 };
-export const kartozaTheme = createSystem(defaultConfig, {
+
+export const system = createSystem(defaultConfig, {
   theme: {
     tokens: {
       colors: COLORS,
     },
-    recipes: {
-      button: buttonRecipe,
-    },
   },
 });
+
+// Keep the old export for backwards compatibility
+export const kartozaTheme = system;

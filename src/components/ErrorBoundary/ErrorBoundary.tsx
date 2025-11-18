@@ -1,18 +1,19 @@
-import React, { type ErrorInfo, type ReactNode } from 'react';
+import React from 'react';
+import type { ReactNode } from 'react';
 import * as Sentry from '@sentry/react';
 
-interface Props {
+interface ErrorBoundaryProps {
   children: ReactNode;
 }
 
-interface State {
+interface ErrorBoundaryState {
   hasError: boolean;
-  error?: Error | null;
-  errorInfo?: ErrorInfo | null;
+  errorInfo: React.ErrorInfo | null;
+  error: Error | null;
 }
 
-export default class ErrorBoundary extends React.Component<Props, State> {
-  constructor(props: Props) {
+export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
       hasError: false,
@@ -21,12 +22,12 @@ export default class ErrorBoundary extends React.Component<Props, State> {
     };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     // Update state so the next render will show the fallback UI.
     return { hasError: true, error: error, errorInfo: null };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // You can also log the error to an error reporting service
     this.setState({
       error: error,
@@ -44,6 +45,12 @@ export default class ErrorBoundary extends React.Component<Props, State> {
         <div>
           <h1>Something went wrong!</h1>
           <p>{this.state.error ? this.state.error.message : null}</p>
+          {this.state.errorInfo && (
+            <details style={{ whiteSpace: 'pre-wrap', marginTop: '1em' }}>
+              <summary>Stack Trace</summary>
+              {this.state.errorInfo.componentStack}
+            </details>
+          )}
         </div>
       );
     }

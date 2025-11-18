@@ -1,0 +1,81 @@
+.circle-number-lg {
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+  line-height: 24px;
+  border-radius: 50%;
+  background-color: white;
+  border: 1px solid #144465;
+  color: #144465;
+  text-align: center;
+  margin-right: 8px;
+}
+
+.circle-number-md {
+  display: inline-block;
+  width: 23px;
+  height: 24px;
+  line-height: 22px;
+  border-radius: 50%;
+  background-color: white;
+  border: 1px solid #144465;
+  color: #144465;
+  text-align: center;
+  margin-right: 8px;
+}
+
+.circle-number-sm {
+  display: inline-block;
+  width: 21px;
+  height: 22px;
+  line-height: 20px;
+  border-radius: 50%;
+  background-color: white;
+  border: 1px solid #144465;
+  color: #144465;
+  text-align: center;
+  margin-right: 8px;
+}
+
+.circle-number-lg.active {
+  background-color: #144465;
+  color: white;
+}
+
+.circle-number-md.active {
+  background-color: #144465;
+  color: white;
+}
+
+.circle-number-sm.active {
+  background-color: #144465;
+  color: white;
+}
+
+.map-input-parent {
+  max-height: 100vh;
+  overflow-y: scroll;
+}
+
+/* Remove border from entire accordion item */
+.map-input-parent .accordion-item {
+  border: none !important;
+}
+
+.map-input-parent .accordion-body {
+  border-left: 1px solid lightgray;
+  margin-left: 28px;
+}
+
+/* Remove border from the active accordion header */
+.map-input-parent .accordion-button {
+  //   border: none !important;
+  box-shadow: none !important; /* removes the focus shadow */
+}
+
+/* Ensure the active state also has no border */
+.map-input-parent .accordion-button:not(.collapsed) {
+  //   border: none !important;
+  box-shadow: none !important;
+  background-color: white !important; /* optional: keep it white */
+}

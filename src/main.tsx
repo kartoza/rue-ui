@@ -3,41 +3,41 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { ChakraProvider } from '@chakra-ui/react';
 
-import reportWebVitals from './reportWebVitals';
-import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary.tsx';
+import reportWebVitals from './reportWebVitals.tsx';
+import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import { BrowserRouter as Router } from 'react-router-dom';
 
-import { kartozaTheme } from './theme/Theme.tsx';
-import Navbar from './components/NavBar/NavBar.tsx';
-import AppRoutes from './routes';
+import { kartozaTheme } from './theme/Theme';
+import AppRoutes from './routes.tsx';
 
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles.scss';
 
-declare global {
-  interface Window {
-    sentryDsn?: string;
-  }
-}
+import { store } from './app/store';
+import { Provider } from 'react-redux';
 
 Sentry.init({
-  dsn: window.sentryDsn,
+  dsn: (window as { sentryDsn?: string }).sentryDsn,
   tunnel: '/sentry-proxy/',
   tracesSampleRate: 0.5,
 });
 
-const rootElement = document.getElementById('root')!;
-const root = createRoot(rootElement);
-root.render(
-  <ErrorBoundary>
-    <ChakraProvider value={kartozaTheme}>
-      <React.StrictMode>
-        <Router>
-          <Navbar />
-          <AppRoutes />
-        </Router>
-      </React.StrictMode>
-    </ChakraProvider>
-  </ErrorBoundary>
-);
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  const root = createRoot(rootElement);
+  root.render(
+    <ErrorBoundary>
+      <ChakraProvider value={kartozaTheme}>
+        <Provider store={store}>
+          <React.StrictMode>
+            <Router>
+              <AppRoutes />
+            </Router>
+          </React.StrictMode>
+        </Provider>
+      </ChakraProvider>
+    </ErrorBoundary>
+  );
+}
 
 reportWebVitals();

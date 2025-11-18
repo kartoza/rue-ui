@@ -1,14 +1,17 @@
-import { type Metric } from 'web-vitals';
+import type { Metric } from 'web-vitals';
 
-const reportWebVitals = (onPerfEntry?: (metric: Metric) => void) => {
-  if (onPerfEntry && onPerfEntry instanceof Function) {
-    // @ts-expect-error - Ignore errors
-    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-      getCLS(onPerfEntry);
-      getFID(onPerfEntry);
-      getFCP(onPerfEntry);
-      getLCP(onPerfEntry);
-      getTTFB(onPerfEntry);
+type ReportWebVitalsCallback = (metric: Metric) => void;
+
+const reportWebVitals = (onPerfEntry?: ReportWebVitalsCallback) => {
+  if (onPerfEntry && typeof onPerfEntry === 'function') {
+    import('web-vitals').then((webVitals) => {
+      webVitals.onCLS(onPerfEntry);
+      webVitals.onFCP(onPerfEntry);
+      webVitals.onLCP(onPerfEntry);
+      webVitals.onTTFB(onPerfEntry);
+      if (webVitals.onINP) {
+        webVitals.onINP(onPerfEntry);
+      }
     });
   }
 };
