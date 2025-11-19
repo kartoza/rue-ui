@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Container } from 'react-bootstrap';
 import CityScaleProforma from './FinanceTables/CityScaleProforma';
 import DemographicForecast from './FinanceTables/DemographicForecast';
 import DwellingsProformaAffordability from './FinanceTables/DwellingsProformaAffordability';
@@ -44,8 +43,7 @@ function FinanceTable() {
   };
 
   return (
-    <Container fluid>
-      <br />
+    <>
       <select className="form-control" value={selectedOption} onChange={handleChange}>
         <option value="CityScaleProforma">City scale Proforma</option>
         <option value="NeighborhoodScaleProforma">Neighborhood scale Proforma</option>
@@ -56,7 +54,7 @@ function FinanceTable() {
       </select>
       <br />
       {renderSelectedTable()}
-    </Container>
+    </>
   );
 }
 
