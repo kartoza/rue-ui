@@ -1,22 +1,28 @@
-import './style.scss';
-import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { login } from '../../features/auth/authSlice';
-import { Container } from 'react-bootstrap';
-import { useState } from 'react';
 import type { ChangeEvent } from 'react';
+import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { Container, Text } from '@chakra-ui/react';
+import { login } from '../../redux/reducers/authSlice';
+import type { AppDispatch, RootState } from '../../redux/store';
+
+import './style.scss';
 
 const Login: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { error } = useSelector((state: RootState) => state.auth);
 
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
 
   const handleLogin = () => {
     if (username && password) {
-      dispatch(login({ username }));
-      navigate('/map');
+      dispatch(login({ username, password })).then((unwrapResult) => {
+        if (unwrapResult.meta.requestStatus === 'fulfilled') {
+          navigate('/map');
+        }
+      });
     } else {
       alert('Please enter username and password');
     }
@@ -31,10 +37,9 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Container>
-      <br />
+    <Container maxW="md" padding={10}>
       <form>
-        <div className="card" style={{ width: '60vh', margin: '0 auto' }}>
+        <div className="card">
           <div className="card-body">
             <h2>Login</h2>
             <div data-mdb-input-init className="form-outline mb-4">
@@ -45,6 +50,7 @@ const Login: React.FC = () => {
               <label className="form-label">Password</label>
               <input onChange={handlePasswordChange} type="password" className="form-control" />
             </div>
+            {error && <Text style={{ color: 'red' }}>{error}</Text>}
             <button type="button" onClick={handleLogin} className="btn btn-primary btn-block mb-4">
               Sign in
             </button>

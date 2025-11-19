@@ -1,10 +1,11 @@
-import './style.scss';
-import { Container, Row, Col } from 'react-bootstrap';
+import { Col, Container, Row } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
 import Accordion from 'react-bootstrap/Accordion';
 import { useState } from 'react';
-import { setSelectedDefinition } from '../../features/site_definition/definitionSlice';
-import { useDispatch, useSelector } from 'react-redux';
-import type { RootState } from '../../app/store';
+import { setSelectedDefinition } from '../../redux/reducers/definitionSlice';
+import type { RootState } from '../../redux/store';
+
+import './style.scss';
 
 function MapInputControls() {
   const dispatch = useDispatch();

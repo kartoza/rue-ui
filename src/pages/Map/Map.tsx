@@ -1,11 +1,12 @@
-import './style.scss';
+import { useEffect, useRef, useState } from 'react';
 import Map from '../../components/Map/Map.tsx';
 import MapTaskNavigation from '../../components/MapTaskNavigation/MapTaskNavigation';
 import MapInputControls from '../../components/MapInputControls/MapInputControls.tsx';
 import MapFinanceSection from '../../components/MapFinanceSection/MapFinanceSection';
-import { useEffect, useRef, useState } from 'react';
-import { useCurrentDefinition } from '../../features/site_definition/definitionSelector';
-import { useCurrentTask } from '../../features/task/taskSelector';
+import { useCurrentDefinition } from '../../redux/selectors/definitionSelector.ts';
+import { useCurrentTask } from '../../redux/selectors/taskSelector.ts';
+
+import './style.scss';
 
 function MapPage() {
   const navbarRef = useRef<HTMLDivElement>(null);

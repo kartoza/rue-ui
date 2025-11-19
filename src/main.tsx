@@ -13,7 +13,7 @@ import AppRoutes from './routes.tsx';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles.scss';
 
-import { store } from './app/store';
+import { store } from './redux/store';
 import { Provider } from 'react-redux';
 
 Sentry.init({

@@ -1,9 +1,10 @@
-import './style.scss';
+import type { RootState } from '../../redux/store';
+import type { FC } from 'react';
 import { Container } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { setSelectedTask } from '../../features/task/taskSlice';
-import type { FC } from 'react';
-import type { RootState } from '../../app/store';
+import { setSelectedTask } from '../../redux/reducers/taskSlice';
+
+import './style.scss';
 
 const tasks: string[] = [
   'Site',

@@ -1,9 +1,8 @@
 import { useSelector } from 'react-redux';
-import type { RootState } from '../../app/store';
+import type { RootState } from '../store.ts';
 
-// Define the shape of the project state
 type ProjectState = {
-  currentProject: string | null; // Replace 'any' with a more specific type if known
+  currentProject: string | null;
 };
 
 export function useCurrentProject() {
