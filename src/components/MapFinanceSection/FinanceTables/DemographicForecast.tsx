@@ -1,10 +1,9 @@
 import type { FC } from 'react';
-import { Container } from 'react-bootstrap';
 import './style.scss';
 
 const DemographicForecast: FC = () => {
   return (
-    <Container fluid>
+    <>
       <table className="table table-bordered">
         <colgroup>
           <col />
@@ -56,7 +55,7 @@ const DemographicForecast: FC = () => {
           </tr>
         </tbody>
       </table>
-    </Container>
+    </>
   );
 };
 

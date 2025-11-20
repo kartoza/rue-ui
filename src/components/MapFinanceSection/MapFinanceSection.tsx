@@ -1,19 +1,20 @@
-import './style.scss';
-import { Container } from 'react-bootstrap';
+import type { FC } from 'react';
+
 import ImpactChart from './ImpactChart';
 import FinanceTable from './FinanceTable';
-import type { FC } from 'react';
+
+import './style.scss';
 
 const MapFinanceSection: FC = () => {
   return (
-    <Container fluid className="map-finance-section">
+    <div className="map-finance-section">
       <div className="map-finance-top-section">
         <FinanceTable />
       </div>
       <div className="map-finance-bottom-section">
         <ImpactChart />
       </div>
-    </Container>
+    </div>
   );
 };
 

@@ -1,12 +1,11 @@
 import type { FC } from 'react';
-import { Container } from 'react-bootstrap';
 import './style.scss';
 
 const OffgridClustersProforma: FC = () => {
   //TO DO: add tables for individual clusters?
 
   return (
-    <Container fluid>
+    <>
       <p>Number of clusters: 0</p>
       <table className="table table-bordered">
         <colgroup>
@@ -53,7 +52,7 @@ const OffgridClustersProforma: FC = () => {
           </tr>
         </tbody>
       </table>
-    </Container>
+    </>
   );
 };
 

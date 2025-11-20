@@ -4,15 +4,52 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  padding: 0;
 }
 
 .map-finance-top-section {
   flex: 1;
   overflow-y: auto;
   margin-top: 1rem;
+
+  table {
+    tr {
+      border-color: #eee;
+    }
+
+    thead {
+      tr {
+        border-top: unset;
+      }
+    }
+
+    td,
+    th {
+      border: none;
+      text-align: right;
+    }
+
+    th {
+      font-weight: bold;
+    }
+  }
 }
 
 .map-finance-bottom-section {
   height: auto;
-  margin-bottom: 0.5rem;
+
+  .accordion-item {
+    border: unset;
+
+    .accordion-button {
+      border-radius: 0 !important;
+      box-shadow: none;
+      color: var(--bs-accordion-active-color);
+      background-color: var(--bs-accordion-active-bg);
+
+      &:focus {
+        box-shadow: none;
+      }
+    }
+  }
 }

@@ -1,10 +1,9 @@
 import React from 'react';
-import { Container } from 'react-bootstrap';
 import './style.scss';
 
 const StarterBuildingsProforma: React.FC = () => {
   return (
-    <Container fluid>
+    <>
       <p>Serviced lots, WITHOUT construction: 0</p>
       <table className="table table-bordered">
         <colgroup>
@@ -90,7 +89,7 @@ const StarterBuildingsProforma: React.FC = () => {
           </tr>
         </tbody>
       </table>
-    </Container>
+    </>
   );
 };
 

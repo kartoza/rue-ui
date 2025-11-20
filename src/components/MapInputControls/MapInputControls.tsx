@@ -197,7 +197,6 @@ function MapInputControls() {
 
   // Parameters
   const [parameters, setParameters] = useState<ProjectParameters>(projectParametersDefault);
-  console.log(parameters);
 
   const handleSelect = (eventKey: string | string[] | null | undefined) => {
     if (Array.isArray(eventKey)) {
