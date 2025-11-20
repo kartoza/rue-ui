@@ -1,6 +1,6 @@
 import type { RootState } from '../../redux/store';
 import type { FC } from 'react';
-import { Container } from 'react-bootstrap';
+import { TabsRoot, TabsList, TabsTrigger } from '@chakra-ui/react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setSelectedTask } from '../../redux/reducers/taskSlice';
 
@@ -21,28 +21,20 @@ const MapTaskNavigation: FC = () => {
   const dispatch = useDispatch();
   const currentTask = useSelector((state: RootState) => state.task.currentTask);
 
-  const handleTaskClick = (task: string) => {
-    dispatch(setSelectedTask(task));
+  const handleValueChange = (details: { value: string }) => {
+    dispatch(setSelectedTask(details.value));
   };
 
   return (
-    <Container fluid className="no-padding">
-      <ul className="map-task-navigation">
+    <TabsRoot value={currentTask} onValueChange={handleValueChange} variant="plain">
+      <TabsList className="map-task-tabs-list">
         {tasks.map((task) => (
-          <li
-            key={task}
-            className={
-              task === currentTask
-                ? 'map-task-navigation-item task-active'
-                : 'map-task-navigation-item'
-            }
-            onClick={() => handleTaskClick(task)}
-          >
+          <TabsTrigger key={task} value={task} className="map-task-tab-trigger">
             {task}
-          </li>
+          </TabsTrigger>
         ))}
-      </ul>
-    </Container>
+      </TabsList>
+    </TabsRoot>
   );
 };
 
