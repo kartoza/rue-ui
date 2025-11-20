@@ -4,8 +4,13 @@
 }
 
 .map-left-sidebar {
-  width: 400px;
+  width: 430px;
   border: lightgray 1px solid;
+
+  .map-input-parent {
+    padding-left: 0;
+    padding-right: 0;
+  }
 }
 
 .map-container {
@@ -29,5 +34,5 @@
 }
 
 .map-right-sidebar {
-  width: 400px;
+  width: 430px;
 }

@@ -1,11 +1,181 @@
 import { Col, Container, Row } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import Accordion from 'react-bootstrap/Accordion';
+import { Button } from '@chakra-ui/react';
 import { useState } from 'react';
-import { setSelectedDefinition } from '../../redux/reducers/definitionSlice';
+import type { ProjectParameters } from '../../redux/reducers/project';
 import type { RootState } from '../../redux/store';
+import { setSelectedDefinition } from '../../redux/reducers/definitionSlice';
 
 import './style.scss';
+
+const projectParametersDefault: ProjectParameters = {
+  neighbourhood: {
+    off_grid_partitions: {
+      cluster_depth_m: 45,
+      cluster_size_lots: 15,
+      cluster_width_m: 30,
+      lot_depth_along_path_m: 12.5,
+      lot_depth_around_yard_m: 10,
+    },
+    on_grid_partitions: {
+      depth_along_arteries_m: 40,
+      depth_along_locals_m: 20,
+      depth_along_secondaries_m: 30,
+    },
+    public_roads: {
+      width_of_arteries_m: 20,
+      width_of_locals_m: 10,
+      width_of_secondaries_m: 15,
+    },
+    public_spaces: {
+      amenities: {
+        amenities_percentage: 10,
+      },
+      open_spaces: {
+        open_space_percentage: 0,
+      },
+      street_section: {
+        sidewalk_width_m: 3,
+      },
+      trees: {
+        final_tree_height_m: 20,
+        initial_tree_height_m: 8,
+        show_trees_frontend: true,
+        tree_spacing_m: 12,
+      },
+    },
+    urban_block_structure: {
+      along_arteries: {
+        off_grid_clusters_in_depth_m: 0,
+        off_grid_clusters_in_width_m: 3,
+      },
+      along_locals: {
+        off_grid_clusters_in_depth_m: 2,
+        off_grid_clusters_in_width_m: 3,
+      },
+      along_secondaries: {
+        off_grid_clusters_in_depth_m: 0,
+        off_grid_clusters_in_width_m: 3,
+      },
+    },
+  },
+  starter_buildings: {
+    off_grid_cluster_type_1: {
+      initial_depth_percent: 50,
+      initial_floors_percent: 50,
+      initial_width_percent: 100,
+    },
+    off_grid_cluster_type_2: {
+      initial_depth_percent: 50,
+      initial_floors_percent: 50,
+      initial_width_percent: 50,
+    },
+    on_grid_lots_on_arteries: {
+      corner_with_other_artery: {
+        initial_depth_percent: 0,
+        initial_floors_percent: 0,
+        initial_width_percent: 0,
+      },
+      corner_with_secondary: {
+        initial_depth_percent: 0,
+        initial_floors_percent: 0,
+        initial_width_percent: 0,
+      },
+      corner_with_tertiary: {
+        initial_depth_percent: 0,
+        initial_floors_percent: 0,
+        initial_width_percent: 0,
+      },
+      regular_lot: {
+        initial_depth_percent: 60,
+        initial_floors_percent: 80,
+        initial_width_percent: 100,
+      },
+    },
+    on_grid_lots_on_locals: {
+      corner_with_other_local: {
+        initial_depth_percent: 100,
+        initial_floors_percent: 100,
+        initial_width_percent: 100,
+      },
+      regular_lot: {
+        initial_depth_percent: 60,
+        initial_floors_percent: 60,
+        initial_width_percent: 100,
+      },
+    },
+    on_grid_lots_on_secondaries: {
+      corner_with_other_secondary: {
+        initial_depth_percent: 0,
+        initial_floors_percent: 0,
+        initial_width_percent: 0,
+      },
+      corner_with_tertiary: {
+        initial_depth_percent: 0,
+        initial_floors_percent: 0,
+        initial_width_percent: 0,
+      },
+      regular_lot: {
+        initial_depth_percent: 60,
+        initial_floors_percent: 60,
+        initial_width_percent: 100,
+      },
+    },
+  },
+  tissue: {
+    corner_bonus: {
+      description: 'Density (floor) bonus at intersection',
+      with_artery_percent: 40,
+      with_local_percent: 20,
+      with_secondary_percent: 30,
+    },
+    fire_protection: {
+      fire_proof_partitions_with_6m_margins: false,
+    },
+    off_grid_cluster_type_1: {
+      access_path_width_on_grid_m: 3,
+      front_setback_m: 0,
+      internal_path_width_m: 5,
+      lot_width_m: 6,
+      number_of_floors: 2,
+      open_space_length_m: 15,
+      open_space_width_m: 10,
+      rear_setback_m: 3,
+      side_margins_m: 0,
+    },
+    off_grid_cluster_type_2: {
+      cul_de_sac_width_m: 5,
+      internal_path_width_m: 3,
+      lot_depth_behind_cul_de_sac_m: 15,
+      lot_width_m: 4.5,
+    },
+    on_grid_lots_on_arteries: {
+      depth_m: 40,
+      front_setback_m: 6,
+      number_of_floors: 5,
+      rear_setback_m: 6,
+      side_margins_m: 6,
+      width_m: 40,
+    },
+    on_grid_lots_on_locals: {
+      depth_m: 20,
+      front_setback_m: 0,
+      number_of_floors: 3,
+      rear_setback_m: 3,
+      side_margins_m: 0,
+      width_m: 10,
+    },
+    on_grid_lots_on_secondaries: {
+      depth_m: 30,
+      front_setback_m: 3,
+      number_of_floors: 4,
+      rear_setback_m: 3,
+      side_margins_m: 3,
+      width_m: 20,
+    },
+  },
+};
 
 function MapInputControls() {
   const dispatch = useDispatch();
@@ -25,130 +195,9 @@ function MapInputControls() {
   const [rearShift, setRearShift] = useState<number>(0);
   const [depth, setDepth] = useState<number>(0);
 
-  // Neighbourhood - Public roads
-  const [widthOfArteries, setWidthOfArteries] = useState<number>(0);
-  const [widthOfSecondaries, setWidthOfSecondaries] = useState<number>(0);
-  const [widthOfLocals, setWidthOfLocals] = useState<number>(0);
-
-  // Neighbourhood - On-grid partitions
-  const [depthAlongArteries, setDepthAlongArteries] = useState<number>(0);
-  const [depthAlongSecondaries, setDepthAlongSecondaries] = useState<number>(0);
-  const [depthAlongLocals, setDepthAlongLocals] = useState<number>(0);
-
-  // Neighbourhood - Off-grid partitions
-  const [clusterDepth, setClusterDepth] = useState<number>(0);
-  const [clusterSize, setClusterSize] = useState<number>(0);
-  const [clusterWidth, setClusterWidth] = useState<number>(0);
-  const [lotDepthAlongPath, setLotDepthAlongPath] = useState<number>(0);
-  const [lotDepthAroundYard, setLotDepthAroundYard] = useState<number>(0);
-
-  // Neighbourhood - Urban Block Structure
-  const [arteriesOffGridDepth, setArteriesOffGridDepth] = useState<string>('0');
-  const [arteriesOffGridWidth, setArteriesOffGridWidth] = useState<string>('0');
-  const [secondariesOffGridDepth, setSecondariesOffGridDepth] = useState<string>('0');
-  const [secondariesOffGridWidth, setSecondariesOffGridWidth] = useState<string>('0');
-  const [localsOffGridDepth, setLocalsOffGridDepth] = useState<string>('0');
-  const [localsOffGridWidth, setLocalsOffGridWidth] = useState<string>('0');
-
-  // Neighbourhood - Public Spaces
-  const [openSpace, setOpenSpace] = useState<number>(0);
-  const [amenities, setAmenities] = useState<number>(0);
-  const [sidewalkWidth, setSidewalkWidth] = useState<number>(0);
-  const [showTrees, setShowTrees] = useState<boolean>(false);
-  const [treeSpacing, setTreeSpacing] = useState<number>(0);
-  const [initialTreeHeight, setInitialTreeHeight] = useState<number>(0);
-  const [finalTreeHeight, setFinalTreeHeight] = useState<number>(0);
-
-  // Tissue - On-grid lots on arteries
-  const [arteriesDepth, setArteriesDepth] = useState<number>(0);
-  const [arteriesWidth, setArteriesWidth] = useState<number>(0);
-  const [arteriesFrontSetback, setArteriesFrontSetback] = useState<number>(0);
-  const [arteriesSideMargins, setArteriesSideMargins] = useState<number>(0);
-  const [arteriesRearSetback, setArteriesRearSetback] = useState<number>(0);
-  const [arteriesNumFloors, setArteriesNumFloors] = useState<number>(0);
-
-  // Tissue - On-grid lots on secondaries
-  const [secondariesDepth, setSecondariesDepth] = useState<number>(0);
-  const [secondariesWidth, setSecondariesWidth] = useState<number>(0);
-  const [secondariesFrontSetback, setSecondariesFrontSetback] = useState<number>(0);
-  const [secondariesSideMargins, setSecondariesSideMargins] = useState<number>(0);
-  const [secondariesRearSetback, setSecondariesRearSetback] = useState<number>(0);
-  const [secondariesNumFloors, setSecondariesNumFloors] = useState<number>(0);
-
-  // Tissue - On-grid lots on locals
-  const [localsDepth, setLocalsDepth] = useState<number>(0);
-  const [localsWidth, setLocalsWidth] = useState<number>(0);
-  const [localsFrontSetback, setLocalsFrontSetback] = useState<number>(0);
-  const [localsSideMargins, setLocalsSideMargins] = useState<number>(0);
-  const [localsRearSetback, setLocalsRearSetback] = useState<number>(0);
-  const [localsNumFloors, setLocalsNumFloors] = useState<number>(0);
-
-  // Tissue - Off-grid cluster, Type1
-  const [type1AccessPathWidth, setType1AccessPathWidth] = useState<number>(0);
-  const [type1InternalPathWidth, setType1InternalPathWidth] = useState<number>(0);
-  const [type1OpenSpaceWidth, setType1OpenSpaceWidth] = useState<number>(0);
-  const [type1OpenSpaceLength, setType1OpenSpaceLength] = useState<number>(0);
-  const [type1LotWidth, setType1LotWidth] = useState<number>(0);
-  const [type1FrontSetback, setType1FrontSetback] = useState<number>(0);
-  const [type1SideMargins, setType1SideMargins] = useState<number>(0);
-  const [type1RearSetback, setType1RearSetback] = useState<number>(0);
-  const [type1NumFloors, setType1NumFloors] = useState<number>(0);
-
-  // Tissue - Off-grid cluster, Type2
-  const [type2InternalPathWidth, setType2InternalPathWidth] = useState<number>(0);
-  const [type2CulDeSacWidth, setType2CulDeSacWidth] = useState<number>(0);
-  const [type2LotWidth, setType2LotWidth] = useState<number>(0);
-  const [type2LotDepth, setType2LotDepth] = useState<number>(0);
-
-  // Tissue - Corner bonus
-  const [bonusWithArtery, setBonusWithArtery] = useState<number>(0);
-  const [bonusWithSecondary, setBonusWithSecondary] = useState<number>(0);
-  const [bonusWithLocal, setBonusWithLocal] = useState<number>(0);
-
-  // Tissue - Fire protection
-  const [fireProof, setFireProof] = useState<boolean>(false);
-
-  // Starter Buildings - On-grid lots on arteries
-  const [arteriesCornerArteryWidth, setArteriesCornerArteryWidth] = useState<number>(0);
-  const [arteriesCornerArteryDepth, setArteriesCornerArteryDepth] = useState<number>(0);
-  const [arteriesCornerArteryFloors, setArteriesCornerArteryFloors] = useState<number>(0);
-  const [arteriesCornerSecondaryWidth, setArteriesCornerSecondaryWidth] = useState<number>(0);
-  const [arteriesCornerSecondaryDepth, setArteriesCornerSecondaryDepth] = useState<number>(0);
-  const [arteriesCornerSecondaryFloors, setArteriesCornerSecondaryFloors] = useState<number>(0);
-  const [arteriesCornerTertiaryWidth, setArteriesCornerTertiaryWidth] = useState<number>(0);
-  const [arteriesCornerTertiaryDepth, setArteriesCornerTertiaryDepth] = useState<number>(0);
-  const [arteriesCornerTertiaryFloors, setArteriesCornerTertiaryFloors] = useState<number>(0);
-  const [arteriesRegularWidth, setArteriesRegularWidth] = useState<number>(0);
-  const [arteriesRegularDepth, setArteriesRegularDepth] = useState<number>(0);
-  const [arteriesRegularFloors, setArteriesRegularFloors] = useState<number>(0);
-
-  // Starter Buildings - On-grid lots on secondaries
-  const [secondariesCornerSecondaryWidth, setSecondariesCornerSecondaryWidth] = useState<number>(0);
-  const [secondariesCornerSecondaryDepth, setSecondariesCornerSecondaryDepth] = useState<number>(0);
-  const [secondariesCornerSecondaryFloors, setSecondariesCornerSecondaryFloors] =
-    useState<number>(0);
-  const [secondariesCornerTertiaryWidth, setSecondariesCornerTertiaryWidth] = useState<number>(0);
-  const [secondariesCornerTertiaryDepth, setSecondariesCornerTertiaryDepth] = useState<number>(0);
-  const [secondariesCornerTertiaryFloors, setSecondariesCornerTertiaryFloors] = useState<number>(0);
-  const [secondariesRegularWidth, setSecondariesRegularWidth] = useState<number>(0);
-  const [secondariesRegularDepth, setSecondariesRegularDepth] = useState<number>(0);
-  const [secondariesRegularFloors, setSecondariesRegularFloors] = useState<number>(0);
-
-  // Starter Buildings - On-grid lots on locals
-  const [localsCornerLocalWidth, setLocalsCornerLocalWidth] = useState<number>(0);
-  const [localsCornerLocalDepth, setLocalsCornerLocalDepth] = useState<number>(0);
-  const [localsCornerLocalFloors, setLocalsCornerLocalFloors] = useState<number>(0);
-  const [localsRegularWidth, setLocalsRegularWidth] = useState<number>(0);
-  const [localsRegularDepth, setLocalsRegularDepth] = useState<number>(0);
-  const [localsRegularFloors, setLocalsRegularFloors] = useState<number>(0);
-
-  // Starter Buildings - Off-grid clusters
-  const [offGridType1Width, setOffGridType1Width] = useState<number>(0);
-  const [offGridType1Depth, setOffGridType1Depth] = useState<number>(0);
-  const [offGridType1Floors, setOffGridType1Floors] = useState<number>(0);
-  const [offGridType2Width, setOffGridType2Width] = useState<number>(0);
-  const [offGridType2Depth, setOffGridType2Depth] = useState<number>(0);
-  const [offGridType2Floors, setOffGridType2Floors] = useState<number>(0);
+  // Parameters
+  const [parameters, setParameters] = useState<ProjectParameters>(projectParametersDefault);
+  console.log(parameters);
 
   const handleSelect = (eventKey: string | string[] | null | undefined) => {
     if (Array.isArray(eventKey)) {
@@ -164,19 +213,29 @@ function MapInputControls() {
 
   return (
     <Container className="map-input-parent">
-      <Accordion className="mt20" activeKey={activeKeys} onSelect={handleSelect} alwaysOpen>
+      <Accordion
+        activeKey={activeKeys}
+        onSelect={handleSelect}
+        alwaysOpen
+        style={{ marginTop: '10px' }}
+      >
         <Accordion.Item eventKey="0">
           <Accordion.Header>
             <span className={`circle-number-lg${isActive('0') ? ' active' : ''}`}>1</span>City
           </Accordion.Header>
           <Accordion.Body>
-            <Accordion className="mb10" activeKey={activeKeys} onSelect={handleSelect} alwaysOpen>
+            <Accordion
+              activeKey={activeKeys}
+              onSelect={handleSelect}
+              alwaysOpen
+              style={{ marginBottom: '10px' }}
+            >
               <Accordion.Item eventKey="0-0">
                 <Accordion.Header>
                   <span className={`circle-number-md${isActive('0-0') ? ' active' : ''}`}>1</span>
                   Site Definition
                 </Accordion.Header>
-                <Accordion.Body>
+                <Accordion.Body style={{ marginRight: '1rem' }}>
                   <select
                     className="form-control"
                     value={siteDefinition}
@@ -199,9 +258,9 @@ function MapInputControls() {
                       Location
                     </Accordion.Header>
                     <Accordion.Body>
-                      <Row className="mb10">
+                      <Row>
                         <Col>
-                          <label className="font-label-sm">
+                          <label>
                             <span className={`circle-number-sm${isActive('0-1') ? ' active' : ''}`}>
                               1
                             </span>
@@ -222,9 +281,9 @@ function MapInputControls() {
                           </div>
                         </Col>
                       </Row>
-                      <Row className="mb10">
+                      <Row>
                         <Col>
-                          <label className="font-label-sm">
+                          <label>
                             <span className={`circle-number-sm${isActive('0-1') ? ' active' : ''}`}>
                               2
                             </span>
@@ -254,9 +313,9 @@ function MapInputControls() {
                       Geometry
                     </Accordion.Header>
                     <Accordion.Body>
-                      <Row className="mb10">
+                      <Row>
                         <Col>
-                          <label className="font-label-sm">
+                          <label>
                             <span className={`circle-number-sm${isActive('0-2') ? ' active' : ''}`}>
                               1
                             </span>
@@ -277,9 +336,9 @@ function MapInputControls() {
                           </div>
                         </Col>
                       </Row>
-                      <Row className="mb10">
+                      <Row>
                         <Col>
-                          <label className="font-label-sm">
+                          <label>
                             <span className={`circle-number-sm${isActive('0-2') ? ' active' : ''}`}>
                               2
                             </span>
@@ -299,9 +358,9 @@ function MapInputControls() {
                           </div>
                         </Col>
                       </Row>
-                      <Row className="mb10">
+                      <Row>
                         <Col>
-                          <label className="font-label-sm">
+                          <label>
                             <span className={`circle-number-sm${isActive('0-2') ? ' active' : ''}`}>
                               3
                             </span>
@@ -321,9 +380,9 @@ function MapInputControls() {
                           </div>
                         </Col>
                       </Row>
-                      <Row className="mb10">
+                      <Row>
                         <Col>
-                          <label className="font-label-sm">
+                          <label>
                             <span className={`circle-number-sm${isActive('0-2') ? ' active' : ''}`}>
                               4
                             </span>
@@ -343,9 +402,9 @@ function MapInputControls() {
                           </div>
                         </Col>
                       </Row>
-                      <Row className="mb10">
+                      <Row>
                         <Col>
-                          <label className="font-label-sm">
+                          <label>
                             <span className={`circle-number-sm${isActive('0-2') ? ' active' : ''}`}>
                               5
                             </span>
@@ -365,7 +424,7 @@ function MapInputControls() {
                           </div>
                         </Col>
                       </Row>
-                      <Row className="mb10">
+                      <Row>
                         <Col>Site area: 34.5 ha</Col>
                       </Row>
                     </Accordion.Body>
@@ -382,16 +441,16 @@ function MapInputControls() {
             Neighbourhood
           </Accordion.Header>
           <Accordion.Body>
-            <Accordion className="mb10" activeKey={activeKeys} onSelect={handleSelect} alwaysOpen>
+            <Accordion activeKey={activeKeys} onSelect={handleSelect} alwaysOpen>
               <Accordion.Item eventKey="1-0">
                 <Accordion.Header>
                   <span className={`circle-number-md${isActive('1-0') ? ' active' : ''}`}>1</span>
                   Public roads
                 </Accordion.Header>
                 <Accordion.Body>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">
+                      <label>
                         <span className={`circle-number-sm${isActive('1-0') ? ' active' : ''}`}>
                           1
                         </span>
@@ -404,16 +463,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={widthOfArteries}
-                          onChange={(e) => setWidthOfArteries(Number(e.target.value))}
+                          value={parameters.neighbourhood.public_roads.width_of_arteries_m}
+                          onChange={(e) => {
+                            parameters.neighbourhood.public_roads.width_of_arteries_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">
+                      <label>
                         <span className={`circle-number-sm${isActive('1-0') ? ' active' : ''}`}>
                           2
                         </span>
@@ -426,16 +490,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={widthOfSecondaries}
-                          onChange={(e) => setWidthOfSecondaries(Number(e.target.value))}
+                          value={parameters.neighbourhood.public_roads.width_of_secondaries_m}
+                          onChange={(e) => {
+                            parameters.neighbourhood.public_roads.width_of_secondaries_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">
+                      <label>
                         <span className={`circle-number-sm${isActive('1-0') ? ' active' : ''}`}>
                           3
                         </span>
@@ -448,8 +517,13 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={widthOfLocals}
-                          onChange={(e) => setWidthOfLocals(Number(e.target.value))}
+                          value={parameters.neighbourhood.public_roads.width_of_locals_m}
+                          onChange={(e) => {
+                            parameters.neighbourhood.public_roads.width_of_locals_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
@@ -464,9 +538,9 @@ function MapInputControls() {
                   On-grid partitions
                 </Accordion.Header>
                 <Accordion.Body>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">
+                      <label>
                         <span className={`circle-number-sm${isActive('1-1') ? ' active' : ''}`}>
                           1
                         </span>
@@ -479,16 +553,20 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={depthAlongArteries}
-                          onChange={(e) => setDepthAlongArteries(Number(e.target.value))}
+                          value={parameters.neighbourhood.on_grid_partitions.depth_along_arteries_m}
+                          onChange={(e) => {
+                            parameters.neighbourhood.on_grid_partitions.depth_along_arteries_m =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">
+                      <label>
                         <span className={`circle-number-sm${isActive('1-1') ? ' active' : ''}`}>
                           2
                         </span>
@@ -501,16 +579,22 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={depthAlongSecondaries}
-                          onChange={(e) => setDepthAlongSecondaries(Number(e.target.value))}
+                          value={
+                            parameters.neighbourhood.on_grid_partitions.depth_along_secondaries_m
+                          }
+                          onChange={(e) => {
+                            parameters.neighbourhood.on_grid_partitions.depth_along_secondaries_m =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">
+                      <label>
                         <span className={`circle-number-sm${isActive('1-1') ? ' active' : ''}`}>
                           3
                         </span>
@@ -523,8 +607,12 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={depthAlongLocals}
-                          onChange={(e) => setDepthAlongLocals(Number(e.target.value))}
+                          value={parameters.neighbourhood.on_grid_partitions.depth_along_locals_m}
+                          onChange={(e) => {
+                            parameters.neighbourhood.on_grid_partitions.depth_along_locals_m =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
@@ -540,9 +628,9 @@ function MapInputControls() {
                 </Accordion.Header>
                 <Accordion.Body>
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('1-2') ? ' active' : ''}`}>
                             1
                           </span>
@@ -555,16 +643,21 @@ function MapInputControls() {
                             type="number"
                             step="0.1"
                             className="form-control"
-                            value={clusterDepth}
-                            onChange={(e) => setClusterDepth(Number(e.target.value))}
+                            value={parameters.neighbourhood.off_grid_partitions.cluster_depth_m}
+                            onChange={(e) => {
+                              parameters.neighbourhood.off_grid_partitions.cluster_depth_m = Number(
+                                e.target.value
+                              );
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">m</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">Cluster size</label>
+                        <label className="without-number">Cluster size</label>
                       </Col>
                       <Col>
                         <div className="input-group">
@@ -572,8 +665,12 @@ function MapInputControls() {
                             type="number"
                             step="0.1"
                             className="form-control"
-                            value={clusterSize}
-                            onChange={(e) => setClusterSize(Number(e.target.value))}
+                            value={parameters.neighbourhood.off_grid_partitions.cluster_size_lots}
+                            onChange={(e) => {
+                              parameters.neighbourhood.off_grid_partitions.cluster_size_lots =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                             readOnly
                           />
                           <span className="input-group-text">m</span>
@@ -583,9 +680,9 @@ function MapInputControls() {
                   </div>
 
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('1-2') ? ' active' : ''}`}>
                             2
                           </span>
@@ -598,16 +695,21 @@ function MapInputControls() {
                             type="number"
                             step="0.1"
                             className="form-control"
-                            value={clusterWidth}
-                            onChange={(e) => setClusterWidth(Number(e.target.value))}
+                            value={parameters.neighbourhood.off_grid_partitions.cluster_width_m}
+                            onChange={(e) => {
+                              parameters.neighbourhood.off_grid_partitions.cluster_width_m = Number(
+                                e.target.value
+                              );
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">m</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">Lot depth along path</label>
+                        <label className="without-number">Lot depth along path</label>
                       </Col>
                       <Col>
                         <div className="input-group">
@@ -615,17 +717,23 @@ function MapInputControls() {
                             type="number"
                             step="0.1"
                             className="form-control"
-                            value={lotDepthAlongPath}
-                            onChange={(e) => setLotDepthAlongPath(Number(e.target.value))}
+                            value={
+                              parameters.neighbourhood.off_grid_partitions.lot_depth_along_path_m
+                            }
+                            onChange={(e) => {
+                              parameters.neighbourhood.off_grid_partitions.lot_depth_along_path_m =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                             readOnly
                           />
                           <span className="input-group-text">m</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">Lot depth around yard</label>
+                        <label className="without-number">Lot depth around yard</label>
                       </Col>
                       <Col>
                         <div className="input-group">
@@ -633,8 +741,14 @@ function MapInputControls() {
                             type="number"
                             step="0.1"
                             className="form-control"
-                            value={lotDepthAroundYard}
-                            onChange={(e) => setLotDepthAroundYard(Number(e.target.value))}
+                            value={
+                              parameters.neighbourhood.off_grid_partitions.lot_depth_around_yard_m
+                            }
+                            onChange={(e) => {
+                              parameters.neighbourhood.off_grid_partitions.lot_depth_around_yard_m =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                             readOnly
                           />
                           <span className="input-group-text">m</span>
@@ -652,80 +766,56 @@ function MapInputControls() {
                 </Accordion.Header>
                 <Accordion.Body>
                   <div>
-                    <label className="font-label-sm">
-                      <span className={`circle-number-sm${isActive('1-3') ? ' active' : ''}`}>
-                        1
-                      </span>
-                      Along arteries:
-                    </label>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">Off-grid clusters in depth</label>
+                        <label>
+                          <span className={`circle-number-sm${isActive('1-3') ? ' active' : ''}`}>
+                            1
+                          </span>
+                          Along arteries:
+                        </label>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col>
+                        <label className="without-number">Off-grid clusters in depth</label>
                       </Col>
                       <Col>
                         <select
                           className="form-control"
-                          value={arteriesOffGridDepth}
-                          onChange={(e) => setArteriesOffGridDepth(e.target.value)}
+                          value={
+                            '' +
+                            parameters.neighbourhood.urban_block_structure.along_arteries
+                              .off_grid_clusters_in_depth_m
+                          }
+                          onChange={(e) => {
+                            parameters.neighbourhood.urban_block_structure.along_arteries.off_grid_clusters_in_depth_m =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         >
                           <option value="0">0</option>
                           <option value="1">1</option>
                         </select>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">Off-grid clusters in width</label>
+                        <label className="without-number">Off-grid clusters in width</label>
                       </Col>
                       <Col>
                         <select
                           className="form-control"
-                          value={arteriesOffGridWidth}
-                          onChange={(e) => setArteriesOffGridWidth(e.target.value)}
-                        >
-                          <option value="0">0</option>
-                          <option value="1">1</option>
-                          <option value="2">2</option>
-                          <option value="3">3</option>
-                          <option value="4">4</option>
-                          <option value="5">5</option>
-                          <option value="6">6</option>
-                          <option value="7">7</option>
-                        </select>
-                      </Col>
-                    </Row>
-                  </div>
-                  <div>
-                    <label className="font-label-sm">
-                      <span className={`circle-number-sm${isActive('1-3') ? ' active' : ''}`}>
-                        2
-                      </span>
-                      Along secondaries:
-                    </label>
-                    <Row className="mb10">
-                      <Col>
-                        <label className="font-label-sm ml30">Off-grid clusters in depth</label>
-                      </Col>
-                      <Col>
-                        <select
-                          className="form-control"
-                          value={secondariesOffGridDepth}
-                          onChange={(e) => setSecondariesOffGridDepth(e.target.value)}
-                        >
-                          <option value="0">0</option>
-                          <option value="1">1</option>
-                        </select>
-                      </Col>
-                    </Row>
-                    <Row className="mb10">
-                      <Col>
-                        <label className="font-label-sm ml30">Off-grid clusters in width</label>
-                      </Col>
-                      <Col>
-                        <select
-                          className="form-control"
-                          value={secondariesOffGridWidth}
-                          onChange={(e) => setSecondariesOffGridWidth(e.target.value)}
+                          value={
+                            '' +
+                            parameters.neighbourhood.urban_block_structure.along_arteries
+                              .off_grid_clusters_in_width_m
+                          }
+                          onChange={(e) => {
+                            parameters.neighbourhood.urban_block_structure.along_arteries.off_grid_clusters_in_width_m =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         >
                           <option value="0">0</option>
                           <option value="1">1</option>
@@ -740,21 +830,97 @@ function MapInputControls() {
                     </Row>
                   </div>
                   <div>
-                    <label className="font-label-sm">
-                      <span className={`circle-number-sm${isActive('1-3') ? ' active' : ''}`}>
-                        3
-                      </span>
-                      Along locals:
-                    </label>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">Off-grid clusters in depth</label>
+                        <label>
+                          <span className={`circle-number-sm${isActive('1-3') ? ' active' : ''}`}>
+                            2
+                          </span>
+                          Along secondaries:
+                        </label>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col>
+                        <label className="without-number">Off-grid clusters in depth</label>
                       </Col>
                       <Col>
                         <select
                           className="form-control"
-                          value={localsOffGridDepth}
-                          onChange={(e) => setLocalsOffGridDepth(e.target.value)}
+                          value={
+                            '' +
+                            parameters.neighbourhood.urban_block_structure.along_secondaries
+                              .off_grid_clusters_in_depth_m
+                          }
+                          onChange={(e) => {
+                            parameters.neighbourhood.urban_block_structure.along_secondaries.off_grid_clusters_in_depth_m =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
+                        >
+                          <option value="0">0</option>
+                          <option value="1">1</option>
+                        </select>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col>
+                        <label className="without-number">Off-grid clusters in width</label>
+                      </Col>
+                      <Col>
+                        <select
+                          className="form-control"
+                          value={
+                            '' +
+                            parameters.neighbourhood.urban_block_structure.along_secondaries
+                              .off_grid_clusters_in_width_m
+                          }
+                          onChange={(e) => {
+                            parameters.neighbourhood.urban_block_structure.along_secondaries.off_grid_clusters_in_width_m =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
+                        >
+                          <option value="0">0</option>
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                          <option value="3">3</option>
+                          <option value="4">4</option>
+                          <option value="5">5</option>
+                          <option value="6">6</option>
+                          <option value="7">7</option>
+                        </select>
+                      </Col>
+                    </Row>
+                  </div>
+                  <div>
+                    <Row>
+                      <Col>
+                        <label>
+                          <span className={`circle-number-sm${isActive('1-3') ? ' active' : ''}`}>
+                            3
+                          </span>
+                          Along locals:
+                        </label>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col>
+                        <label className="without-number">Off-grid clusters in depth</label>
+                      </Col>
+                      <Col>
+                        <select
+                          className="form-control"
+                          value={
+                            '' +
+                            parameters.neighbourhood.urban_block_structure.along_locals
+                              .off_grid_clusters_in_depth_m
+                          }
+                          onChange={(e) => {
+                            parameters.neighbourhood.urban_block_structure.along_locals.off_grid_clusters_in_depth_m =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         >
                           <option value="0">0</option>
                           <option value="1">1</option>
@@ -762,15 +928,23 @@ function MapInputControls() {
                         </select>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">Off-grid clusters in width</label>
+                        <label className="without-number">Off-grid clusters in width</label>
                       </Col>
                       <Col>
                         <select
                           className="form-control"
-                          value={localsOffGridWidth}
-                          onChange={(e) => setLocalsOffGridWidth(e.target.value)}
+                          value={
+                            '' +
+                            parameters.neighbourhood.urban_block_structure.along_locals
+                              .off_grid_clusters_in_width_m
+                          }
+                          onChange={(e) => {
+                            parameters.neighbourhood.urban_block_structure.along_locals.off_grid_clusters_in_width_m =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         >
                           <option value="0">0</option>
                           <option value="1">1</option>
@@ -792,9 +966,9 @@ function MapInputControls() {
                 </Accordion.Header>
                 <Accordion.Body>
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('1-4') ? ' active' : ''}`}>
                             1
                           </span>
@@ -802,9 +976,9 @@ function MapInputControls() {
                         </label>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">Open space</label>
+                        <label className="without-number">Open space</label>
                       </Col>
                       <Col>
                         <div className="input-group">
@@ -812,8 +986,15 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={openSpace}
-                            onChange={(e) => setOpenSpace(Number(e.target.value))}
+                            value={
+                              parameters.neighbourhood.public_spaces.open_spaces
+                                .open_space_percentage
+                            }
+                            onChange={(e) => {
+                              parameters.neighbourhood.public_spaces.open_spaces.open_space_percentage =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
@@ -822,9 +1003,9 @@ function MapInputControls() {
                   </div>
 
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('1-4') ? ' active' : ''}`}>
                             2
                           </span>
@@ -832,9 +1013,9 @@ function MapInputControls() {
                         </label>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">Amenities</label>
+                        <label className="without-number">Amenities</label>
                       </Col>
                       <Col>
                         <div className="input-group">
@@ -842,8 +1023,14 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={amenities}
-                            onChange={(e) => setAmenities(Number(e.target.value))}
+                            value={
+                              parameters.neighbourhood.public_spaces.amenities.amenities_percentage
+                            }
+                            onChange={(e) => {
+                              parameters.neighbourhood.public_spaces.amenities.amenities_percentage =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
@@ -852,9 +1039,9 @@ function MapInputControls() {
                   </div>
 
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('1-4') ? ' active' : ''}`}>
                             3
                           </span>
@@ -862,9 +1049,9 @@ function MapInputControls() {
                         </label>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">Sidewalk width</label>
+                        <label className="without-number">Sidewalk width</label>
                       </Col>
                       <Col>
                         <div className="input-group">
@@ -872,8 +1059,14 @@ function MapInputControls() {
                             type="number"
                             step="0.5"
                             className="form-control"
-                            value={sidewalkWidth}
-                            onChange={(e) => setSidewalkWidth(Number(e.target.value))}
+                            value={
+                              parameters.neighbourhood.public_spaces.street_section.sidewalk_width_m
+                            }
+                            onChange={(e) => {
+                              parameters.neighbourhood.public_spaces.street_section.sidewalk_width_m =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">m</span>
                         </div>
@@ -882,9 +1075,9 @@ function MapInputControls() {
                   </div>
 
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('1-4') ? ' active' : ''}`}>
                             4
                           </span>
@@ -892,23 +1085,29 @@ function MapInputControls() {
                         </label>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">Show trees?</label>
+                        <label className="without-number">Show trees?</label>
                       </Col>
                       <Col>
                         <div className="input-group">
                           <input
                             type="checkbox"
-                            checked={showTrees}
-                            onChange={(e) => setShowTrees(e.target.checked)}
+                            checked={
+                              parameters.neighbourhood.public_spaces.trees.show_trees_frontend
+                            }
+                            onChange={(e) => {
+                              parameters.neighbourhood.public_spaces.trees.show_trees_frontend =
+                                e.target.checked;
+                              setParameters({ ...parameters });
+                            }}
                           />
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">Tree spacing</label>
+                        <label className="without-number">Tree spacing</label>
                       </Col>
                       <Col>
                         <div className="input-group">
@@ -916,33 +1115,21 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={treeSpacing}
-                            onChange={(e) => setTreeSpacing(Number(e.target.value))}
-                          />
-                          <span className="input-group-text">m</span>
-                        </div>
-                      </Col>
-                    </Row>
-                    <Row className="mb10">
-                      <Col>
-                        <label className="font-label-sm ml30">Initial tree height</label>
-                      </Col>
-                      <Col>
-                        <div className="input-group">
-                          <input
-                            type="number"
-                            step="1"
-                            className="form-control"
-                            value={initialTreeHeight}
-                            onChange={(e) => setInitialTreeHeight(Number(e.target.value))}
+                            value={parameters.neighbourhood.public_spaces.trees.tree_spacing_m}
+                            onChange={(e) => {
+                              parameters.neighbourhood.public_spaces.trees.tree_spacing_m = Number(
+                                e.target.value
+                              );
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">m</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">Final tree height</label>
+                        <label className="without-number">Initial tree height</label>
                       </Col>
                       <Col>
                         <div className="input-group">
@@ -950,8 +1137,35 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={finalTreeHeight}
-                            onChange={(e) => setFinalTreeHeight(Number(e.target.value))}
+                            value={
+                              parameters.neighbourhood.public_spaces.trees.initial_tree_height_m
+                            }
+                            onChange={(e) => {
+                              parameters.neighbourhood.public_spaces.trees.initial_tree_height_m =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
+                          />
+                          <span className="input-group-text">m</span>
+                        </div>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col>
+                        <label className="without-number">Final tree height</label>
+                      </Col>
+                      <Col>
+                        <div className="input-group">
+                          <input
+                            type="number"
+                            step="1"
+                            className="form-control"
+                            value={parameters.neighbourhood.public_spaces.trees.final_tree_height_m}
+                            onChange={(e) => {
+                              parameters.neighbourhood.public_spaces.trees.final_tree_height_m =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">m</span>
                         </div>
@@ -976,9 +1190,9 @@ function MapInputControls() {
                   On-grid lots on arteries
                 </Accordion.Header>
                 <Accordion.Body>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Depth</label>
+                      <label>Depth</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -986,17 +1200,22 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={arteriesDepth}
-                          onChange={(e) => setArteriesDepth(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_arteries.depth_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_arteries.depth_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                           readOnly
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Width</label>
+                      <label>Width</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1004,16 +1223,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={arteriesWidth}
-                          onChange={(e) => setArteriesWidth(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_arteries.width_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_arteries.width_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Front setback</label>
+                      <label>Front setback</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1021,16 +1245,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={arteriesFrontSetback}
-                          onChange={(e) => setArteriesFrontSetback(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_arteries.front_setback_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_arteries.front_setback_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Side margins</label>
+                      <label>Side margins</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1038,16 +1267,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={arteriesSideMargins}
-                          onChange={(e) => setArteriesSideMargins(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_arteries.side_margins_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_arteries.side_margins_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Rear setback</label>
+                      <label>Rear setback</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1055,16 +1289,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={arteriesRearSetback}
-                          onChange={(e) => setArteriesRearSetback(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_arteries.rear_setback_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_arteries.rear_setback_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Number of floors</label>
+                      <label>Number of floors</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1072,8 +1311,13 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={arteriesNumFloors}
-                          onChange={(e) => setArteriesNumFloors(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_arteries.number_of_floors}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_arteries.number_of_floors = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">floors</span>
                       </div>
@@ -1088,9 +1332,9 @@ function MapInputControls() {
                   On-grid lots on secondaries
                 </Accordion.Header>
                 <Accordion.Body>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Depth</label>
+                      <label>Depth</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1098,17 +1342,22 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={secondariesDepth}
-                          onChange={(e) => setSecondariesDepth(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_secondaries.depth_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_secondaries.depth_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                           readOnly
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Width</label>
+                      <label>Width</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1116,16 +1365,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={secondariesWidth}
-                          onChange={(e) => setSecondariesWidth(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_secondaries.width_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_secondaries.width_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Front setback</label>
+                      <label>Front setback</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1133,16 +1387,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={secondariesFrontSetback}
-                          onChange={(e) => setSecondariesFrontSetback(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_secondaries.front_setback_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_secondaries.front_setback_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Side margins</label>
+                      <label>Side margins</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1150,16 +1409,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={secondariesSideMargins}
-                          onChange={(e) => setSecondariesSideMargins(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_secondaries.side_margins_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_secondaries.side_margins_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Rear setback</label>
+                      <label>Rear setback</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1167,16 +1431,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={secondariesRearSetback}
-                          onChange={(e) => setSecondariesRearSetback(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_secondaries.rear_setback_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_secondaries.rear_setback_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Number of floors</label>
+                      <label>Number of floors</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1184,8 +1453,13 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={secondariesNumFloors}
-                          onChange={(e) => setSecondariesNumFloors(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_secondaries.number_of_floors}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_secondaries.number_of_floors = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">floors</span>
                       </div>
@@ -1200,9 +1474,9 @@ function MapInputControls() {
                   On-grid lots on locals
                 </Accordion.Header>
                 <Accordion.Body>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Depth</label>
+                      <label>Depth</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1210,17 +1484,22 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={localsDepth}
-                          onChange={(e) => setLocalsDepth(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_locals.depth_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_locals.depth_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                           readOnly
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Width</label>
+                      <label>Width</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1228,16 +1507,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={localsWidth}
-                          onChange={(e) => setLocalsWidth(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_locals.width_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_locals.width_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Front setback</label>
+                      <label>Front setback</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1245,16 +1529,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={localsFrontSetback}
-                          onChange={(e) => setLocalsFrontSetback(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_locals.front_setback_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_locals.front_setback_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Side margins</label>
+                      <label>Side margins</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1262,16 +1551,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={localsSideMargins}
-                          onChange={(e) => setLocalsSideMargins(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_locals.side_margins_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_locals.side_margins_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Rear setback</label>
+                      <label>Rear setback</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1279,16 +1573,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={localsRearSetback}
-                          onChange={(e) => setLocalsRearSetback(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_locals.rear_setback_m}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_locals.rear_setback_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Number of floors</label>
+                      <label>Number of floors</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1296,8 +1595,13 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={localsNumFloors}
-                          onChange={(e) => setLocalsNumFloors(Number(e.target.value))}
+                          value={parameters.tissue.on_grid_lots_on_locals.number_of_floors}
+                          onChange={(e) => {
+                            parameters.tissue.on_grid_lots_on_locals.number_of_floors = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">floors</span>
                       </div>
@@ -1312,9 +1616,9 @@ function MapInputControls() {
                   Off-grid cluster, Type1 (behind on-grid)
                 </Accordion.Header>
                 <Accordion.Body>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Access path width (on grid)</label>
+                      <label>Access path width (on grid)</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1322,16 +1626,22 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={type1AccessPathWidth}
-                          onChange={(e) => setType1AccessPathWidth(Number(e.target.value))}
+                          value={
+                            parameters.tissue.off_grid_cluster_type_1.access_path_width_on_grid_m
+                          }
+                          onChange={(e) => {
+                            parameters.tissue.off_grid_cluster_type_1.access_path_width_on_grid_m =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Internal path width</label>
+                      <label>Internal path width</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1339,16 +1649,20 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={type1InternalPathWidth}
-                          onChange={(e) => setType1InternalPathWidth(Number(e.target.value))}
+                          value={parameters.tissue.off_grid_cluster_type_1.internal_path_width_m}
+                          onChange={(e) => {
+                            parameters.tissue.off_grid_cluster_type_1.internal_path_width_m =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Open space width</label>
+                      <label>Open space width</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1356,16 +1670,21 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={type1OpenSpaceWidth}
-                          onChange={(e) => setType1OpenSpaceWidth(Number(e.target.value))}
+                          value={parameters.tissue.off_grid_cluster_type_1.open_space_width_m}
+                          onChange={(e) => {
+                            parameters.tissue.off_grid_cluster_type_1.open_space_width_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Open space length</label>
+                      <label>Open space length</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1373,16 +1692,21 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={type1OpenSpaceLength}
-                          onChange={(e) => setType1OpenSpaceLength(Number(e.target.value))}
+                          value={parameters.tissue.off_grid_cluster_type_1.open_space_length_m}
+                          onChange={(e) => {
+                            parameters.tissue.off_grid_cluster_type_1.open_space_length_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Lot width</label>
+                      <label>Lot width</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1390,16 +1714,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={type1LotWidth}
-                          onChange={(e) => setType1LotWidth(Number(e.target.value))}
+                          value={parameters.tissue.off_grid_cluster_type_1.lot_width_m}
+                          onChange={(e) => {
+                            parameters.tissue.off_grid_cluster_type_1.lot_width_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Front setback</label>
+                      <label>Front setback</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1407,16 +1736,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={type1FrontSetback}
-                          onChange={(e) => setType1FrontSetback(Number(e.target.value))}
+                          value={parameters.tissue.off_grid_cluster_type_1.front_setback_m}
+                          onChange={(e) => {
+                            parameters.tissue.off_grid_cluster_type_1.front_setback_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Side margins</label>
+                      <label>Side margins</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1424,16 +1758,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={type1SideMargins}
-                          onChange={(e) => setType1SideMargins(Number(e.target.value))}
+                          value={parameters.tissue.off_grid_cluster_type_1.side_margins_m}
+                          onChange={(e) => {
+                            parameters.tissue.off_grid_cluster_type_1.side_margins_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Rear setback</label>
+                      <label>Rear setback</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1441,16 +1780,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={type1RearSetback}
-                          onChange={(e) => setType1RearSetback(Number(e.target.value))}
+                          value={parameters.tissue.off_grid_cluster_type_1.rear_setback_m}
+                          onChange={(e) => {
+                            parameters.tissue.off_grid_cluster_type_1.rear_setback_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Number of floors</label>
+                      <label>Number of floors</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1458,8 +1802,13 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={type1NumFloors}
-                          onChange={(e) => setType1NumFloors(Number(e.target.value))}
+                          value={parameters.tissue.off_grid_cluster_type_1.number_of_floors}
+                          onChange={(e) => {
+                            parameters.tissue.off_grid_cluster_type_1.number_of_floors = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">floors</span>
                       </div>
@@ -1474,9 +1823,9 @@ function MapInputControls() {
                   Off-grid cluster, Type2 (behind 1st)
                 </Accordion.Header>
                 <Accordion.Body>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Internal path width</label>
+                      <label>Internal path width</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1484,16 +1833,20 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={type2InternalPathWidth}
-                          onChange={(e) => setType2InternalPathWidth(Number(e.target.value))}
+                          value={parameters.tissue.off_grid_cluster_type_2.internal_path_width_m}
+                          onChange={(e) => {
+                            parameters.tissue.off_grid_cluster_type_2.internal_path_width_m =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Cul-de-sac width</label>
+                      <label>Cul-de-sac width</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1501,16 +1854,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={type2CulDeSacWidth}
-                          onChange={(e) => setType2CulDeSacWidth(Number(e.target.value))}
+                          value={parameters.tissue.off_grid_cluster_type_2.cul_de_sac_width_m}
+                          onChange={(e) => {
+                            parameters.tissue.off_grid_cluster_type_2.cul_de_sac_width_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Lot width</label>
+                      <label>Lot width</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1518,16 +1876,21 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={type2LotWidth}
-                          onChange={(e) => setType2LotWidth(Number(e.target.value))}
+                          value={parameters.tissue.off_grid_cluster_type_2.lot_width_m}
+                          onChange={(e) => {
+                            parameters.tissue.off_grid_cluster_type_2.lot_width_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Lot depth (behind cul-de-sac)</label>
+                      <label>Lot depth (behind cul-de-sac)</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1535,8 +1898,14 @@ function MapInputControls() {
                           type="number"
                           step="0.1"
                           className="form-control"
-                          value={type2LotDepth}
-                          onChange={(e) => setType2LotDepth(Number(e.target.value))}
+                          value={
+                            parameters.tissue.off_grid_cluster_type_2.lot_depth_behind_cul_de_sac_m
+                          }
+                          onChange={(e) => {
+                            parameters.tissue.off_grid_cluster_type_2.lot_depth_behind_cul_de_sac_m =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">m</span>
                       </div>
@@ -1551,14 +1920,14 @@ function MapInputControls() {
                   Corner bonus
                 </Accordion.Header>
                 <Accordion.Body>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Density (floor) bonus at intersection</label>
+                      <label>Density (floor) bonus at intersection</label>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">With artery</label>
+                      <label>With artery</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1566,16 +1935,21 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={bonusWithArtery}
-                          onChange={(e) => setBonusWithArtery(Number(e.target.value))}
+                          value={parameters.tissue.corner_bonus.with_artery_percent}
+                          onChange={(e) => {
+                            parameters.tissue.corner_bonus.with_artery_percent = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">%</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">With Secondary</label>
+                      <label>With Secondary</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1583,16 +1957,21 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={bonusWithSecondary}
-                          onChange={(e) => setBonusWithSecondary(Number(e.target.value))}
+                          value={parameters.tissue.corner_bonus.with_secondary_percent}
+                          onChange={(e) => {
+                            parameters.tissue.corner_bonus.with_secondary_percent = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">%</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Width local</label>
+                      <label>Width local</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -1600,8 +1979,13 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={bonusWithLocal}
-                          onChange={(e) => setBonusWithLocal(Number(e.target.value))}
+                          value={parameters.tissue.corner_bonus.with_local_percent}
+                          onChange={(e) => {
+                            parameters.tissue.corner_bonus.with_local_percent = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">%</span>
                       </div>
@@ -1616,18 +2000,22 @@ function MapInputControls() {
                   Fire protection
                 </Accordion.Header>
                 <Accordion.Body>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">
-                        Make partitions fire-proof via 6m margins
-                      </label>
+                      <label>Make partitions fire-proof via 6m margins</label>
                     </Col>
                     <Col>
                       <div className="input-group">
                         <input
                           type="checkbox"
-                          checked={fireProof}
-                          onChange={(e) => setFireProof(e.target.checked)}
+                          checked={
+                            parameters.tissue.fire_protection.fire_proof_partitions_with_6m_margins
+                          }
+                          onChange={(e) => {
+                            parameters.tissue.fire_protection.fire_proof_partitions_with_6m_margins =
+                              e.target.checked;
+                            setParameters({ ...parameters });
+                          }}
                         />
                       </div>
                     </Col>
@@ -1652,9 +2040,9 @@ function MapInputControls() {
                 </Accordion.Header>
                 <Accordion.Body>
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('3-0') ? ' active' : ''}`}>
                             1
                           </span>
@@ -1662,9 +2050,9 @@ function MapInputControls() {
                         </label>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial width (share of permissable)
                         </label>
                       </Col>
@@ -1674,16 +2062,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={arteriesCornerArteryWidth}
-                            onChange={(e) => setArteriesCornerArteryWidth(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_arteries
+                                .corner_with_other_artery.initial_width_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_arteries.corner_with_other_artery.initial_width_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial depth (share of permissable)
                         </label>
                       </Col>
@@ -1693,16 +2088,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={arteriesCornerArteryDepth}
-                            onChange={(e) => setArteriesCornerArteryDepth(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_arteries
+                                .corner_with_other_artery.initial_depth_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_arteries.corner_with_other_artery.initial_depth_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial floors (share of permissable)
                         </label>
                       </Col>
@@ -1712,8 +2114,15 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={arteriesCornerArteryFloors}
-                            onChange={(e) => setArteriesCornerArteryFloors(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_arteries
+                                .corner_with_other_artery.initial_floors_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_arteries.corner_with_other_artery.initial_floors_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
@@ -1722,9 +2131,9 @@ function MapInputControls() {
                   </div>
 
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('3-0') ? ' active' : ''}`}>
                             2
                           </span>
@@ -1732,9 +2141,9 @@ function MapInputControls() {
                         </label>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial width (share of permissable)
                         </label>
                       </Col>
@@ -1744,18 +2153,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={arteriesCornerSecondaryWidth}
-                            onChange={(e) =>
-                              setArteriesCornerSecondaryWidth(Number(e.target.value))
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_arteries
+                                .corner_with_secondary.initial_width_percent
                             }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_arteries.corner_with_secondary.initial_width_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial depth (share of permissable)
                         </label>
                       </Col>
@@ -1765,18 +2179,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={arteriesCornerSecondaryDepth}
-                            onChange={(e) =>
-                              setArteriesCornerSecondaryDepth(Number(e.target.value))
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_arteries
+                                .corner_with_secondary.initial_depth_percent
                             }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_arteries.corner_with_secondary.initial_depth_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial floors (share of permissable)
                         </label>
                       </Col>
@@ -1786,10 +2205,15 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={arteriesCornerSecondaryFloors}
-                            onChange={(e) =>
-                              setArteriesCornerSecondaryFloors(Number(e.target.value))
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_arteries
+                                .corner_with_secondary.initial_floors_percent
                             }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_arteries.corner_with_secondary.initial_floors_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
@@ -1798,9 +2222,9 @@ function MapInputControls() {
                   </div>
 
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('3-0') ? ' active' : ''}`}>
                             3
                           </span>
@@ -1808,9 +2232,9 @@ function MapInputControls() {
                         </label>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial width (share of permissable)
                         </label>
                       </Col>
@@ -1820,16 +2244,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={arteriesCornerTertiaryWidth}
-                            onChange={(e) => setArteriesCornerTertiaryWidth(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_arteries
+                                .corner_with_tertiary.initial_width_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_arteries.corner_with_tertiary.initial_width_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial depth (share of permissable)
                         </label>
                       </Col>
@@ -1839,16 +2270,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={arteriesCornerTertiaryDepth}
-                            onChange={(e) => setArteriesCornerTertiaryDepth(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_arteries
+                                .corner_with_tertiary.initial_depth_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_arteries.corner_with_tertiary.initial_depth_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial floors (share of permissable)
                         </label>
                       </Col>
@@ -1858,10 +2296,15 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={arteriesCornerTertiaryFloors}
-                            onChange={(e) =>
-                              setArteriesCornerTertiaryFloors(Number(e.target.value))
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_arteries
+                                .corner_with_tertiary.initial_floors_percent
                             }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_arteries.corner_with_tertiary.initial_floors_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
@@ -1870,9 +2313,9 @@ function MapInputControls() {
                   </div>
 
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('3-0') ? ' active' : ''}`}>
                             4
                           </span>
@@ -1880,9 +2323,9 @@ function MapInputControls() {
                         </label>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial width (share of permissable)
                         </label>
                       </Col>
@@ -1892,16 +2335,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={arteriesRegularWidth}
-                            onChange={(e) => setArteriesRegularWidth(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_arteries.regular_lot
+                                .initial_width_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_arteries.regular_lot.initial_width_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial depth (share of permissable)
                         </label>
                       </Col>
@@ -1911,16 +2361,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={arteriesRegularDepth}
-                            onChange={(e) => setArteriesRegularDepth(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_arteries.regular_lot
+                                .initial_depth_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_arteries.regular_lot.initial_depth_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial floors (share of permissable)
                         </label>
                       </Col>
@@ -1930,8 +2387,15 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={arteriesRegularFloors}
-                            onChange={(e) => setArteriesRegularFloors(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_arteries.regular_lot
+                                .initial_floors_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_arteries.regular_lot.initial_floors_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
@@ -1948,9 +2412,9 @@ function MapInputControls() {
                 </Accordion.Header>
                 <Accordion.Body>
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('3-1') ? ' active' : ''}`}>
                             1
                           </span>
@@ -1958,9 +2422,9 @@ function MapInputControls() {
                         </label>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial width (share of permissable)
                         </label>
                       </Col>
@@ -1970,18 +2434,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={secondariesCornerSecondaryWidth}
-                            onChange={(e) =>
-                              setSecondariesCornerSecondaryWidth(Number(e.target.value))
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_secondaries
+                                .corner_with_other_secondary.initial_width_percent
                             }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_secondaries.corner_with_other_secondary.initial_width_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial depth (share of permissable)
                         </label>
                       </Col>
@@ -1991,18 +2460,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={secondariesCornerSecondaryDepth}
-                            onChange={(e) =>
-                              setSecondariesCornerSecondaryDepth(Number(e.target.value))
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_secondaries
+                                .corner_with_other_secondary.initial_depth_percent
                             }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_secondaries.corner_with_other_secondary.initial_depth_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial floors (share of permissable)
                         </label>
                       </Col>
@@ -2012,10 +2486,15 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={secondariesCornerSecondaryFloors}
-                            onChange={(e) =>
-                              setSecondariesCornerSecondaryFloors(Number(e.target.value))
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_secondaries
+                                .corner_with_other_secondary.initial_floors_percent
                             }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_secondaries.corner_with_other_secondary.initial_floors_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
@@ -2024,9 +2503,9 @@ function MapInputControls() {
                   </div>
 
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('3-1') ? ' active' : ''}`}>
                             2
                           </span>
@@ -2034,9 +2513,9 @@ function MapInputControls() {
                         </label>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial width (share of permissable)
                         </label>
                       </Col>
@@ -2046,18 +2525,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={secondariesCornerTertiaryWidth}
-                            onChange={(e) =>
-                              setSecondariesCornerTertiaryWidth(Number(e.target.value))
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_secondaries
+                                .corner_with_tertiary.initial_width_percent
                             }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_secondaries.corner_with_tertiary.initial_width_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial depth (share of permissable)
                         </label>
                       </Col>
@@ -2067,18 +2551,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={secondariesCornerTertiaryDepth}
-                            onChange={(e) =>
-                              setSecondariesCornerTertiaryDepth(Number(e.target.value))
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_secondaries
+                                .corner_with_tertiary.initial_depth_percent
                             }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_secondaries.corner_with_tertiary.initial_depth_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial floors (share of permissable)
                         </label>
                       </Col>
@@ -2088,10 +2577,15 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={secondariesCornerTertiaryFloors}
-                            onChange={(e) =>
-                              setSecondariesCornerTertiaryFloors(Number(e.target.value))
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_secondaries
+                                .corner_with_tertiary.initial_floors_percent
                             }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_secondaries.corner_with_tertiary.initial_floors_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
@@ -2100,9 +2594,9 @@ function MapInputControls() {
                   </div>
 
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('3-1') ? ' active' : ''}`}>
                             3
                           </span>
@@ -2110,9 +2604,9 @@ function MapInputControls() {
                         </label>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial width (share of permissable)
                         </label>
                       </Col>
@@ -2122,16 +2616,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={secondariesRegularWidth}
-                            onChange={(e) => setSecondariesRegularWidth(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_secondaries.regular_lot
+                                .initial_width_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_secondaries.regular_lot.initial_width_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial depth (share of permissable)
                         </label>
                       </Col>
@@ -2141,16 +2642,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={secondariesRegularDepth}
-                            onChange={(e) => setSecondariesRegularDepth(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_secondaries.regular_lot
+                                .initial_depth_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_secondaries.regular_lot.initial_depth_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial floors (share of permissable)
                         </label>
                       </Col>
@@ -2160,8 +2668,15 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={secondariesRegularFloors}
-                            onChange={(e) => setSecondariesRegularFloors(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_secondaries.regular_lot
+                                .initial_floors_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_secondaries.regular_lot.initial_floors_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
@@ -2178,9 +2693,9 @@ function MapInputControls() {
                 </Accordion.Header>
                 <Accordion.Body>
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('3-2') ? ' active' : ''}`}>
                             1
                           </span>
@@ -2188,9 +2703,9 @@ function MapInputControls() {
                         </label>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial width (share of permissable)
                         </label>
                       </Col>
@@ -2200,16 +2715,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={localsCornerLocalWidth}
-                            onChange={(e) => setLocalsCornerLocalWidth(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_locals
+                                .corner_with_other_local.initial_width_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_locals.corner_with_other_local.initial_width_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial depth (share of permissable)
                         </label>
                       </Col>
@@ -2219,16 +2741,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={localsCornerLocalDepth}
-                            onChange={(e) => setLocalsCornerLocalDepth(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_locals
+                                .corner_with_other_local.initial_depth_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_locals.corner_with_other_local.initial_depth_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial floors (share of permissable)
                         </label>
                       </Col>
@@ -2238,8 +2767,15 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={localsCornerLocalFloors}
-                            onChange={(e) => setLocalsCornerLocalFloors(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_locals
+                                .corner_with_other_local.initial_floors_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_locals.corner_with_other_local.initial_floors_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
@@ -2248,9 +2784,9 @@ function MapInputControls() {
                   </div>
 
                   <div>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm">
+                        <label>
                           <span className={`circle-number-sm${isActive('3-2') ? ' active' : ''}`}>
                             2
                           </span>
@@ -2258,9 +2794,9 @@ function MapInputControls() {
                         </label>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial width (share of permissable)
                         </label>
                       </Col>
@@ -2270,16 +2806,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={localsRegularWidth}
-                            onChange={(e) => setLocalsRegularWidth(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_locals.regular_lot
+                                .initial_width_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_locals.regular_lot.initial_width_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial depth (share of permissable)
                         </label>
                       </Col>
@@ -2289,16 +2832,23 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={localsRegularDepth}
-                            onChange={(e) => setLocalsRegularDepth(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_locals.regular_lot
+                                .initial_depth_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_locals.regular_lot.initial_depth_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
                       </Col>
                     </Row>
-                    <Row className="mb10">
+                    <Row>
                       <Col>
-                        <label className="font-label-sm ml30">
+                        <label className="without-number">
                           Initial floors (share of permissable)
                         </label>
                       </Col>
@@ -2308,8 +2858,15 @@ function MapInputControls() {
                             type="number"
                             step="1"
                             className="form-control"
-                            value={localsRegularFloors}
-                            onChange={(e) => setLocalsRegularFloors(Number(e.target.value))}
+                            value={
+                              parameters.starter_buildings.on_grid_lots_on_locals.regular_lot
+                                .initial_floors_percent
+                            }
+                            onChange={(e) => {
+                              parameters.starter_buildings.on_grid_lots_on_locals.regular_lot.initial_floors_percent =
+                                Number(e.target.value);
+                              setParameters({ ...parameters });
+                            }}
                           />
                           <span className="input-group-text">%</span>
                         </div>
@@ -2325,9 +2882,9 @@ function MapInputControls() {
                   Off-grid cluster, Type1 (behind on-grid)
                 </Accordion.Header>
                 <Accordion.Body>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Initial width (share of permissable)</label>
+                      <label>Initial width (share of permissable)</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -2335,16 +2892,23 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={offGridType1Width}
-                          onChange={(e) => setOffGridType1Width(Number(e.target.value))}
+                          value={
+                            parameters.starter_buildings.off_grid_cluster_type_1
+                              .initial_width_percent
+                          }
+                          onChange={(e) => {
+                            parameters.starter_buildings.off_grid_cluster_type_1.initial_width_percent =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">%</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Initial depth (share of permissable)</label>
+                      <label>Initial depth (share of permissable)</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -2352,16 +2916,23 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={offGridType1Depth}
-                          onChange={(e) => setOffGridType1Depth(Number(e.target.value))}
+                          value={
+                            parameters.starter_buildings.off_grid_cluster_type_1
+                              .initial_depth_percent
+                          }
+                          onChange={(e) => {
+                            parameters.starter_buildings.off_grid_cluster_type_1.initial_depth_percent =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">%</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Initial floors (share of permissable)</label>
+                      <label>Initial floors (share of permissable)</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -2369,8 +2940,15 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={offGridType1Floors}
-                          onChange={(e) => setOffGridType1Floors(Number(e.target.value))}
+                          value={
+                            parameters.starter_buildings.off_grid_cluster_type_1
+                              .initial_floors_percent
+                          }
+                          onChange={(e) => {
+                            parameters.starter_buildings.off_grid_cluster_type_1.initial_floors_percent =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">%</span>
                       </div>
@@ -2385,9 +2963,9 @@ function MapInputControls() {
                   Off-grid cluster, Type2 (behind 1st)
                 </Accordion.Header>
                 <Accordion.Body>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Initial width (share of permissable)</label>
+                      <label>Initial width (share of permissable)</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -2395,16 +2973,23 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={offGridType2Width}
-                          onChange={(e) => setOffGridType2Width(Number(e.target.value))}
+                          value={
+                            parameters.starter_buildings.off_grid_cluster_type_2
+                              .initial_width_percent
+                          }
+                          onChange={(e) => {
+                            parameters.starter_buildings.off_grid_cluster_type_2.initial_width_percent =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">%</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Initial depth (share of permissable)</label>
+                      <label>Initial depth (share of permissable)</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -2412,16 +2997,23 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={offGridType2Depth}
-                          onChange={(e) => setOffGridType2Depth(Number(e.target.value))}
+                          value={
+                            parameters.starter_buildings.off_grid_cluster_type_2
+                              .initial_depth_percent
+                          }
+                          onChange={(e) => {
+                            parameters.starter_buildings.off_grid_cluster_type_2.initial_depth_percent =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">%</span>
                       </div>
                     </Col>
                   </Row>
-                  <Row className="mb10">
+                  <Row>
                     <Col>
-                      <label className="font-label-sm">Initial floors (share of permissable)</label>
+                      <label>Initial floors (share of permissable)</label>
                     </Col>
                     <Col>
                       <div className="input-group">
@@ -2429,8 +3021,15 @@ function MapInputControls() {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={offGridType2Floors}
-                          onChange={(e) => setOffGridType2Floors(Number(e.target.value))}
+                          value={
+                            parameters.starter_buildings.off_grid_cluster_type_2
+                              .initial_floors_percent
+                          }
+                          onChange={(e) => {
+                            parameters.starter_buildings.off_grid_cluster_type_2.initial_floors_percent =
+                              Number(e.target.value);
+                            setParameters({ ...parameters });
+                          }}
                         />
                         <span className="input-group-text">%</span>
                       </div>
@@ -2442,8 +3041,23 @@ function MapInputControls() {
           </Accordion.Body>
         </Accordion.Item>
       </Accordion>
-      <div className="txt-center mt20">
-        <button className="btn btn-primary">Apply</button>
+      <div
+        style={{
+          marginTop: '10px',
+          marginBottom: '1rem',
+          padding: '0 1rem',
+        }}
+      >
+        <Button
+          // @ts-expect-error: A custom variant
+          variant="primary"
+          style={{
+            textAlign: 'center',
+            width: '100%',
+          }}
+        >
+          Apply
+        </Button>
       </div>
     </Container>
   );

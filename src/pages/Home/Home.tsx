@@ -12,7 +12,7 @@ const Home: React.FC = () => {
     <Container>
       <Box p={4}>
         <Box className="home-logo">
-          <img src={logo} alt="Logo" className="mauto" />
+          <img src={logo} alt="Logo" style={{ margin: 'auto' }} />
         </Box>
         <Box>
           <h2>About</h2>

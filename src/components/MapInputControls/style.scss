@@ -78,5 +78,14 @@
   .row {
     margin-left: 1rem;
     margin-right: 0;
+    margin-bottom: 10px;
+
+    label {
+      font-size: 13px;
+
+      &.without-number {
+        margin-left: 30px;
+      }
+    }
   }
 }
