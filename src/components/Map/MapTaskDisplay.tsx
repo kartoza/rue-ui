@@ -57,26 +57,9 @@ export default function MapTaskDisplay({
     const response = await fetch(geojsonUrl);
     const geojson = await response.json();
 
-    let modelOrigin: [number, number] = [148.9819, -35.39847];
-
-    // Use turf to get the centroid of all features
-    if (geojson.features && geojson.features.length > 0) {
-      // If only one feature, use its centroid
-      if (geojson.features.length === 1) {
-        const centroid = turf.centroid(geojson.features[0]);
-        if (centroid && centroid.geometry && centroid.geometry.coordinates) {
-          modelOrigin = [centroid.geometry.coordinates[0], centroid.geometry.coordinates[1]];
-        }
-      } else {
-        // If multiple features, create a feature collection and get centroid
-        const centroid = turf.centroid(geojson);
-        if (centroid && centroid.geometry && centroid.geometry.coordinates) {
-          modelOrigin = [centroid.geometry.coordinates[0], centroid.geometry.coordinates[1]];
-        }
-      }
-    }
-
-    const modelAsMercator = maplibregl.MercatorCoordinate.fromLngLat(modelOrigin, 0);
+    const modelOrigin = (turf.centroid(geojson).geometry.coordinates as [number, number]) || [0, 0];
+    const modelAltitude = 0;
+    const modelAsMercator = maplibregl.MercatorCoordinate.fromLngLat(modelOrigin, modelAltitude);
 
     // Calculate GLTF centroid before adding to map
     let gltfCentroid: any = null;
@@ -138,20 +121,14 @@ export default function MapTaskDisplay({
         const loader = new GLTFLoader();
         loader.load(modelUrl, (gltf) => {
           // Align GLTF centroid with geojson centroid
-          if (gltfCentroid && modelOrigin) {
-            // Convert geojson centroid to Mercator units
-            const geojsonMerc = maplibregl.MercatorCoordinate.fromLngLat(modelOrigin, 0);
-            // Calculate offset in Mercator units
-            // gltfCentroid is in model's local coordinates, so we shift the scene
-            gltf.scene.position.set(
-              geojsonMerc.x - gltfCentroid.x,
-              geojsonMerc.y - gltfCentroid.y,
-              geojsonMerc.z - gltfCentroid.z
-            );
+          if (gltfCentroid) {
+            // Shift GLTF model so its centroid is at origin (0,0,0)
+            // The modelTransform already positions origin at the GeoJSON centroid
+            gltf.scene.position.set(-gltfCentroid.x, -gltfCentroid.y, -gltfCentroid.z);
             console.log('Applied offset to GLTF:', {
-              x: geojsonMerc.x - gltfCentroid.x,
-              y: geojsonMerc.y - gltfCentroid.y,
-              z: geojsonMerc.z - gltfCentroid.z,
+              x: -gltfCentroid.x,
+              y: -gltfCentroid.y,
+              z: -gltfCentroid.z,
             });
           }
           scene.add(gltf.scene);
