@@ -146,9 +146,9 @@ interface FootprintResult {
   param_lot_sec_f: number | null;
   param_lot_loc_f: number | null;
   param_lot_og_f: number | null;
-  param_lot_art_fm: number | null;
-  param_lot_sec_fm: number | null;
-  param_lot_loc_fm: number | null;
+  param_lot_art_fm: number;
+  param_lot_sec_fm: number;
+  param_lot_loc_fm: number;
 }
 
 // 06-building_start

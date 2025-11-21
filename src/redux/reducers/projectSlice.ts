@@ -26,6 +26,7 @@ export const createProject = createAsyncThunk(
       return {
         uuid: '00000000-0000-0000-0000-000000000000',
         name: parameters.name,
+        parameters: parameters.parameters,
       };
     }
     // -----------------------------
@@ -34,7 +35,10 @@ export const createProject = createAsyncThunk(
       const response = await axios.post(API_URL + 'projects', parameters, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return response.data;
+      return {
+        ...response.data,
+        parameters: parameters.parameters,
+      };
     } catch (error) {
       let errorMessage = 'Unknown error';
       if (axios.isAxiosError(error) && error.response) {

@@ -25,7 +25,17 @@
   overflow-y: auto;
   margin-top: 0.5rem;
 
+  .NoData {
+    height: 80%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
   table {
+    margin-bottom: 2rem;
+
     tr {
       border-color: #eee;
     }
@@ -33,6 +43,11 @@
     thead {
       tr {
         border-top: unset;
+      }
+
+      th {
+        background-color: rgb(242, 242, 242);
+        font-weight: normal;
       }
     }
 
@@ -50,6 +65,32 @@
   p {
     padding: 1rem;
     margin: 0;
+  }
+
+  .bg-red {
+    td {
+      background-color: #f8d7da;
+      color: darkred;
+    }
+
+    &.dark {
+      td {
+        background-color: rgb(230, 184, 183);
+      }
+    }
+  }
+
+  .bg-green {
+    td {
+      background-color: rgb(235, 241, 222);
+      color: darkgreen;
+    }
+
+    &.dark {
+      td {
+        background-color: rgb(216, 228, 188);
+      }
+    }
   }
 }
 

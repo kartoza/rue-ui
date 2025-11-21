@@ -188,6 +188,7 @@ interface Project {
     building_start: StepBuildingStartState;
     building_max: StepBuildingMaxState;
   };
+  parameters: ProjectParameters;
 }
 
 interface ProjectState {

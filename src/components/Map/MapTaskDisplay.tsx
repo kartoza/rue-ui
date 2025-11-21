@@ -14,7 +14,7 @@ import {
 
 import './style.scss';
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
-import { removeLayer, removeSource } from '../../utilities/maplibre.tsx';
+import { removeLayer, removeSource } from '../../utils/maplibre.tsx';
 
 const GLTF_ID: string = '3d-model';
 const GEOJSON_ID: string = 'geojson-comparison';
