@@ -1,9 +1,34 @@
 import type { RootState } from '../../redux/store';
-import { TabsList, TabsRoot, TabsTrigger } from '@chakra-ui/react';
+import { Spinner, TabsList, TabsRoot, TabsTrigger } from '@chakra-ui/react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setCurrentStep, STEP_LABELS, type StepType } from '../../redux/reducers/stepSlice.ts';
+import { useCurrentProjectStep } from '../../redux/selectors/projectSelector.ts';
+import { TaskStatus } from '../../redux/reducers/task.ts';
 
 import './style.scss';
+
+interface TabPanelProps {
+  value: string;
+  label: string;
+}
+
+function TabPanel({ value, label }: TabPanelProps) {
+  const currentStep = useCurrentProjectStep(value as StepType);
+  console.log('----------------');
+  console.log(currentStep);
+  console.log(currentStep?.step?.task?.status);
+  return (
+    <TabsTrigger
+      value={value}
+      disabled={currentStep?.step?.task?.status !== TaskStatus.success}
+      className="map-task-tab-trigger"
+    >
+      {label}{' '}
+      {(currentStep?.step?.task?.status === TaskStatus.pending ||
+        currentStep?.step?.task?.status === TaskStatus.running) && <Spinner />}
+    </TabsTrigger>
+  );
+}
 
 export default function MapTabNavigation() {
   const dispatch = useDispatch();
@@ -17,9 +42,7 @@ export default function MapTabNavigation() {
     <TabsRoot value={currentStep} onValueChange={handleValueChange} variant="plain">
       <TabsList className="map-task-tabs-list">
         {Object.entries(STEP_LABELS).map(([value, label]) => (
-          <TabsTrigger key={value} value={value} disabled={true} className="map-task-tab-trigger">
-            {label}
-          </TabsTrigger>
+          <TabPanel key={value} value={value} label={label} />
         ))}
       </TabsList>
     </TabsRoot>

@@ -1,5 +1,5 @@
 import type { SerializedError } from '@reduxjs/toolkit';
-import type { StepType } from './stepSlice.ts';
+import type { Task } from './task.ts';
 
 // -------------------------
 // For payload
@@ -166,21 +166,22 @@ interface ProjectPayload {
   parameters: ProjectParameters;
 }
 
-interface Task {
-  task_id: string;
-  status: string;
-  message: string;
+interface Step {
+  file: string | null;
+  task: Task | null;
 }
 
-interface Step {
-  name: StepType;
-  task: Task | null;
+interface StepState {
+  step: Step | null;
+  loading: boolean;
+  error: SerializedError | null;
 }
 
 interface Project {
   uuid: string | null;
+  name: string | null;
   steps: {
-    [key in StepType]: Step;
+    [key in StepState]: Step;
   };
 }
 

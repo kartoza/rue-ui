@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import maplibregl, { Map as MapLibreMap } from 'maplibre-gl';
 import { Box } from '@chakra-ui/react';
-import { layers } from './data.ts';
-import MapDrawing from './MapDrawing.tsx';
-import MapLocation from './MapLocation.tsx';
+import { layers } from './data';
+import MapDrawing from './MapDrawing';
+import MapLocation from './MapLocation';
 import BaseMaps from './BaseMaps';
-import MapTaskDisplay from './MapTaskDisplay.tsx';
-import type { DefinitionType } from '../../redux/reducers/definitionSlice.ts';
-import type { StepType } from '../../redux/reducers/stepSlice.ts';
+import MapTaskDisplay from './MapTaskDisplay';
+import ProjectControl from '../ProjectControl';
+
+import type { DefinitionType } from '../../redux/reducers/definitionSlice';
+import type { StepType } from '../../redux/reducers/stepSlice';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.scss';
@@ -94,6 +96,7 @@ export default function MapLibre({ currentDefinition, currentStep }: MapLibrePro
       {map && <MapTaskDisplay map={map} currentStep={currentStep} />}
       {map && <MapLocation map={map} />}
       {map && <BaseMaps map={map} />}
+      {map && <ProjectControl />}
     </Box>
   );
 }

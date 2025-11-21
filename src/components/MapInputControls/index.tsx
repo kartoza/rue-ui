@@ -12,175 +12,9 @@ import {
 } from '../../redux/reducers/definitionSlice';
 import { createProject } from '../../redux/reducers/projectSlice';
 
-import './style.scss';
+import projectParametersDefault from './general_input.json';
 
-const projectParametersDefault: ProjectParameters = {
-  neighbourhood: {
-    off_grid_partitions: {
-      cluster_depth_m: 45,
-      cluster_size_lots: 15,
-      cluster_width_m: 30,
-      lot_depth_along_path_m: 12.5,
-      lot_depth_around_yard_m: 10,
-    },
-    on_grid_partitions: {
-      depth_along_arteries_m: 40,
-      depth_along_locals_m: 20,
-      depth_along_secondaries_m: 30,
-    },
-    public_roads: {
-      width_of_arteries_m: 20,
-      width_of_locals_m: 10,
-      width_of_secondaries_m: 15,
-    },
-    public_spaces: {
-      amenities: {
-        amenities_percentage: 10,
-      },
-      open_spaces: {
-        open_space_percentage: 0,
-      },
-      street_section: {
-        sidewalk_width_m: 3,
-      },
-      trees: {
-        final_tree_height_m: 20,
-        initial_tree_height_m: 8,
-        show_trees_frontend: true,
-        tree_spacing_m: 12,
-      },
-    },
-    urban_block_structure: {
-      along_arteries: {
-        off_grid_clusters_in_depth_m: 0,
-        off_grid_clusters_in_width_m: 3,
-      },
-      along_locals: {
-        off_grid_clusters_in_depth_m: 2,
-        off_grid_clusters_in_width_m: 3,
-      },
-      along_secondaries: {
-        off_grid_clusters_in_depth_m: 0,
-        off_grid_clusters_in_width_m: 3,
-      },
-    },
-  },
-  starter_buildings: {
-    off_grid_cluster_type_1: {
-      initial_depth_percent: 50,
-      initial_floors_percent: 50,
-      initial_width_percent: 100,
-    },
-    off_grid_cluster_type_2: {
-      initial_depth_percent: 50,
-      initial_floors_percent: 50,
-      initial_width_percent: 50,
-    },
-    on_grid_lots_on_arteries: {
-      corner_with_other_artery: {
-        initial_depth_percent: 0,
-        initial_floors_percent: 0,
-        initial_width_percent: 0,
-      },
-      corner_with_secondary: {
-        initial_depth_percent: 0,
-        initial_floors_percent: 0,
-        initial_width_percent: 0,
-      },
-      corner_with_tertiary: {
-        initial_depth_percent: 0,
-        initial_floors_percent: 0,
-        initial_width_percent: 0,
-      },
-      regular_lot: {
-        initial_depth_percent: 60,
-        initial_floors_percent: 80,
-        initial_width_percent: 100,
-      },
-    },
-    on_grid_lots_on_locals: {
-      corner_with_other_local: {
-        initial_depth_percent: 100,
-        initial_floors_percent: 100,
-        initial_width_percent: 100,
-      },
-      regular_lot: {
-        initial_depth_percent: 60,
-        initial_floors_percent: 60,
-        initial_width_percent: 100,
-      },
-    },
-    on_grid_lots_on_secondaries: {
-      corner_with_other_secondary: {
-        initial_depth_percent: 0,
-        initial_floors_percent: 0,
-        initial_width_percent: 0,
-      },
-      corner_with_tertiary: {
-        initial_depth_percent: 0,
-        initial_floors_percent: 0,
-        initial_width_percent: 0,
-      },
-      regular_lot: {
-        initial_depth_percent: 60,
-        initial_floors_percent: 60,
-        initial_width_percent: 100,
-      },
-    },
-  },
-  tissue: {
-    corner_bonus: {
-      description: 'Density (floor) bonus at intersection',
-      with_artery_percent: 40,
-      with_local_percent: 20,
-      with_secondary_percent: 30,
-    },
-    fire_protection: {
-      fire_proof_partitions_with_6m_margins: false,
-    },
-    off_grid_cluster_type_1: {
-      access_path_width_on_grid_m: 3,
-      front_setback_m: 0,
-      internal_path_width_m: 5,
-      lot_width_m: 6,
-      number_of_floors: 2,
-      open_space_length_m: 15,
-      open_space_width_m: 10,
-      rear_setback_m: 3,
-      side_margins_m: 0,
-    },
-    off_grid_cluster_type_2: {
-      cul_de_sac_width_m: 5,
-      internal_path_width_m: 3,
-      lot_depth_behind_cul_de_sac_m: 15,
-      lot_width_m: 4.5,
-    },
-    on_grid_lots_on_arteries: {
-      depth_m: 40,
-      front_setback_m: 6,
-      number_of_floors: 5,
-      rear_setback_m: 6,
-      side_margins_m: 6,
-      width_m: 40,
-    },
-    on_grid_lots_on_locals: {
-      depth_m: 20,
-      front_setback_m: 0,
-      number_of_floors: 3,
-      rear_setback_m: 3,
-      side_margins_m: 0,
-      width_m: 10,
-    },
-    on_grid_lots_on_secondaries: {
-      depth_m: 30,
-      front_setback_m: 3,
-      number_of_floors: 4,
-      rear_setback_m: 3,
-      side_margins_m: 3,
-      width_m: 20,
-    },
-  },
-};
+import './style.scss';
 
 export default function MapInputControls() {
   const dispatch = useDispatch<AppDispatch>();
@@ -218,8 +52,8 @@ export default function MapInputControls() {
   const apply = () => {
     dispatch(
       createProject({
-        name: 'New project',
-        description: 'description',
+        name: 'Demo project',
+        description: 'This is demo project',
         parameters: parameters,
       })
     );
