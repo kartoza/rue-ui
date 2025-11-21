@@ -32,7 +32,7 @@ const Home: React.FC = () => {
         <hr />
         <Box>
           <h2>Terms and Conditions</h2>
-          <section className="h-40" style={{ overflowX: 'hidden', paddingRight: '1rem' }}>
+          <section style={{ overflowX: 'hidden', paddingRight: '1rem', maxHeight: '40vh' }}>
             <article>
               <h4 className="ant-typography">Terms of Use</h4>
               <div

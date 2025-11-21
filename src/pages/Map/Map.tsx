@@ -4,7 +4,7 @@ import MapTaskNavigation from '../../components/MapTaskNavigation/MapTaskNavigat
 import MapInputControls from '../../components/MapInputControls/MapInputControls.tsx';
 import MapFinanceSection from '../../components/MapFinanceSection/MapFinanceSection';
 import { useCurrentDefinition } from '../../redux/selectors/definitionSelector.ts';
-import { useCurrentTask } from '../../redux/selectors/taskSelector.ts';
+import { useCurrentStep } from '../../redux/selectors/stepSelector.ts';
 
 import './style.scss';
 
@@ -13,7 +13,7 @@ function MapPage() {
   const [mapHeight, setMapHeight] = useState<string>('calc(100vh - 60px)'); // Default fallback
 
   const currentDefinition = useCurrentDefinition();
-  const currentTask = useCurrentTask();
+  const currentStep = useCurrentStep();
 
   useEffect(() => {
     const updateMapHeight = () => {
@@ -45,7 +45,7 @@ function MapPage() {
           <MapTaskNavigation />
         </div>
         <div className="map-wrapper" style={{ height: mapHeight }}>
-          <Map currentDefinition={currentDefinition} currentTask={currentTask} />
+          <Map currentDefinition={currentDefinition} currentStep={currentStep} />
         </div>
       </div>
 

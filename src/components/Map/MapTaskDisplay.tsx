@@ -1,20 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect } from 'react';
-import maplibregl from 'maplibre-gl';
+import maplibregl, { Map } from 'maplibre-gl';
 import * as THREE from 'three';
 import { Vector3 } from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Map } from 'maplibre-gl';
 import turf from 'turf';
-import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
+
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { StepType } from '../../redux/reducers/stepSlice.ts';
+
 import './style.scss';
+import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 
 export default function MapTaskDisplay({
   map,
-  currentTask,
+  currentStep,
 }: {
   map: Map | null;
-  currentTask: string;
+  currentStep: StepType;
 }) {
   useEffect(() => {
     if (!map) return;
@@ -36,6 +38,14 @@ export default function MapTaskDisplay({
       }
     }
 
+    const site_model = new URL(
+      '../../dummy-data/input-output/00-site/outputs/site.gltf',
+      import.meta.url
+    ).href;
+    const site_geojson = new URL(
+      '../../dummy-data/input-output/00-site/outputs/site.geojson',
+      import.meta.url
+    ).href;
     const street_model = new URL(
       '../../dummy-data/input-output/01-streets/outputs/streets.gltf',
       import.meta.url
@@ -100,34 +110,35 @@ export default function MapTaskDisplay({
     ).href;
 
     // Pass rotation and altitude from state
-    switch (currentTask) {
-      case 'Site':
+    switch (currentStep) {
+      case StepType.site:
+        createCustomLayerFromGeoJSON(site_model, site_geojson);
         break;
-      case 'Streets':
+      case StepType.streets:
         createCustomLayerFromGeoJSON(street_model, street_geojson);
         break;
-      case 'Cluster':
+      case StepType.clusters:
         createCustomLayerFromGeoJSON(cluster_model, cluster_geojson);
         break;
-      case 'Public':
+      case StepType.public:
         createCustomLayerFromGeoJSON(public_model, public_geojson);
         break;
-      case 'Subdivision':
+      case StepType.subdivision:
         createCustomLayerFromGeoJSON(subdivision_model, subdivision_geojson);
         break;
-      case 'Footprint':
+      case StepType.footprint:
         createCustomLayerFromGeoJSON(footprint_model, footprint_geojson);
         break;
-      case 'Starter buildings':
+      case StepType.building_start:
         createCustomLayerFromGeoJSON(building_start_model, building_start_geojson);
         break;
-      case 'Consolidated buildings':
+      case StepType.building_max:
         createCustomLayerFromGeoJSON(building_max_model, building_max_geojson);
         break;
       default:
         break;
     }
-  }, [map, currentTask]);
+  }, [map, currentStep]);
 
   async function createCustomLayerFromGeoJSON(modelUrl: string, geojsonUrl: string) {
     if (!map) return;

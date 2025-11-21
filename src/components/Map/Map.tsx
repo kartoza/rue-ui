@@ -6,17 +6,20 @@ import MapDrawing from './MapDrawing.tsx';
 import MapLocation from './MapLocation.tsx';
 import BaseMaps from './BaseMaps';
 import MapTaskDisplay from './MapTaskDisplay.tsx';
+import type { DefinitionType } from '../../redux/reducers/definitionSlice.ts';
+import type { StepType } from '../../redux/reducers/stepSlice.ts';
+
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.scss';
 
 /** MapLibre component. */
 
 interface MapLibreProps {
-  currentDefinition: string;
-  currentTask: string;
+  currentDefinition: DefinitionType;
+  currentStep: StepType;
 }
 
-export default function MapLibre({ currentDefinition, currentTask }: MapLibreProps) {
+export default function MapLibre({ currentDefinition, currentStep }: MapLibreProps) {
   const [map, setMap] = useState<MapLibreMap | null>(null);
 
   // Initialize map
@@ -88,7 +91,7 @@ export default function MapLibre({ currentDefinition, currentTask }: MapLibrePro
     <Box position="relative" width="100%" height="100%" minHeight="400px">
       <Box id="map" width="100%" height="100%" />
       {map && <MapDrawing map={map} currentDefinition={currentDefinition} />}
-      {map && <MapTaskDisplay map={map} currentTask={currentTask} />}
+      {map && <MapTaskDisplay map={map} currentStep={currentStep} />}
       {map && <MapLocation map={map} />}
       {map && <BaseMaps map={map} />}
     </Box>

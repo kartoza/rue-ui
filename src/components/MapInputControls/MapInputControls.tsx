@@ -4,8 +4,13 @@ import Accordion from 'react-bootstrap/Accordion';
 import { Button } from '@chakra-ui/react';
 import { useState } from 'react';
 import type { ProjectParameters } from '../../redux/reducers/project';
-import type { RootState } from '../../redux/store';
-import { setSelectedDefinition } from '../../redux/reducers/definitionSlice';
+import type { AppDispatch, RootState } from '../../redux/store';
+import {
+  DEFINITION_LABELS,
+  type DefinitionType,
+  setSelectedDefinition,
+} from '../../redux/reducers/definitionSlice';
+import { createProject } from '../../redux/reducers/projectSlice';
 
 import './style.scss';
 
@@ -178,7 +183,7 @@ const projectParametersDefault: ProjectParameters = {
 };
 
 function MapInputControls() {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [activeKeys, setActiveKeys] = useState<string[]>(['0', '0-0']);
 
   // City - Site Definition
@@ -210,6 +215,16 @@ function MapInputControls() {
 
   const isActive = (key: string) => activeKeys.includes(key);
 
+  const apply = () => {
+    dispatch(
+      createProject({
+        name: 'New project',
+        description: 'description',
+        parameters: parameters,
+      })
+    );
+  };
+
   return (
     <Container className="map-input-parent">
       <Accordion
@@ -238,12 +253,15 @@ function MapInputControls() {
                   <select
                     className="form-control"
                     value={siteDefinition}
-                    onChange={(e) => dispatch(setSelectedDefinition(e.target.value))}
+                    onChange={(e) =>
+                      dispatch(setSelectedDefinition(e.target.value as DefinitionType))
+                    }
                   >
-                    <option value="vmc_demo">VMC Demo</option>
-                    <option value="draw_your_own">Draw your own</option>
-                    <option value="load_site">Load site</option>
-                    <option value="dummy_site">Dummy Site</option>
+                    {Object.entries(DEFINITION_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
                   </select>
                 </Accordion.Body>
               </Accordion.Item>
@@ -3046,6 +3064,7 @@ function MapInputControls() {
           marginBottom: '1rem',
           padding: '0 1rem',
         }}
+        onClick={apply}
       >
         <Button
           // @ts-expect-error: A custom variant

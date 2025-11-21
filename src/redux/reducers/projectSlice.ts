@@ -14,14 +14,7 @@ const initialState: ProjectState = {
 // Async thunk for project
 export const createProject = createAsyncThunk(
   'project/create',
-  async (
-    {
-      parameters,
-    }: {
-      parameters: ProjectPayload;
-    },
-    thunkAPI
-  ) => {
+  async (parameters: ProjectPayload, thunkAPI) => {
     // -----------------------------
     // FOR DEMO
     // -----------------------------
@@ -34,7 +27,6 @@ export const createProject = createAsyncThunk(
       };
     }
     // -----------------------------
-
     const token = localStorage.getItem('token');
     try {
       const response = await axios.post(

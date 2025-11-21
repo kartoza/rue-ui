@@ -1,36 +1,25 @@
 import type { RootState } from '../../redux/store';
 import type { FC } from 'react';
-import { TabsRoot, TabsList, TabsTrigger } from '@chakra-ui/react';
+import { TabsList, TabsRoot, TabsTrigger } from '@chakra-ui/react';
 import { useDispatch, useSelector } from 'react-redux';
-import { setSelectedTask } from '../../redux/reducers/taskSlice';
+import { setCurrentStep, STEP_LABELS, type StepType } from '../../redux/reducers/stepSlice.ts';
 
 import './style.scss';
 
-const tasks: string[] = [
-  'Site',
-  'Streets',
-  'Cluster',
-  'Public',
-  'Subdivision',
-  'Footprint',
-  'Starter buildings',
-  'Consolidated buildings',
-];
-
 const MapTaskNavigation: FC = () => {
   const dispatch = useDispatch();
-  const currentTask = useSelector((state: RootState) => state.task.currentTask);
+  const currentStep = useSelector((state: RootState) => state.step.currentStep);
 
   const handleValueChange = (details: { value: string }) => {
-    dispatch(setSelectedTask(details.value));
+    dispatch(setCurrentStep(details.value as StepType));
   };
 
   return (
-    <TabsRoot value={currentTask} onValueChange={handleValueChange} variant="plain">
+    <TabsRoot value={currentStep} onValueChange={handleValueChange} variant="plain">
       <TabsList className="map-task-tabs-list">
-        {tasks.map((task) => (
-          <TabsTrigger key={task} value={task} className="map-task-tab-trigger">
-            {task}
+        {Object.entries(STEP_LABELS).map(([value, label]) => (
+          <TabsTrigger key={value} value={value} disabled={true} className="map-task-tab-trigger">
+            {label}
           </TabsTrigger>
         ))}
       </TabsList>

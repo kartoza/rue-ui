@@ -28,6 +28,22 @@ code {
   }
 }
 
+.form-control {
+  &:focus {
+    box-shadow: none;
+  }
+}
+
 i {
   font-style: italic;
+}
+
+input:read-only {
+  cursor: default;
+  background-color: var(--bs-tertiary-bg);
+
+  &:focus {
+    background-color: var(--bs-tertiary-bg);
+    border-color: inherit;
+  }
 }
