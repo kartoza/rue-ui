@@ -1,5 +1,4 @@
 import type { FC } from 'react';
-import './style.scss';
 
 const NeighborhoodScaleProforma: FC = () => {
   return (

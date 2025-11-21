@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import Map from '../../components/Map/Map.tsx';
-import MapTaskNavigation from '../../components/MapTaskNavigation/MapTaskNavigation';
-import MapInputControls from '../../components/MapInputControls/MapInputControls.tsx';
-import MapFinanceSection from '../../components/MapFinanceSection/MapFinanceSection';
-import { useCurrentDefinition } from '../../redux/selectors/definitionSelector.ts';
-import { useCurrentStep } from '../../redux/selectors/stepSelector.ts';
+import Map from '../../components/Map';
+import MapTabNavigation from '../../components/MapTabNavigation';
+import MapInputControls from '../../components/MapInputControls';
+import MapFinanceSection from '../../components/MapFinanceSection';
+import { useCurrentDefinition } from '../../redux/selectors/definitionSelector';
+import { useCurrentStep } from '../../redux/selectors/stepSelector';
 
 import './style.scss';
 
-function MapPage() {
+export default function MapPage() {
   const navbarRef = useRef<HTMLDivElement>(null);
   const [mapHeight, setMapHeight] = useState<string>('calc(100vh - 60px)'); // Default fallback
 
@@ -42,7 +42,7 @@ function MapPage() {
 
       <div className="map-container">
         <div className="map-container-navbar" ref={navbarRef}>
-          <MapTaskNavigation />
+          <MapTabNavigation />
         </div>
         <div className="map-wrapper" style={{ height: mapHeight }}>
           <Map currentDefinition={currentDefinition} currentStep={currentStep} />
@@ -55,5 +55,3 @@ function MapPage() {
     </div>
   );
 }
-
-export default MapPage;

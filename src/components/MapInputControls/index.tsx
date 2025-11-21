@@ -182,7 +182,7 @@ const projectParametersDefault: ProjectParameters = {
   },
 };
 
-function MapInputControls() {
+export default function MapInputControls() {
   const dispatch = useDispatch<AppDispatch>();
   const [activeKeys, setActiveKeys] = useState<string[]>(['0', '0-0']);
 
@@ -3080,5 +3080,3 @@ function MapInputControls() {
     </Container>
   );
 }
-
-export default MapInputControls;

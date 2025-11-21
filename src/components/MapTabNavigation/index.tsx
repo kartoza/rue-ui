@@ -1,12 +1,11 @@
 import type { RootState } from '../../redux/store';
-import type { FC } from 'react';
 import { TabsList, TabsRoot, TabsTrigger } from '@chakra-ui/react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setCurrentStep, STEP_LABELS, type StepType } from '../../redux/reducers/stepSlice.ts';
 
 import './style.scss';
 
-const MapTaskNavigation: FC = () => {
+export default function MapTabNavigation() {
   const dispatch = useDispatch();
   const currentStep = useSelector((state: RootState) => state.step.currentStep);
 
@@ -25,6 +24,4 @@ const MapTaskNavigation: FC = () => {
       </TabsList>
     </TabsRoot>
   );
-};
-
-export default MapTaskNavigation;
+}

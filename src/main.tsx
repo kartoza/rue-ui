@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { ChakraProvider } from '@chakra-ui/react';
 
 import reportWebVitals from './reportWebVitals.tsx';
-import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
+import ErrorBoundary from './components/ErrorBoundary';
 import { BrowserRouter as Router } from 'react-router-dom';
 
 import { kartozaTheme } from './theme/Theme';

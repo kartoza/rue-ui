@@ -1,6 +1,6 @@
-import { Accordion, Container, Row, Col } from 'react-bootstrap';
+import { Accordion, Col, Container, Row } from 'react-bootstrap';
 import { Radar } from '@ant-design/charts';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ChartData {
   key: string;
@@ -8,7 +8,7 @@ interface ChartData {
   value: number;
 }
 
-const ImpactChart = () => {
+export default function ImpactChart() {
   // Use state to hold dummy data
   const [dummyData, setChartData] = useState<ChartData[]>([
     { key: 'r5', item: 'Density, initial', value: 0 },
@@ -66,6 +66,4 @@ const ImpactChart = () => {
       </Accordion.Item>
     </Accordion>
   );
-};
-
-export default ImpactChart;
+}

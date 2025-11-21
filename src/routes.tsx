@@ -1,9 +1,9 @@
 import { Route, Routes } from 'react-router-dom';
-import Home from './pages/Home/Home';
-import MapPage from './pages/Map/Map.tsx';
+import Home from './pages/Home';
+import MapPage from './pages/Map';
 import Page from './pages/Page';
-import Login from './pages/Login/Login';
-import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute.tsx';
+import Login from './pages/Login';
+import ProtectedRoute from './components/ProtectedRoute';
 import React from 'react';
 
 const AppRoutes: React.FC = () => {

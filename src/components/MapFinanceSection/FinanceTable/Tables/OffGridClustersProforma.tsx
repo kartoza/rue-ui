@@ -1,7 +1,6 @@
 import type { FC } from 'react';
-import './style.scss';
 
-const OffgridClustersProforma: FC = () => {
+const OffGridClustersProforma: FC = () => {
   //TO DO: add tables for individual clusters?
 
   return (
@@ -56,4 +55,4 @@ const OffgridClustersProforma: FC = () => {
   );
 };
 
-export default OffgridClustersProforma;
+export default OffGridClustersProforma;
