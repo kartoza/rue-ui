@@ -1,5 +1,14 @@
 import type { SerializedError } from '@reduxjs/toolkit';
-import type { Task } from './task.ts';
+import type {
+  StepBuildingMaxState,
+  StepBuildingStartState,
+  StepClusterState,
+  StepFootprintState,
+  StepPublicState,
+  StepSiteState,
+  StepStreetState,
+  StepSubdivisionState,
+} from './step';
 
 // -------------------------
 // For payload
@@ -166,22 +175,18 @@ interface ProjectPayload {
   parameters: ProjectParameters;
 }
 
-interface Step {
-  file: string | null;
-  task: Task | null;
-}
-
-interface StepState {
-  step: Step | null;
-  loading: boolean;
-  error: SerializedError | null;
-}
-
 interface Project {
   uuid: string | null;
   name: string | null;
   steps: {
-    [key in StepState]: Step;
+    site: StepSiteState;
+    streets: StepStreetState;
+    clusters: StepClusterState;
+    public: StepPublicState;
+    subdivision: StepSubdivisionState;
+    footprint: StepFootprintState;
+    building_start: StepBuildingStartState;
+    building_max: StepBuildingMaxState;
   };
 }
 

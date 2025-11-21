@@ -37,7 +37,7 @@ function FinanceTable() {
 
   return (
     <>
-      <div style={{ padding: '0 1rem' }}>
+      <div style={{ padding: '0 1rem 0 3rem' }}>
         <select className="form-control" value={selectedOption} onChange={handleChange}>
           {Object.entries(LABELS).map(([value, label]) => (
             <option key={value} value={value}>

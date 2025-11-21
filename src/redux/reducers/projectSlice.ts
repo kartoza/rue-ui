@@ -63,6 +63,9 @@ export const getStepStatus = createAsyncThunk(
     // -----------------------------
     if (!API_URL) {
       const index = Object.keys(STEP_LABELS).indexOf(step);
+      const result = await import(
+        `../../assets/dummy-data/${String(index).padStart(2, '0')}-${step}/outputs/data.json`
+      );
       return {
         file:
           location.origin +
@@ -72,6 +75,7 @@ export const getStepStatus = createAsyncThunk(
           status: TaskStatus.success,
           message: '',
         },
+        result: result.default,
       };
     }
     // -----------------------------
@@ -117,6 +121,7 @@ const projectSlice = createSlice({
       .addCase(getStepStatus.pending, (state, action) => {
         const { uuid, step } = action.meta.arg;
         if (!state.project || state.project.uuid !== uuid) return;
+        // @ts-expect-error: Save by step
         state.project.steps[step] = {
           loading: true,
           error: null,
@@ -125,6 +130,7 @@ const projectSlice = createSlice({
       .addCase(getStepStatus.fulfilled, (state, action) => {
         const { uuid, step } = action.meta.arg;
         if (!state.project || state.project.uuid !== uuid) return;
+        // @ts-expect-error: Save by step
         state.project.steps[step] = {
           loading: false,
           step: action.payload,
@@ -133,6 +139,7 @@ const projectSlice = createSlice({
       .addCase(getStepStatus.rejected, (state, action) => {
         const { uuid, step } = action.meta.arg;
         if (!state.project || state.project.uuid !== uuid) return;
+        // @ts-expect-error: Save by step
         state.project.steps[step] = {
           loading: false,
           error: action.error as SerializedError,

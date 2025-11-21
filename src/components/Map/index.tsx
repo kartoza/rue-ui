@@ -7,6 +7,7 @@ import MapLocation from './MapLocation';
 import BaseMaps from './BaseMaps';
 import MapTaskDisplay from './MapTaskDisplay';
 import ProjectControl from '../ProjectControl';
+import StepControl from '../StepControl';
 
 import type { DefinitionType } from '../../redux/reducers/definitionSlice';
 import type { StepType } from '../../redux/reducers/stepSlice';
@@ -97,6 +98,7 @@ export default function MapLibre({ currentDefinition, currentStep }: MapLibrePro
       {map && <MapLocation map={map} />}
       {map && <BaseMaps map={map} />}
       {map && <ProjectControl />}
+      {map && <StepControl />}
     </Box>
   );
 }

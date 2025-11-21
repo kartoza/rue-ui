@@ -15,6 +15,8 @@ import { createProject } from '../../redux/reducers/projectSlice';
 import projectParametersDefault from './general_input.json';
 
 import './style.scss';
+import NeighbourhoodPublicScapeOpenSpace from './Results/NeighbourhoodPublicScapeOpenSpace.tsx';
+import NeighbourhoodPublicScapeAmenities from './Results/NeighbourhoodPublicScapeAmenities.tsx';
 
 export default function MapInputControls() {
   const dispatch = useDispatch<AppDispatch>();
@@ -851,6 +853,12 @@ export default function MapInputControls() {
                         </div>
                       </Col>
                     </Row>
+                    <Row>
+                      <Col></Col>
+                      <Col style={{ textAlign: 'right' }}>
+                        <NeighbourhoodPublicScapeOpenSpace />
+                      </Col>
+                    </Row>
                   </div>
 
                   <div>
@@ -885,6 +893,12 @@ export default function MapInputControls() {
                           />
                           <span className="input-group-text">%</span>
                         </div>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col></Col>
+                      <Col style={{ textAlign: 'right' }}>
+                        <NeighbourhoodPublicScapeAmenities />
                       </Col>
                     </Row>
                   </div>

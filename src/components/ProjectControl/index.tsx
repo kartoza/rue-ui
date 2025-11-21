@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { useCurrentProjectState } from '../../redux/selectors/projectSelector.ts';
 import { StepType } from '../../redux/reducers/stepSlice.ts';
-import type { Project, ProjectState, StepState } from '../../redux/reducers/project';
+import type { Project, ProjectState } from '../../redux/reducers/project';
 import { TaskStatus } from '../../redux/reducers/task.ts';
 import { getStepStatus } from '../../redux/reducers/projectSlice.ts';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store.ts';
+import type { StepState } from '../../redux/reducers/step';
 
 export default function ProjectControl() {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,6 +23,7 @@ export default function ProjectControl() {
   }
   let step: StepState | undefined = undefined;
   if (firstUndefinedStep) {
+    // @ts-expect-error: Expect Step State
     step = currentProject?.steps[firstUndefinedStep];
   }
 
