@@ -14,9 +14,7 @@ interface TabPanelProps {
 
 function TabPanel({ value, label }: TabPanelProps) {
   const currentStep = useCurrentProjectStep(value as StepType);
-  console.log('----------------');
-  console.log(currentStep);
-  console.log(currentStep?.step?.task?.status);
+
   return (
     <TabsTrigger
       value={value}

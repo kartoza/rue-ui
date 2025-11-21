@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import maplibregl, { Map } from 'maplibre-gl';
 import * as THREE from 'three';
 import { Vector3 } from 'three';
@@ -7,9 +7,19 @@ import turf from 'turf';
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { StepType } from '../../redux/reducers/stepSlice.ts';
+import {
+  useCurrentProjectStep,
+  useCurrentProjectUUID,
+} from '../../redux/selectors/projectSelector';
 
 import './style.scss';
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
+import { removeLayer, removeSource } from '../../utilities/maplibre.tsx';
+
+const GLTF_ID: string = '3d-model';
+const GEOJSON_ID: string = 'geojson-comparison';
+const GEOJSON_ID_POINT: string = 'geojson-comparison-point';
+const GEOJSON_ID_LINE: string = 'geojson-comparison-line';
 
 export default function MapTaskDisplay({
   map,
@@ -18,127 +28,28 @@ export default function MapTaskDisplay({
   map: Map | null;
   currentStep: StepType;
 }) {
+  const currentStepState = useCurrentProjectStep(currentStep);
+  const [isInit, setIsInit] = useState<boolean>(true);
+  const currentUUID = useCurrentProjectUUID();
+
+  /** Set init when current UUID changes */
+  useEffect(() => {
+    setIsInit(true);
+  }, [currentUUID]);
+
   useEffect(() => {
     if (!map) return;
 
-    if (map.getLayer('3d-model')) {
-      try {
-        map.removeLayer('3d-model');
-        map.removeLayer('geojson-comparison');
-      } catch (e) {
-        console.warn('Could not remove previous 3d-model layer:', e);
-      }
+    removeSource(map, GLTF_ID);
+    removeLayer(map, GLTF_ID);
+    removeSource(map, GEOJSON_ID);
+
+    // Load files
+    const file = currentStepState?.step?.file;
+    if (file) {
+      createCustomLayerFromGeoJSON(file.replace('geojson', 'gltf'), file);
     }
-
-    if (map.getSource && map.getSource('3d-model')) {
-      try {
-        map.removeSource('3d-model');
-      } catch (e) {
-        console.warn('Could not remove previous 3d-model source:', e);
-      }
-    }
-
-    const site_model = new URL(
-      '../../dummy-data/input-output/00-site/outputs/site.gltf',
-      import.meta.url
-    ).href;
-    const site_geojson = new URL(
-      '../../dummy-data/input-output/00-site/outputs/site.geojson',
-      import.meta.url
-    ).href;
-    const street_model = new URL(
-      '../../dummy-data/input-output/01-streets/outputs/streets.gltf',
-      import.meta.url
-    ).href;
-    const street_geojson = new URL(
-      '../../dummy-data/input-output/01-streets/outputs/streets.geojson',
-      import.meta.url
-    ).href;
-
-    const cluster_model = new URL(
-      '../../dummy-data/input-output/02-clusters/outputs/cluster.gltf',
-      import.meta.url
-    ).href;
-    const cluster_geojson = new URL(
-      '../../dummy-data/input-output/02-clusters/outputs/cluster.geojson',
-      import.meta.url
-    ).href;
-
-    const public_model = new URL(
-      '../../dummy-data/input-output/03-public/outputs/public.gltf',
-      import.meta.url
-    ).href;
-    const public_geojson = new URL(
-      '../../dummy-data/input-output/03-public/outputs/public.geojson',
-      import.meta.url
-    ).href;
-
-    const subdivision_model = new URL(
-      '../../dummy-data/input-output/04-subdivision/outputs/subdivision.gltf',
-      import.meta.url
-    ).href;
-    const subdivision_geojson = new URL(
-      '../../dummy-data/input-output/04-subdivision/outputs/subdivision.geojson',
-      import.meta.url
-    ).href;
-
-    const footprint_model = new URL(
-      '../../dummy-data/input-output/05-footprint/outputs/footprint.gltf',
-      import.meta.url
-    ).href;
-    const footprint_geojson = new URL(
-      '../../dummy-data/input-output/05-footprint/outputs/footprint.geojson',
-      import.meta.url
-    ).href;
-
-    const building_start_model = new URL(
-      '../../dummy-data/input-output/06-building_start/outputs/building_start.gltf',
-      import.meta.url
-    ).href;
-    const building_start_geojson = new URL(
-      '../../dummy-data/input-output/06-building_start/outputs/building_start.geojson',
-      import.meta.url
-    ).href;
-
-    const building_max_model = new URL(
-      '../../dummy-data/input-output/07-building_max/outputs/building_max.gltf',
-      import.meta.url
-    ).href;
-    const building_max_geojson = new URL(
-      '../../dummy-data/input-output/07-building_max/outputs/building_max.geojson',
-      import.meta.url
-    ).href;
-
-    // Pass rotation and altitude from state
-    switch (currentStep) {
-      case StepType.site:
-        createCustomLayerFromGeoJSON(site_model, site_geojson);
-        break;
-      case StepType.streets:
-        createCustomLayerFromGeoJSON(street_model, street_geojson);
-        break;
-      case StepType.clusters:
-        createCustomLayerFromGeoJSON(cluster_model, cluster_geojson);
-        break;
-      case StepType.public:
-        createCustomLayerFromGeoJSON(public_model, public_geojson);
-        break;
-      case StepType.subdivision:
-        createCustomLayerFromGeoJSON(subdivision_model, subdivision_geojson);
-        break;
-      case StepType.footprint:
-        createCustomLayerFromGeoJSON(footprint_model, footprint_geojson);
-        break;
-      case StepType.building_start:
-        createCustomLayerFromGeoJSON(building_start_model, building_start_geojson);
-        break;
-      case StepType.building_max:
-        createCustomLayerFromGeoJSON(building_max_model, building_max_geojson);
-        break;
-      default:
-        break;
-    }
-  }, [map, currentStep]);
+  }, [map, currentStepState]);
 
   async function createCustomLayerFromGeoJSON(modelUrl: string, geojsonUrl: string) {
     if (!map) return;
@@ -163,58 +74,6 @@ export default function MapTaskDisplay({
           modelOrigin = [centroid.geometry.coordinates[0], centroid.geometry.coordinates[1]];
         }
       }
-    }
-
-    map.flyTo({
-      center: modelOrigin as [number, number],
-      zoom: 18,
-      pitch: 60,
-      bearing: 0,
-      essential: true,
-    });
-
-    // Add GeoJSON source and layer for comparison
-    if (map.getLayer('geojson-comparison')) {
-      try {
-        map.removeLayer('geojson-comparison');
-      } catch (e) {
-        console.warn('Could not remove previous geojson-comparison layer:', e);
-      }
-    }
-    if (map.getSource('geojson-comparison')) {
-      try {
-        map.removeSource('geojson-comparison');
-      } catch (e) {
-        console.warn('Could not remove previous geojson-comparison source:', e);
-      }
-    }
-    map.addSource('geojson-comparison', {
-      type: 'geojson',
-      data: geojson,
-    });
-    // Style lines and polygons distinctly
-    if (geojson.features[0]?.geometry?.type === 'Point') {
-      map.addLayer({
-        id: 'geojson-comparison',
-        type: 'circle',
-        source: 'geojson-comparison',
-        paint: {
-          'circle-radius': 8,
-          'circle-color': '#ff0000',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#fff',
-        },
-      });
-    } else {
-      map.addLayer({
-        id: 'geojson-comparison',
-        type: 'line',
-        source: 'geojson-comparison',
-        paint: {
-          'line-color': '#ff0000',
-          'line-width': 4,
-        },
-      });
     }
 
     const modelAsMercator = maplibregl.MercatorCoordinate.fromLngLat(modelOrigin, 0);
@@ -261,7 +120,7 @@ export default function MapTaskDisplay({
     };
 
     const layer: any = {
-      id: '3d-model',
+      id: GLTF_ID,
       type: 'custom',
       renderingMode: '3d',
       onAdd(mapInstance: any, gl: any) {
@@ -340,6 +199,54 @@ export default function MapTaskDisplay({
     };
 
     map.addLayer(layer);
+
+    // Zoom to the model
+    if (isInit) {
+      map.flyTo({
+        center: modelOrigin as [number, number],
+        zoom: 18,
+        pitch: 60,
+        bearing: 0,
+        essential: true,
+        speed: 2.5,
+      });
+    }
+    setIsInit(false);
+
+    // Add GeoJSON source and layer for comparison
+    removeSource(map, GEOJSON_ID);
+
+    map.addSource(GEOJSON_ID, {
+      type: 'geojson',
+      data: geojson,
+    });
+    map.addLayer(
+      {
+        id: GEOJSON_ID_POINT,
+        type: 'circle',
+        source: GEOJSON_ID,
+        paint: {
+          'circle-radius': 2,
+          'circle-color': '#ff0000',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fff',
+        },
+      },
+      GLTF_ID
+    );
+
+    map.addLayer(
+      {
+        id: GEOJSON_ID_LINE,
+        type: 'line',
+        source: GEOJSON_ID,
+        paint: {
+          'line-color': '#ff0000',
+          'line-width': 2,
+        },
+      },
+      GLTF_ID
+    );
   }
 
   return <div></div>;

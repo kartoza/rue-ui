@@ -7,8 +7,8 @@ export function useCurrentProjectState() {
   return useSelector((state: RootState) => state.project as ProjectState);
 }
 
-export function useCurrentProject() {
-  return useSelector((state: RootState) => (state.project as ProjectState).project);
+export function useCurrentProjectUUID() {
+  return useSelector((state: RootState) => (state.project as ProjectState).project?.uuid);
 }
 
 export function useCurrentProjectStep(step: StepType): StepState {
