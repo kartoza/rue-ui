@@ -1,0 +1,56 @@
+.map-task-tabs-list {
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  width: 100%;
+}
+
+.map-task-tab-trigger {
+  position: relative;
+  padding-top: 24px;
+  padding-bottom: 24px;
+  transition: color 0.3s ease;
+  flex: 1;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+
+  &::before {
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-top: -6px;
+    margin-left: -18px;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+    border-bottom: none;
+    border-left: none;
+    transform: rotate(45deg);
+    content: '';
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0%;
+    height: 2px;
+    background-color: #3182ce;
+    transition: width 0.3s ease;
+  }
+
+  &[data-selected] {
+    color: #3182ce;
+
+    &::after {
+      width: 100%;
+    }
+  }
+
+  &:hover {
+    color: #63b3ed;
+  }
+}

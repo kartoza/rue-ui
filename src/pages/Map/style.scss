@@ -4,13 +4,13 @@
 }
 
 .map-left-sidebar {
-  width: 25%;
+  width: 410px;
   border: lightgray 1px solid;
-}
 
-.map-left-sidebar {
-  width: 25%;
-  border: lightgray 1px solid;
+  .map-input-parent {
+    padding-left: 0;
+    padding-right: 0;
+  }
 }
 
 .map-container {
@@ -34,5 +34,5 @@
 }
 
 .map-right-sidebar {
-  width: 25%;
+  width: 410px;
 }

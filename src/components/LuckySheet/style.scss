@@ -1,0 +1,36 @@
+#luckysheet {
+  background-color: white;
+  position: fixed;
+  top: 0;
+  left: 100vw;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1000;
+  transition: left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+
+  &.open {
+    left: 0;
+  }
+
+  .header {
+    height: auto;
+    width: 100%;
+    font-size: 36px;
+    color: #1a1a1a;
+
+    svg {
+      cursor: pointer;
+
+      &:hover {
+        opacity: 0.7;
+      }
+    }
+  }
+
+  #luckysheet-content {
+    flex-grow: 1;
+    width: 100%;
+  }
+}

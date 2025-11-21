@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import type { GeoJSONSource, MapMouseEvent } from 'maplibre-gl';
-import type { Feature, FeatureCollection, Position, Polygon, LineString } from 'geojson';
+import type { GeoJSONSource, Map as MaplibreMap, MapMouseEvent } from 'maplibre-gl';
+import type { Feature, FeatureCollection, LineString, Polygon, Position } from 'geojson';
 import MaplibreDraw from 'maplibre-gl-draw';
-import type { Map as MaplibreMap } from 'maplibre-gl';
 import { HStack, IconButton } from '@chakra-ui/react';
-import { MdDelete, MdCropSquare, MdTimeline } from 'react-icons/md';
+import { MdCropSquare, MdDelete, MdTimeline } from 'react-icons/md';
+
+import type { DefinitionType } from '../../redux/reducers/definitionSlice.ts';
+
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 import './style.scss';
 
@@ -13,7 +15,7 @@ export default function MapDrawing({
   currentDefinition,
 }: {
   map: MaplibreMap | null;
-  currentDefinition: string;
+  currentDefinition: DefinitionType;
 }) {
   const drawRef = useRef<MaplibreDraw | null>(null);
   const drawFeaturesSource = useRef<GeoJSONSource | null>(null);
@@ -318,7 +320,11 @@ export default function MapDrawing({
         map.removeControl(drawControl as unknown as maplibregl.IControl);
         drawRef.current = null;
       };
-      (drawRef.current as MaplibreDraw & { cleanup?: () => void }).cleanup = cleanup;
+      (
+        drawRef.current as MaplibreDraw & {
+          cleanup?: () => void;
+        }
+      ).cleanup = cleanup;
     } else {
       try {
         map.setLayoutProperty('gl-draw-polygon-fill', 'visibility', 'none');
@@ -332,14 +338,23 @@ export default function MapDrawing({
         if (
           drawRef.current &&
           'hasControl' in map &&
-          typeof (map as MaplibreMap & { hasControl?: (control: maplibregl.IControl) => boolean })
-            .hasControl === 'function' &&
+          typeof (
+            map as MaplibreMap & {
+              hasControl?: (control: maplibregl.IControl) => boolean;
+            }
+          ).hasControl === 'function' &&
           (
-            map as MaplibreMap & { hasControl?: (control: maplibregl.IControl) => boolean }
+            map as MaplibreMap & {
+              hasControl?: (control: maplibregl.IControl) => boolean;
+            }
           ).hasControl(drawRef.current as unknown as maplibregl.IControl)
         ) {
           map.removeControl(drawRef.current as unknown as maplibregl.IControl);
-          const cleanupFn = (drawRef.current as MaplibreDraw & { cleanup?: () => void }).cleanup;
+          const cleanupFn = (
+            drawRef.current as MaplibreDraw & {
+              cleanup?: () => void;
+            }
+          ).cleanup;
           if (typeof cleanupFn === 'function') cleanupFn();
           drawRef.current = null;
         }
@@ -350,7 +365,11 @@ export default function MapDrawing({
 
     return () => {
       if (drawRef.current) {
-        const cleanupFn = (drawRef.current as MaplibreDraw & { cleanup?: () => void }).cleanup;
+        const cleanupFn = (
+          drawRef.current as MaplibreDraw & {
+            cleanup?: () => void;
+          }
+        ).cleanup;
         if (typeof cleanupFn === 'function') cleanupFn();
       }
     };
@@ -375,7 +394,9 @@ export default function MapDrawing({
     const drawnSource = map?.getSource('drawnFeatures') as maplibregl.GeoJSONSource | undefined;
     const all = (drawRef.current?.getAll()?.features as GeoJSON.Feature[]) || [];
     const features: GeoJSON.FeatureCollection = (
-      drawnSource as maplibregl.GeoJSONSource & { _data?: GeoJSON.FeatureCollection }
+      drawnSource as maplibregl.GeoJSONSource & {
+        _data?: GeoJSON.FeatureCollection;
+      }
     )?._data || { type: 'FeatureCollection', features: [] };
 
     all.forEach((f) => {
@@ -408,7 +429,9 @@ export default function MapDrawing({
             | undefined;
           if (drawnSource?.setData) {
             const existing: GeoJSON.FeatureCollection = (
-              drawnSource as maplibregl.GeoJSONSource & { _data?: GeoJSON.FeatureCollection }
+              drawnSource as maplibregl.GeoJSONSource & {
+                _data?: GeoJSON.FeatureCollection;
+              }
             )._data || { type: 'FeatureCollection', features: [] };
             existing.features.push(feature);
             drawnSource.setData(existing);
@@ -460,7 +483,9 @@ export default function MapDrawing({
             | undefined;
           if (drawnSource?.setData) {
             const existing: GeoJSON.FeatureCollection = (
-              drawnSource as maplibregl.GeoJSONSource & { _data?: GeoJSON.FeatureCollection }
+              drawnSource as maplibregl.GeoJSONSource & {
+                _data?: GeoJSON.FeatureCollection;
+              }
             )._data || { type: 'FeatureCollection', features: [] };
             existing.features.push(f);
             drawnSource.setData(existing);

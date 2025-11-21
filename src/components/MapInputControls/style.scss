@@ -55,27 +55,37 @@
 .map-input-parent {
   max-height: 100vh;
   overflow-y: scroll;
-}
 
-/* Remove border from entire accordion item */
-.map-input-parent .accordion-item {
-  border: none !important;
-}
+  .accordion-item {
+    border: none !important;
+  }
 
-.map-input-parent .accordion-body {
-  border-left: 1px solid lightgray;
-  margin-left: 28px;
-}
+  .accordion-body {
+    border-left: 1px solid lightgray;
+    margin-left: 2rem;
+    padding: 0;
+  }
 
-/* Remove border from the active accordion header */
-.map-input-parent .accordion-button {
-  //   border: none !important;
-  box-shadow: none !important; /* removes the focus shadow */
-}
+  .accordion-button {
+    box-shadow: none !important;
+  }
 
-/* Ensure the active state also has no border */
-.map-input-parent .accordion-button:not(.collapsed) {
-  //   border: none !important;
-  box-shadow: none !important;
-  background-color: white !important; /* optional: keep it white */
+  .accordion-button:not(.collapsed) {
+    box-shadow: none !important;
+    background-color: white !important;
+  }
+
+  .row {
+    margin-left: 1rem;
+    margin-right: 0;
+    margin-bottom: 10px;
+
+    label {
+      font-size: 13px;
+
+      &.without-number {
+        margin-left: 30px;
+      }
+    }
+  }
 }
