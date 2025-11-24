@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { ChakraProvider } from '@chakra-ui/react';
 
 import reportWebVitals from './reportWebVitals.tsx';
-import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
+import ErrorBoundary from './components/ErrorBoundary';
 import { BrowserRouter as Router } from 'react-router-dom';
 
 import { kartozaTheme } from './theme/Theme';
@@ -13,7 +13,7 @@ import AppRoutes from './routes.tsx';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles.scss';
 
-import { store } from './app/store';
+import { store } from './redux/store';
 import { Provider } from 'react-redux';
 
 Sentry.init({

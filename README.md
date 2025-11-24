@@ -96,7 +96,7 @@ rue-ui/
 │   │   ├── About/
 │   │   │   ├── About.tsx            # page implementation
 │   │   │   └── style.scss           # page-scoped styles
-│   │   ├── Home/                    # (reserved for Home page files)
+│   │   ├── Index/                    # (reserved for Index page files)
 │   ├── test/
 │   │   ├── render.tsx               # RTL render wrapper (Chakra + Router)
 │   │   └── setup.ts                 # Vitest setup (JSDOM config, mocks, etc.)

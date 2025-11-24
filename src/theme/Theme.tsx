@@ -1,4 +1,5 @@
 import { createSystem, defaultConfig } from '@chakra-ui/react';
+import { buttonRecipe } from './Button';
 
 // Type definitions for color tokens
 export type ColorShade = {
@@ -57,6 +58,9 @@ export const system = createSystem(defaultConfig, {
   theme: {
     tokens: {
       colors: COLORS,
+    },
+    recipes: {
+      button: buttonRecipe,
     },
   },
 });

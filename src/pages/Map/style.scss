@@ -4,13 +4,13 @@
 }
 
 .map-left-sidebar {
-  width: 25%;
+  width: 410px;
   border: lightgray 1px solid;
-}
 
-.map-left-sidebar {
-  width: 25%;
-  border: lightgray 1px solid;
+  .map-input-parent {
+    padding-left: 0;
+    padding-right: 0;
+  }
 }
 
 .map-container {
@@ -34,5 +34,39 @@
 }
 
 .map-right-sidebar {
-  width: 25%;
+  width: 410px;
+  transition: width 0.3s ease;
+  position: relative;
+
+  .left-toggle {
+    display: none;
+    position: absolute;
+    top: 8px;
+    left: 0;
+  }
+
+  .map-finance-section {
+    transition: margin-left 0.3s ease;
+  }
+
+  &.close {
+    width: 38px;
+
+    .left-toggle {
+      display: block;
+    }
+
+    .map-finance-section {
+      margin-left: 38px;
+    }
+  }
+
+  .svg-button {
+    font-size: 36px;
+    color: #1a1a1a;
+
+    &:hover {
+      opacity: 0.7;
+    }
+  }
 }

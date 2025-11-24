@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { FC } from 'react';
+
 // Import VITE_MAPBOX_TOKEN from environment
 const MAPBOX_TOKEN: string = import.meta.env.VITE_MAPBOX_TOKEN;
 

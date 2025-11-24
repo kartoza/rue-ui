@@ -28,43 +28,22 @@ code {
   }
 }
 
-.mt20 {
-  margin-top: 20px;
+.form-control {
+  &:focus {
+    box-shadow: none;
+  }
 }
 
-.mb10 {
-  margin-bottom: 10px;
+i {
+  font-style: italic;
 }
 
-.ml10 {
-  margin-left: 10px;
-}
+input:read-only {
+  cursor: default;
+  background-color: var(--bs-tertiary-bg);
 
-.ml20 {
-  margin-left: 20px;
-}
-
-.ml30 {
-  margin-left: 30px;
-}
-
-.txt-center {
-  text-align: center;
-}
-
-.font-label-sm {
-  font-size: 13px;
-}
-
-.mauto {
-  margin: auto !important;
-}
-
-.h-100 {
-  height: 100vh;
-}
-
-.h-40 {
-  height: 40vh;
-  overflow: scroll;
+  &:focus {
+    background-color: var(--bs-tertiary-bg);
+    border-color: inherit;
+  }
 }
