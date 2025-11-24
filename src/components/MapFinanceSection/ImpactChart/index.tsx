@@ -11,7 +11,7 @@ interface ChartData {
   value: number;
 }
 
-function Chart() {
+const Chart: React.FC = () => {
   const spider = useSpider();
   const [data, setData] = useState<ChartData[]>([]);
 
@@ -86,7 +86,7 @@ function Chart() {
     );
   }
   return <Radar {...config} />;
-}
+};
 
 export default function ImpactChart() {
   return (

@@ -1,9 +1,9 @@
-import React, { type FC } from 'react';
+import React from 'react';
 import { Box } from '@chakra-ui/react';
 import { financeClass, formatCurrency } from '../../../../utils/format.ts';
 import { useS2DB } from '../../../../redux/selectors/luckySheet.ts';
 
-const NeighborhoodScaleProforma: FC = () => {
+const NeighborhoodScaleProforma: React.FC = () => {
   const s2db = useS2DB();
 
   if (!s2db) {

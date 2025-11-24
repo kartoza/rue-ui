@@ -1,8 +1,8 @@
-import React, { type FC } from 'react';
+import React from 'react';
 import { useS6DB } from '../../../../redux/selectors/luckySheet.ts';
 import { Box } from '@chakra-ui/react';
 
-const DemographicForecast: FC = () => {
+const DemographicForecast: React.FC = () => {
   const s6db = useS6DB();
 
   if (!s6db) {

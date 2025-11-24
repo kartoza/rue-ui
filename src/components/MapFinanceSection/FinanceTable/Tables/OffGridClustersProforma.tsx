@@ -1,9 +1,9 @@
-import React, { type ChangeEvent, type FC, useState } from 'react';
+import React, { type ChangeEvent, useState } from 'react';
 import { useS3DB } from '../../../../redux/selectors/luckySheet.ts';
 import { Box } from '@chakra-ui/react';
 import { financeClass, formatCurrency } from '../../../../utils/format.ts';
 
-const OffGridClustersProforma: FC = () => {
+const OffGridClustersProforma: React.FC = () => {
   const s3db = useS3DB();
   const [selectedColumn, setSelectedColumn] = useState<string>('f');
 
