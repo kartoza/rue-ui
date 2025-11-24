@@ -6,9 +6,9 @@ import type { AppDispatch } from '../../redux/store.ts';
 import { useCurrentProject } from '../../redux/selectors/projectSelector.ts';
 import { getLuckySheet, SheetIndex } from './types.ts';
 import { setCells } from './setCells.tsx';
+import { updateLuckySheetReducer } from './updateLuckySheetReducer.tsx';
 
 import './style.scss';
-import { updateLuckySheetReducer } from './updateLuckySheetReducer.tsx';
 
 interface Props {
   open: boolean;
@@ -42,6 +42,7 @@ const LuckySheet = ({ open, setOpen }: Props) => {
         showsheetbar: true,
         showstatisticBar: false,
         allowEdit: true,
+        forceCalculation: true,
       });
       isSheetReadyRef.current = true;
     };
@@ -126,11 +127,12 @@ const LuckySheet = ({ open, setOpen }: Props) => {
       currentProject?.parameters
     );
 
-    // Update reducers
-    updateLuckySheetReducer(dispatch, luckysheet);
-
-    // Update default opened sheet
-    luckysheet.setSheetActive(SheetIndex.S1DB);
+    // Update reducers after formulas recalculate
+    setTimeout(() => {
+      updateLuckySheetReducer(dispatch, luckysheet);
+      // Update default opened sheet
+      luckysheet.setSheetActive(SheetIndex.S1DB);
+    }, 1000);
   }, [currentProject, dispatch]);
 
   return (

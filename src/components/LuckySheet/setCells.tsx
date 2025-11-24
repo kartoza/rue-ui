@@ -183,7 +183,7 @@ export function setCells(
   //AJ14, AJ15, AJ16
   luckySheet.setCellValue(13, 35, T.param_lot_art_fm / 100, { isRefresh: false });
   luckySheet.setCellValue(14, 35, T.param_lot_sec_fm / 100, { isRefresh: false });
-  luckySheet.setCellValue(15, 35, T.param_lot_loc_fm / 100, { isRefresh: false });
+  luckySheet.setCellValue(15, 35, T.param_lot_loc_fm / 100);
 
   //AO14, AP14, AQ14
   luckySheet.setCellValue(

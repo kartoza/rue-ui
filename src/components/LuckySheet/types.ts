@@ -44,6 +44,7 @@ export interface LuckySheetGlobal {
     }
   ) => unknown;
   refreshFormula: () => void;
+  refresh: () => void;
 }
 
 export const getLuckySheet = (): LuckySheetGlobal | undefined => {

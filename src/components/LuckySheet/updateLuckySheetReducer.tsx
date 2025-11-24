@@ -13,6 +13,11 @@ import type { S1DB, S2DB, S3DB, S4DB, S5DB, S6DB, Spider } from '../../redux/red
 
 export function updateLuckySheetReducer(dispatch: AppDispatch, luckySheet: LuckySheetGlobal) {
   if (!luckySheet) return;
+
+  luckySheet.setSheetActive(SheetIndex.Q);
+  luckySheet.refresh();
+  luckySheet.refreshFormula();
+
   // -------------------------
   // Update the lucky sheet
   // -------------------------
