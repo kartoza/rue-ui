@@ -1,6 +1,6 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
-import type { S1DB, S2DB, S3DB, S4DB, S5DB, S6DB } from './luckySheet';
+import type { S1DB, S2DB, S3DB, S4DB, S5DB, S6DB, Spider } from './luckySheet';
 
 export interface LuckySheetState {
   S1DB: S1DB | null;
@@ -9,6 +9,7 @@ export interface LuckySheetState {
   S4DB: S4DB | null;
   S5DB: S5DB | null;
   S6DB: S6DB | null;
+  Spider: Spider | null;
 }
 
 const initialState: LuckySheetState = {
@@ -18,6 +19,7 @@ const initialState: LuckySheetState = {
   S4DB: null,
   S5DB: null,
   S6DB: null,
+  Spider: null,
 };
 
 const luckySheetSlice = createSlice({
@@ -42,8 +44,12 @@ const luckySheetSlice = createSlice({
     setS6DB: (state, action: PayloadAction<S6DB>) => {
       state.S6DB = action.payload;
     },
+    setSpider: (state, action: PayloadAction<Spider>) => {
+      state.Spider = action.payload;
+    },
   },
 });
 
-export const { setS1DB, setS2DB, setS3DB, setS4DB, setS5DB, setS6DB } = luckySheetSlice.actions;
+export const { setS1DB, setS2DB, setS3DB, setS4DB, setS5DB, setS6DB, setSpider } =
+  luckySheetSlice.actions;
 export default luckySheetSlice.reducer;

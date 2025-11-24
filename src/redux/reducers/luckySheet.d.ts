@@ -190,3 +190,14 @@ export interface S6DB {
   b10: string;
   b11: string;
 }
+
+export interface Spider {
+  d5: string;
+  d7: string;
+  d10: string;
+  d12: string;
+  d13: string;
+  d14: string;
+  d16: string;
+  d17: string;
+}

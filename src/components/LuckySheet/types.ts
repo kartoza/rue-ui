@@ -25,7 +25,7 @@ interface LuckySheetOptions {
   forceCalculation?: boolean;
 }
 
-interface LuckySheetGlobal {
+export interface LuckySheetGlobal {
   create: (options: LuckySheetOptions) => void;
   destroy: () => void;
   setSheetActive: (index: number) => void;

@@ -2,7 +2,7 @@
 import type { Task } from './task.ts';
 import type { SerializedError } from '@reduxjs/toolkit';
 
-interface SiteResult {
+export interface SiteResult {
   site_area_total: number;
   site_roads_area: number;
 }
@@ -10,7 +10,7 @@ interface SiteResult {
 // 01-streets
 // 02-cluster
 // 04-subdivision
-interface StreetsResult {
+export interface StreetsResult {
   road_len_art_100: number | null;
   road_len_sec_100: number | null;
   road_len_loc_100: number | null;
@@ -98,7 +98,7 @@ interface PublicResult {
 }
 
 // 05-footprint
-interface FootprintResult {
+export interface FootprintResult {
   og_lot0_on_art_num: number | null;
   og_lot0_on_sec_num: number | null;
   og_lot0_on_loc_num: number | null;
