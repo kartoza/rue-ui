@@ -6,6 +6,7 @@ import DwellingsProformaAffordability from './Tables/DwellingsProformaAffordabil
 import OffGridClustersProforma from './Tables/OffGridClustersProforma.tsx';
 import NeighborhoodScaleProforma from './Tables/NeighborhoodScaleProforma';
 import StarterBuildingsProforma from './Tables/StarterBuildingsProforma';
+import { getLuckySheet, SheetIndex } from '../../LuckySheet/types.ts';
 
 import { LABELS, OptionType } from './type';
 
@@ -32,7 +33,31 @@ function FinanceTable() {
   };
 
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setSelectedOption(e.target.value as OptionType);
+    const value = e.target.value as OptionType;
+    setSelectedOption(value);
+
+    const luckysheet = getLuckySheet();
+    if (!luckysheet) return;
+    switch (value) {
+      case OptionType.CityScaleProforma:
+        luckysheet.setSheetActive(SheetIndex.S1DB);
+        break;
+      case OptionType.NeighborhoodScaleProforma:
+        luckysheet.setSheetActive(SheetIndex.S2DB);
+        break;
+      case OptionType.OffGridClustersProforma:
+        luckysheet.setSheetActive(SheetIndex.S3DB);
+        break;
+      case OptionType.StarterBuildingsProforma:
+        luckysheet.setSheetActive(SheetIndex.S4DB);
+        break;
+      case OptionType.DwellingsProformaAffordability:
+        luckysheet.setSheetActive(SheetIndex.S5DB);
+        break;
+      case OptionType.DemographicForecast:
+        luckysheet.setSheetActive(SheetIndex.S6DB);
+        break;
+    }
   };
 
   return (

@@ -1,56 +1,21 @@
 import { useEffect, useRef } from 'react';
+import { useDispatch } from 'react-redux';
 import LuckyExcel from 'luckyexcel';
 import { MdChevronRight } from 'react-icons/md';
+import type { AppDispatch } from '../../redux/store.ts';
 import { useCurrentProject } from '../../redux/selectors/projectSelector.ts';
-import type { S1DB, S2DB, S6DB } from '../../redux/reducers/luckySheet';
-import { setS1DB, setS2DB, setS6DB } from '../../redux/reducers/luckySheetSlice';
+import type { S1DB, S2DB, S3DB, S4DB, S5DB, S6DB } from '../../redux/reducers/luckySheet';
+import {
+  setS1DB,
+  setS2DB,
+  setS3DB,
+  setS4DB,
+  setS5DB,
+  setS6DB,
+} from '../../redux/reducers/luckySheetSlice';
+import { getLuckySheet, SheetIndex } from './types.ts';
 
 import './style.scss';
-import { useDispatch } from 'react-redux';
-import type { AppDispatch } from '../../redux/store.ts';
-
-const QSheetIndex = 1;
-
-interface LuckySheetOptions {
-  container: string;
-  title?: string;
-  lang?: string;
-  data?: unknown[];
-  showtoolbar?: boolean;
-  showinfobar?: boolean;
-  showsheetbar?: boolean;
-  showstatisticBar?: boolean;
-  sheetBottomConfig?: boolean;
-  allowEdit?: boolean;
-  enableAddRow?: boolean;
-  enableAddBackTop?: boolean;
-  showConfigWindowResize?: boolean;
-  forceCalculation?: boolean;
-}
-
-interface LuckySheetGlobal {
-  create: (options: LuckySheetOptions) => void;
-  destroy: () => void;
-  setSheetActive: (index: number) => void;
-  setCellValue: (
-    row: number,
-    col: number,
-    value: unknown,
-    options?: { isRefresh?: boolean }
-  ) => void;
-  getCellValue: (
-    row: number,
-    col: number,
-    options?: {
-      type?: 'v' | 'm' | 'f';
-    }
-  ) => unknown;
-  refreshFormula: () => void;
-}
-
-const getLuckySheet = (): LuckySheetGlobal | undefined => {
-  return (window as unknown as { luckysheet?: LuckySheetGlobal }).luckysheet;
-};
 
 interface Props {
   open: boolean;
@@ -159,7 +124,7 @@ const LuckySheet = ({ open, setOpen }: Props) => {
     const T = currentProject?.steps?.footprint?.step?.result;
     const parameters = currentProject?.parameters;
     if (!C || !N || !T || !parameters) return;
-    luckysheet.setSheetActive(QSheetIndex);
+    luckysheet.setSheetActive(SheetIndex.Q);
     luckysheet.setCellValue(52, 1, C.site_roads_area / 10000, { isRefresh: false });
     luckysheet.setCellValue(63, 1, C.site_area_total, { isRefresh: false });
 
@@ -629,8 +594,8 @@ const LuckySheet = ({ open, setOpen }: Props) => {
     // -------------------------
     // Update the lucky sheet
     // -------------------------
-    // 1db (0-indexed: row 4 = index 3, col A = 0, col B = 1)
-    luckysheet.setSheetActive(QSheetIndex + 1);
+    // Update s1db
+    luckysheet.setSheetActive(SheetIndex.S1DB);
     const s1db: S1DB = {
       b4: luckysheet.getCellValue(3, 1) as number,
       b5: luckysheet.getCellValue(4, 1) as number,
@@ -651,7 +616,8 @@ const LuckySheet = ({ open, setOpen }: Props) => {
     };
     dispatch(setS1DB(s1db));
 
-    luckysheet.setSheetActive(QSheetIndex + 2);
+    // Update s2db
+    luckysheet.setSheetActive(SheetIndex.S2DB);
     const s2db: S2DB = {
       b4: luckysheet.getCellValue(3, 1) as number,
       b5: luckysheet.getCellValue(4, 1) as number,
@@ -671,7 +637,161 @@ const LuckySheet = ({ open, setOpen }: Props) => {
     };
     dispatch(setS2DB(s2db));
 
-    luckysheet.setSheetActive(QSheetIndex + 6);
+    // Update s3db
+    luckysheet.setSheetActive(SheetIndex.S3DB);
+    const s3db: S3DB = {
+      //arteries
+      b4: luckysheet.getCellValue(3, 1) as number,
+      b6: luckysheet.getCellValue(5, 1) as number,
+      b7: luckysheet.getCellValue(6, 1) as number,
+      b8: luckysheet.getCellValue(7, 1) as number,
+      b9: luckysheet.getCellValue(8, 1) as number,
+      b10: luckysheet.getCellValue(9, 1) as number,
+      b11: luckysheet.getCellValue(10, 1) as number,
+      b13: luckysheet.getCellValue(12, 1) as number,
+      b14: luckysheet.getCellValue(13, 1) as number,
+      b17: luckysheet.getCellValue(16, 1) as number,
+      b19: luckysheet.getCellValue(18, 1) as number,
+      b20: luckysheet.getCellValue(19, 1) as number,
+      b21: luckysheet.getCellValue(20, 1) as number,
+      b22: luckysheet.getCellValue(21, 1) as number,
+      b23: luckysheet.getCellValue(22, 1) as number,
+      b24: luckysheet.getCellValue(23, 1) as number,
+      b26: luckysheet.getCellValue(25, 1) as number,
+      b27: luckysheet.getCellValue(26, 1) as number,
+      //secondaries
+      c4: luckysheet.getCellValue(3, 2) as number,
+      c6: luckysheet.getCellValue(5, 2) as number,
+      c7: luckysheet.getCellValue(6, 2) as number,
+      c8: luckysheet.getCellValue(7, 2) as number,
+      c9: luckysheet.getCellValue(8, 2) as number,
+      c10: luckysheet.getCellValue(9, 2) as number,
+      c11: luckysheet.getCellValue(10, 2) as number,
+      c13: luckysheet.getCellValue(12, 2) as number,
+      c14: luckysheet.getCellValue(13, 2) as number,
+      c17: luckysheet.getCellValue(16, 2) as number,
+      c19: luckysheet.getCellValue(18, 2) as number,
+      c20: luckysheet.getCellValue(19, 2) as number,
+      c21: luckysheet.getCellValue(20, 2) as number,
+      c22: luckysheet.getCellValue(21, 2) as number,
+      c23: luckysheet.getCellValue(22, 2) as number,
+      c24: luckysheet.getCellValue(23, 2) as number,
+      c26: luckysheet.getCellValue(25, 2) as number,
+      c27: luckysheet.getCellValue(26, 2) as number,
+      //locals single
+      d4: luckysheet.getCellValue(3, 3) as number,
+      d6: luckysheet.getCellValue(5, 3) as number,
+      d7: luckysheet.getCellValue(6, 3) as number,
+      d8: luckysheet.getCellValue(7, 3) as number,
+      d9: luckysheet.getCellValue(8, 3) as number,
+      d10: luckysheet.getCellValue(9, 3) as number,
+      d11: luckysheet.getCellValue(10, 3) as number,
+      d13: luckysheet.getCellValue(12, 3) as number,
+      d14: luckysheet.getCellValue(13, 3) as number,
+      d17: luckysheet.getCellValue(16, 3) as number,
+      d19: luckysheet.getCellValue(18, 3) as number,
+      d20: luckysheet.getCellValue(19, 3) as number,
+      d21: luckysheet.getCellValue(20, 3) as number,
+      d22: luckysheet.getCellValue(21, 3) as number,
+      d23: luckysheet.getCellValue(22, 3) as number,
+      d24: luckysheet.getCellValue(23, 3) as number,
+      d26: luckysheet.getCellValue(25, 3) as number,
+      d27: luckysheet.getCellValue(26, 3) as number,
+      //locals multiple
+      e4: luckysheet.getCellValue(3, 4) as number,
+      e6: luckysheet.getCellValue(5, 4) as number,
+      e7: luckysheet.getCellValue(6, 4) as number,
+      e8: luckysheet.getCellValue(7, 4) as number,
+      e9: luckysheet.getCellValue(8, 4) as number,
+      e10: luckysheet.getCellValue(9, 4) as number,
+      e11: luckysheet.getCellValue(10, 4) as number,
+      e13: luckysheet.getCellValue(12, 4) as number,
+      e14: luckysheet.getCellValue(13, 4) as number,
+      e17: luckysheet.getCellValue(16, 4) as number,
+      e19: luckysheet.getCellValue(18, 4) as number,
+      e20: luckysheet.getCellValue(19, 4) as number,
+      e21: luckysheet.getCellValue(20, 4) as number,
+      e22: luckysheet.getCellValue(21, 4) as number,
+      e23: luckysheet.getCellValue(22, 4) as number,
+      e24: luckysheet.getCellValue(23, 4) as number,
+      e26: luckysheet.getCellValue(25, 4) as number,
+      e27: luckysheet.getCellValue(26, 4) as number,
+      //total
+      f4: luckysheet.getCellValue(3, 5) as number,
+      f6: luckysheet.getCellValue(5, 5) as number,
+      f7: luckysheet.getCellValue(6, 5) as number,
+      f8: luckysheet.getCellValue(7, 5) as number,
+      f9: luckysheet.getCellValue(8, 5) as number,
+      f10: luckysheet.getCellValue(9, 5) as number,
+      f11: luckysheet.getCellValue(10, 5) as number,
+      f13: luckysheet.getCellValue(12, 5) as number,
+      f14: luckysheet.getCellValue(13, 5) as number,
+      f17: luckysheet.getCellValue(16, 5) as number,
+      f19: luckysheet.getCellValue(18, 5) as number,
+      f20: luckysheet.getCellValue(19, 5) as number,
+      f21: luckysheet.getCellValue(20, 5) as number,
+      f22: luckysheet.getCellValue(21, 5) as number,
+      f23: luckysheet.getCellValue(22, 5) as number,
+      f24: luckysheet.getCellValue(23, 5) as number,
+      f26: luckysheet.getCellValue(25, 5) as number,
+      f27: luckysheet.getCellValue(26, 5) as number,
+    };
+    dispatch(setS3DB(s3db));
+
+    // Update s4db
+    luckysheet.setSheetActive(SheetIndex.S4DB);
+    const s4db: S4DB = {
+      s3: luckysheet.getCellValue(2, 18) as number,
+      s5: luckysheet.getCellValue(4, 18) as number,
+      s6: luckysheet.getCellValue(5, 18) as number,
+      s7: luckysheet.getCellValue(6, 18) as number,
+      s8: luckysheet.getCellValue(7, 18) as number,
+      s9: luckysheet.getCellValue(8, 18) as number,
+      s10: luckysheet.getCellValue(9, 18) as number,
+      s11: luckysheet.getCellValue(10, 18) as number,
+      s13: luckysheet.getCellValue(12, 18) as number,
+      s15: luckysheet.getCellValue(14, 18) as number,
+      s16: luckysheet.getCellValue(15, 18) as number,
+      s17: luckysheet.getCellValue(16, 18) as number,
+      s18: luckysheet.getCellValue(17, 18) as number,
+      s19: luckysheet.getCellValue(18, 18) as number,
+      s20: luckysheet.getCellValue(19, 18) as number,
+      s21: luckysheet.getCellValue(20, 18) as number,
+      s22: luckysheet.getCellValue(21, 18) as number,
+      s23: luckysheet.getCellValue(22, 18) as number,
+    };
+    dispatch(setS4DB(s4db));
+
+    // Update s5db
+    luckysheet.setSheetActive(SheetIndex.S5DB);
+    const s5db: S5DB = {
+      s4: luckysheet.getCellValue(3, 18) as number,
+      s5: luckysheet.getCellValue(4, 18) as number,
+      s7: luckysheet.getCellValue(6, 18) as number,
+      u7: luckysheet.getCellValue(6, 20) as number,
+      s9: luckysheet.getCellValue(8, 18) as number,
+      u9: luckysheet.getCellValue(8, 20) as number,
+      s10: luckysheet.getCellValue(9, 18) as number,
+      u10: luckysheet.getCellValue(9, 20) as number,
+      s11: luckysheet.getCellValue(10, 18) as number,
+      u11: luckysheet.getCellValue(10, 20) as number,
+      s12: luckysheet.getCellValue(11, 18) as number,
+      u12: luckysheet.getCellValue(11, 20) as number,
+      s15: luckysheet.getCellValue(14, 18) as number,
+      u15: luckysheet.getCellValue(14, 20) as number,
+      s16: luckysheet.getCellValue(15, 18) as number,
+      u16: luckysheet.getCellValue(15, 20) as number,
+      s17: luckysheet.getCellValue(16, 18) as number,
+      u17: luckysheet.getCellValue(16, 20) as number,
+      s18: luckysheet.getCellValue(17, 18) as number,
+      u18: luckysheet.getCellValue(17, 20) as number,
+      s20: luckysheet.getCellValue(19, 18) as number,
+      s21: luckysheet.getCellValue(20, 18) as number,
+    };
+    dispatch(setS5DB(s5db));
+
+    // Update s6db
+    luckysheet.setSheetActive(SheetIndex.S6DB);
     const s6DB: S6DB = {
       b3: luckysheet.getCellValue(2, 1, { type: 'm' }) as string,
       b4: luckysheet.getCellValue(3, 1, { type: 'm' }) as string,
@@ -684,7 +804,7 @@ const LuckySheet = ({ open, setOpen }: Props) => {
     };
     dispatch(setS6DB(s6DB));
 
-    luckysheet.setSheetActive(QSheetIndex + 1);
+    luckysheet.setSheetActive(SheetIndex.Q);
   }, [currentProject, dispatch]);
 
   return (

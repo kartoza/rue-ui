@@ -40,14 +40,14 @@
       border-color: #eee;
     }
 
+    th {
+      background-color: rgb(242, 242, 242);
+      font-weight: normal;
+    }
+
     thead {
       tr {
         border-top: unset;
-      }
-
-      th {
-        background-color: rgb(242, 242, 242);
-        font-weight: normal;
       }
     }
 
