@@ -10,7 +10,7 @@ const StarterBuildingsProforma: React.FC = () => {
     return <Box className="NoData">No Data</Box>;
   }
   return (
-    <>
+    <div className="table-container">
       <table className="table table-bordered">
         <tbody>
           <tr>
@@ -95,7 +95,7 @@ const StarterBuildingsProforma: React.FC = () => {
           </tr>
         </tbody>
       </table>
-    </>
+    </div>
   );
 };
 

@@ -1,4 +1,4 @@
-import { Accordion, Col, Container, Row } from 'react-bootstrap';
+import { Accordion } from 'react-bootstrap';
 import { Radar } from '@ant-design/charts';
 import { useEffect, useState } from 'react';
 
@@ -37,6 +37,7 @@ export default function ImpactChart() {
 
   const config = {
     height: 250,
+    width: 410,
     data: dummyData,
     xField: 'item',
     yField: 'value',
@@ -55,13 +56,9 @@ export default function ImpactChart() {
       <Accordion.Item eventKey="0">
         <Accordion.Header>Impact</Accordion.Header>
         <Accordion.Body>
-          <Container fluid className="mt-3">
-            <Row>
-              <Col>
-                <Radar {...config} />
-              </Col>
-            </Row>
-          </Container>
+          <div style={{ width: '100%', height: 250 }}>
+            <Radar {...config} />
+          </div>
         </Accordion.Body>
       </Accordion.Item>
     </Accordion>

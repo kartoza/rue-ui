@@ -9,7 +9,7 @@ const DemographicForecast: FC = () => {
     return <Box className="NoData">No Data</Box>;
   }
   return (
-    <>
+    <div className="table-container">
       <table className="table table-bordered">
         <thead>
           <tr>
@@ -55,7 +55,7 @@ const DemographicForecast: FC = () => {
           </tr>
         </tbody>
       </table>
-    </>
+    </div>
   );
 };
 

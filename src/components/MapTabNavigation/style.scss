@@ -1,3 +1,7 @@
+.map-container-navbar {
+  padding-right: 2rem;
+}
+
 .map-task-tabs-list {
   border-bottom: 1px solid #e2e8f0;
   display: flex;
@@ -40,6 +44,10 @@
     height: 2px;
     background-color: #3182ce;
     transition: width 0.3s ease;
+  }
+
+  &:last-child::before {
+    display: none;
   }
 
   &[data-selected] {
