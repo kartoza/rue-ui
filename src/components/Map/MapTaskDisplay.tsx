@@ -11,10 +11,10 @@ import {
   useCurrentProjectStep,
   useCurrentProjectUUID,
 } from '../../redux/selectors/projectSelector';
+import { removeLayer, removeSource } from '../../utils/maplibre.tsx';
 
 import './style.scss';
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
-import { removeLayer, removeSource } from '../../utils/maplibre.tsx';
 
 const GLTF_ID: string = '3d-model';
 const GEOJSON_ID: string = 'geojson-comparison';
@@ -47,13 +47,12 @@ export default function MapTaskDisplay({
     // Load files
     const file = currentStepState?.step?.file;
     if (file) {
-      createCustomLayerFromGeoJSON(file.replace('geojson', 'gltf'), file);
+      createCustomLayerFromGeoJSON(file, file.replace('gltf', 'geojson'));
     }
   }, [map, currentStepState]);
 
   async function createCustomLayerFromGeoJSON(modelUrl: string, geojsonUrl: string) {
     if (!map) return;
-
     const response = await fetch(geojsonUrl);
     const geojson = await response.json();
 

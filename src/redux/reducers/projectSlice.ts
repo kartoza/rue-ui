@@ -68,12 +68,12 @@ export const getStepStatus = createAsyncThunk(
     if (!API_URL) {
       const index = Object.keys(STEP_LABELS).indexOf(step);
       const result = await import(
-        `../../assets/dummy-data/${String(index).padStart(2, '0')}-${step}/outputs/data.json`
+        `../../assets/dummy-data/${String(index).padStart(2, '0')}-${step}/outputs/result.json`
       );
       return {
         file:
           location.origin +
-          `/src/assets/dummy-data/${String(index).padStart(2, '0')}-${step}/outputs/${step}.geojson`,
+          `/src/assets/dummy-data/${String(index).padStart(2, '0')}-${step}/outputs/${step}.gltf`,
         task: {
           task_id: '00000000-0000-0000-0000-000000000000',
           status: TaskStatus.success,

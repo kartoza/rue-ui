@@ -1,7 +1,7 @@
 import { Col, Container, Row } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import Accordion from 'react-bootstrap/Accordion';
-import { Button } from '@chakra-ui/react';
+import { Button, Spinner } from '@chakra-ui/react';
 import { useState } from 'react';
 import type { ProjectParameters } from '../../redux/reducers/project';
 import type { AppDispatch, RootState } from '../../redux/store';
@@ -17,10 +17,12 @@ import projectParametersDefault from './general_input.json';
 import './style.scss';
 import NeighbourhoodPublicScapeOpenSpace from './Results/NeighbourhoodPublicScapeOpenSpace.tsx';
 import NeighbourhoodPublicScapeAmenities from './Results/NeighbourhoodPublicScapeAmenities.tsx';
+import { useCurrentProjectDone } from '../../redux/selectors/projectSelector.ts';
 
 export default function MapInputControls() {
   const dispatch = useDispatch<AppDispatch>();
   const [activeKeys, setActiveKeys] = useState<string[]>(['0', '0-0']);
+  const isProjectDone = useCurrentProjectDone();
 
   // City - Site Definition
   const siteDefinition = useSelector((state: RootState) => state.definition.selectedDefinition);
@@ -2921,8 +2923,9 @@ export default function MapInputControls() {
             textAlign: 'center',
             width: '100%',
           }}
+          disabled={!isProjectDone}
         >
-          Apply
+          Apply {!isProjectDone && <Spinner />}
         </Button>
       </div>
     </Container>
