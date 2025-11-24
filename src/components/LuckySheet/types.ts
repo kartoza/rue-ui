@@ -6,6 +6,7 @@ export const SheetIndex = {
   S4DB: 5,
   S5DB: 6,
   S6DB: 7,
+  Spider: 8,
 };
 
 interface LuckySheetOptions {

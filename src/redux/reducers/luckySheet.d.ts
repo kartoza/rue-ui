@@ -192,12 +192,12 @@ export interface S6DB {
 }
 
 export interface Spider {
-  d5: string;
-  d7: string;
-  d10: string;
-  d12: string;
-  d13: string;
-  d14: string;
-  d16: string;
-  d17: string;
+  d5: number;
+  d7: number;
+  d10: number;
+  d12: number;
+  d13: number;
+  d14: number;
+  d16: number;
+  d17: number;
 }

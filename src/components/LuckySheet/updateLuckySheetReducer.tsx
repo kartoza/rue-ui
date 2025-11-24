@@ -7,8 +7,9 @@ import {
   setS4DB,
   setS5DB,
   setS6DB,
+  setSpider,
 } from '../../redux/reducers/luckySheetSlice.ts';
-import type { S1DB, S2DB, S3DB, S4DB, S5DB, S6DB } from '../../redux/reducers/luckySheet';
+import type { S1DB, S2DB, S3DB, S4DB, S5DB, S6DB, Spider } from '../../redux/reducers/luckySheet';
 
 export function updateLuckySheetReducer(dispatch: AppDispatch, luckySheet: LuckySheetGlobal) {
   if (!luckySheet) return;
@@ -224,4 +225,18 @@ export function updateLuckySheetReducer(dispatch: AppDispatch, luckySheet: Lucky
     b11: luckySheet.getCellValue(10, 1, { type: 'm' }) as string,
   };
   dispatch(setS6DB(s6DB));
+
+  // Update s6db
+  luckySheet.setSheetActive(SheetIndex.Spider);
+  const spider: Spider = {
+    d5: luckySheet.getCellValue(4, 3) as number,
+    d7: luckySheet.getCellValue(6, 3) as number,
+    d10: luckySheet.getCellValue(9, 3) as number,
+    d12: luckySheet.getCellValue(11, 3) as number,
+    d13: luckySheet.getCellValue(12, 3) as number,
+    d14: luckySheet.getCellValue(13, 3) as number,
+    d16: luckySheet.getCellValue(15, 3) as number,
+    d17: luckySheet.getCellValue(16, 3) as number,
+  };
+  dispatch(setSpider(spider));
 }

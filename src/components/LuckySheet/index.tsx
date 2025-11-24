@@ -130,7 +130,7 @@ const LuckySheet = ({ open, setOpen }: Props) => {
     updateLuckySheetReducer(dispatch, luckysheet);
 
     // Update default opened sheet
-    luckysheet.setSheetActive(SheetIndex.Q);
+    luckysheet.setSheetActive(SheetIndex.S1DB);
   }, [currentProject, dispatch]);
 
   return (
