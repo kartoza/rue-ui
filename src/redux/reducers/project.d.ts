@@ -9,6 +9,7 @@ import type {
   StepStreetState,
   StepSubdivisionState,
 } from './step';
+import type { FeatureCollection, LineString, Polygon } from 'geojson';
 
 // -------------------------
 // For payload
@@ -173,6 +174,8 @@ interface ProjectPayload {
   name: string;
   description: string;
   parameters: ProjectParameters;
+  site: FeatureCollection<Polygon> | null;
+  roads: FeatureCollection<LineString> | null;
 }
 
 interface Project {

@@ -16,7 +16,7 @@ const initialState: ProjectState = {
 // Async thunk for project
 export const createProject = createAsyncThunk(
   'project/create',
-  async (parameters: ProjectPayload, thunkAPI) => {
+  async (payload: ProjectPayload, thunkAPI) => {
     // -----------------------------
     // FOR DEMO
     // -----------------------------
@@ -26,19 +26,19 @@ export const createProject = createAsyncThunk(
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return {
         uuid: '00000000-0000-0000-0000-000000000000',
-        name: parameters.name,
-        parameters: parameters.parameters,
+        name: payload.name,
+        parameters: payload.parameters,
       };
     }
     // -----------------------------
     const token = localStorage.getItem('token');
     try {
-      const response = await axios.post(API_URL + 'projects', parameters, {
+      const response = await axios.post(API_URL + 'projects', payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return {
         ...response.data,
-        parameters: parameters.parameters,
+        parameters: payload.parameters,
       };
     } catch (error) {
       let errorMessage = 'Unknown error';
