@@ -51,7 +51,7 @@ export default function ProjectControl() {
         }
       }
     }
-  }, [currentProjectState.loading, currentProject?.uuid, step]);
+  }, [currentProjectState.loading, currentProject?.uuid, firstUndefinedStep, step]);
 
   return null;
 }

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import maplibregl, { Map } from 'maplibre-gl';
+import { useDispatch } from 'react-redux';
 import * as THREE from 'three';
 import { Vector3 } from 'three';
 import turf from 'turf';
@@ -14,7 +15,11 @@ import { useCurrentStep } from '../../redux/selectors/stepSelector.ts';
 import { hasLayer, removeLayer, removeSource } from '../../utils/maplibre.tsx';
 import { StepType } from '../../redux/reducers/stepSlice.ts';
 import MapStepLayerEditor from './MapStepLayerEditor.tsx';
-import { Box, Button } from '@chakra-ui/react';
+import { Box, Button, Spinner } from '@chakra-ui/react';
+import { useCurrentStepUpdate } from '../../redux/selectors/stepUpdateSelector.ts';
+import { updateStep } from '../../redux/reducers/stepUpdateSlice.ts';
+import type { AppDispatch } from '../../redux/store.ts';
+import { resetStepAfter } from '../../redux/reducers/projectSlice.ts';
 
 import './style.scss';
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
@@ -28,13 +33,16 @@ const GEOJSON_ID_LINE: string = 'task-layer-line';
 let globalCurrentStep: string = '';
 
 export default function MapStepLayer({ map }: { map: Map | null }) {
+  const dispatch = useDispatch<AppDispatch>();
   const currentStep = useCurrentStep();
   const currentStepState = useCurrentProjectStep(currentStep);
   const currentUUID = useCurrentProjectUUID();
+  const currentStepUpdate = useCurrentStepUpdate();
 
   const [isInit, setIsInit] = useState<boolean>(true);
   const [geojson, setGeojson] = useState<FeatureCollection | null>(null);
   const [isUpdated, setIsUpdated] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
 
   const style = () => {
     switch (currentStep) {
@@ -154,6 +162,14 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
       );
     }
   }, [map, geojson]);
+
+  /** Check current step update status */
+  useEffect(() => {
+    if (currentStepUpdate.lastRequest) {
+      dispatch(resetStepAfter(currentStep));
+      doInit();
+    }
+  }, [currentStepUpdate.lastRequest]);
 
   /** Add click handler to show feature properties */
   useEffect(() => {
@@ -338,15 +354,25 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
   }
 
   // Apply the form
-  const apply = () => {};
+  const apply = () => {
+    if (!currentUUID) return;
+    if (!geojson) return;
+    dispatch(
+      updateStep({
+        uuid: currentUUID,
+        step: currentStep,
+        geojson: geojson,
+      })
+    );
+  };
 
   return (
     <Box position="absolute" top="10px" right="10px" zIndex={1} display="flex" gap="1rem">
-      {isUpdated && (
+      {isUpdated && !isEditing && (
         <Box bg="white" borderRadius="md" boxShadow="md" p={2} zIndex={1}>
           {/* @ts-expect-error: A custom variant */}
           <Button variant="primary" size="sm" onClick={apply} flex={1}>
-            Apply
+            Apply {currentStepUpdate.loading && <Spinner />}
           </Button>
         </Box>
       )}
@@ -357,6 +383,8 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
           setIsUpdated(true);
           setGeojson(geojson);
         }}
+        isEditing={isEditing}
+        setIsEditing={setIsEditing}
       />
     </Box>
   );

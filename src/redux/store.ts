@@ -5,12 +5,14 @@ import luckySheetReducer from './reducers/luckySheetSlice';
 import siteDefinitionReducer from './reducers/definitionSlice';
 import projectReducer from './reducers/projectSlice';
 import stepReducer from './reducers/stepSlice';
+import stepUpdateReducer from './reducers/stepUpdateSlice';
 
 export const store = configureStore({
   reducer: {
     global: globalReducer,
     auth: authReducer,
     step: stepReducer,
+    stepUpdate: stepUpdateReducer,
     definition: siteDefinitionReducer,
     project: projectReducer,
     luckySheet: luckySheetReducer,

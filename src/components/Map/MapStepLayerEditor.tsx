@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { Map } from 'maplibre-gl';
 import maplibregl from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
@@ -9,15 +9,22 @@ interface MapStepLayerEditorProps {
   map: Map | null;
   geojson: FeatureCollection | null;
   setGeojson: (updatedGeojson: FeatureCollection) => void;
+  isEditing: boolean;
+  setIsEditing: (isEditing: boolean) => void;
 }
 
 /**
  * Editor component for the GEOJSON_ID_FILL layer in MapStepLayer
  * Provides click-to-edit functionality with save/cancel controls
  */
-export default function MapStepLayerEditor({ map, geojson, setGeojson }: MapStepLayerEditorProps) {
+export default function MapStepLayerEditor({
+  map,
+  geojson,
+  setGeojson,
+  isEditing,
+  setIsEditing,
+}: MapStepLayerEditorProps) {
   const drawRef = useRef<MaplibreDraw | null>(null);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
 
   /** Initialize MaplibreDraw control */
   useEffect(() => {

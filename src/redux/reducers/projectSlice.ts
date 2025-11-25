@@ -1,4 +1,4 @@
-import type { SerializedError } from '@reduxjs/toolkit';
+import type { PayloadAction, SerializedError } from '@reduxjs/toolkit';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { STEP_LABELS, type StepType } from './stepSlice';
@@ -52,7 +52,7 @@ export const createProject = createAsyncThunk(
 );
 // Async thunk for project
 export const getStepStatus = createAsyncThunk(
-  'project/get',
+  'project/step/get',
   async (
     {
       uuid,
@@ -104,7 +104,22 @@ export const getStepStatus = createAsyncThunk(
 const projectSlice = createSlice({
   name: 'project',
   initialState,
-  reducers: {},
+  reducers: {
+    resetStepAfter: (state: ProjectState, action: PayloadAction<StepType>) => {
+      if (!state.project) return;
+
+      const stepKeys = Object.keys(STEP_LABELS) as StepType[];
+      const currentStepIndex = stepKeys.indexOf(action.payload);
+
+      // Get all steps after the current step
+      const stepsToReset = stepKeys.slice(currentStepIndex + 1);
+
+      // Delete those steps from the project
+      stepsToReset.forEach((step) => {
+        delete state.project!.steps[step];
+      });
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(createProject.pending, (state) => {
@@ -153,4 +168,5 @@ const projectSlice = createSlice({
   },
 });
 
+export const { resetStepAfter } = projectSlice.actions;
 export default projectSlice.reducer;

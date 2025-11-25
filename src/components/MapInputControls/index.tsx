@@ -21,6 +21,7 @@ import {
 } from '../../redux/selectors/projectSelector.ts';
 import DummySite from './SiteDefinitionInput/DummySite.tsx';
 import LoadSite from './SiteDefinitionInput/LoadSite.tsx';
+import { useCurrentStepUpdateLoading } from '../../redux/selectors/stepUpdateSelector.ts';
 
 import projectParametersDefault from './general_input.json';
 
@@ -30,6 +31,7 @@ export default function MapInputControls() {
   const dispatch = useDispatch<AppDispatch>();
   const isProjectDone = useCurrentProjectDone();
   const currentProject = useCurrentProjectState();
+  const currentStepUpdateLoading = useCurrentStepUpdateLoading();
 
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [activeKeys, setActiveKeys] = useState<string[]>(['0', '0-0']);
@@ -64,7 +66,9 @@ export default function MapInputControls() {
 
   // When project done, make submitted false
   useEffect(() => {
-    setSubmitted(false);
+    if (isProjectDone) {
+      setSubmitted(false);
+    }
   }, [isProjectDone]);
 
   // When project done, make submitted false
@@ -2789,9 +2793,9 @@ export default function MapInputControls() {
             textAlign: 'center',
             width: '100%',
           }}
-          disabled={!!errors.length || submitted}
+          disabled={!!errors.length || !isProjectDone || submitted || currentStepUpdateLoading}
         >
-          Apply {submitted && <Spinner />}
+          Apply {(submitted || currentStepUpdateLoading || !isProjectDone) && <Spinner />}
         </Button>
       </div>
       {!!errors.length && (
