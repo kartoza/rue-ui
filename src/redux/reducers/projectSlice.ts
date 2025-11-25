@@ -68,8 +68,8 @@ export const getStepStatus = createAsyncThunk(
     // -----------------------------
     if (!API_URL) {
       const index = Object.keys(STEP_LABELS).indexOf(step);
-      const result = await import(
-        `../../assets/dummy-data/${String(index).padStart(2, '0')}-${step}/outputs/result.json`
+      const result = await fetch(
+        `/src/assets/dummy-data/${String(index).padStart(2, '0')}-${step}/outputs/result.json`
       );
       return {
         file:
@@ -80,7 +80,7 @@ export const getStepStatus = createAsyncThunk(
           status: TaskStatus.success,
           message: '',
         },
-        result: result.default,
+        result: await result.json(),
       };
     }
     // -----------------------------

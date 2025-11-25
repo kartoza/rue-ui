@@ -5,7 +5,6 @@ import * as THREE from 'three';
 import { Vector3 } from 'three';
 import turf from 'turf';
 import type { FeatureCollection } from 'geojson';
-
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import {
   useCurrentProjectStep,
@@ -14,10 +13,13 @@ import {
 import { useCurrentStep } from '../../redux/selectors/stepSelector.ts';
 import { hasLayer, removeLayer, removeSource } from '../../utils/maplibre.tsx';
 import { StepType } from '../../redux/reducers/stepSlice.ts';
+import MapStepLayerEditor from './MapStepLayerEditor.tsx';
+import { Box, Button } from '@chakra-ui/react';
 
 import './style.scss';
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 
+const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 const GLTF_ID: string = '3d-model';
 const GEOJSON_ID: string = 'task-layer';
 const GEOJSON_ID_FILL: string = 'task-layer-fill';
@@ -32,6 +34,7 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
 
   const [isInit, setIsInit] = useState<boolean>(true);
   const [geojson, setGeojson] = useState<FeatureCollection | null>(null);
+  const [isUpdated, setIsUpdated] = useState<boolean>(false);
 
   const style = () => {
     switch (currentStep) {
@@ -41,6 +44,8 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
             'match',
             ['get', 'type'], // <-- get the property "type"
             'landowner',
+            '#00FF00', // type = forest
+            'site',
             '#00FF00', // type = forest
             'road_art',
             '#c28823', // type = water
@@ -64,11 +69,12 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
     setIsInit(true);
   }, [currentUUID]);
 
-  /** When map or current step changes, load GeoJSON*/
-  useEffect(() => {
+  /** Initiate the layer */
+  const doInit = () => {
     if (!map) return;
 
     setGeojson(null);
+    setIsUpdated(false);
 
     // Load files
     const geojsonUrl = currentStepState?.step?.file?.replace('gltf', 'geojson');
@@ -83,16 +89,39 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
           setGeojson(data);
         });
     }
+  };
+
+  /** When map or current step changes, load GeoJSON */
+  useEffect(() => {
+    doInit();
   }, [map, currentStepState]);
 
   /** Render geojson */
   useEffect(() => {
     if (!map) return;
+
     removeSource(map, GEOJSON_ID);
     if (geojson) {
       let before: string | undefined = undefined;
       if (hasLayer(map, GLTF_ID)) {
         before = GLTF_ID;
+      }
+      if (hasLayer(map, GL_DRAW_POLYGON)) {
+        before = GL_DRAW_POLYGON;
+      }
+
+      if (isInit) {
+        const bbox = turf.bbox(geojson);
+        map.fitBounds(
+          [
+            [bbox[0], bbox[1]],
+            [bbox[2], bbox[3]],
+          ],
+          {
+            padding: 50,
+            duration: 1000,
+          }
+        );
       }
 
       map.addSource(GEOJSON_ID, {
@@ -123,20 +152,6 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
         },
         before
       );
-
-      if (isInit) {
-        const bbox = turf.bbox(geojson);
-        map.fitBounds(
-          [
-            [bbox[0], bbox[1]],
-            [bbox[2], bbox[3]],
-          ],
-          {
-            padding: 50,
-            duration: 1000,
-          }
-        );
-      }
     }
   }, [map, geojson]);
 
@@ -322,5 +337,27 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
     map.addLayer(layer);
   }
 
-  return <></>;
+  // Apply the form
+  const apply = () => {};
+
+  return (
+    <Box position="absolute" top="10px" right="10px" zIndex={1} display="flex" gap="1rem">
+      {isUpdated && (
+        <Box bg="white" borderRadius="md" boxShadow="md" p={2} zIndex={1}>
+          {/* @ts-expect-error: A custom variant */}
+          <Button variant="primary" size="sm" onClick={apply} flex={1}>
+            Apply
+          </Button>
+        </Box>
+      )}
+      <MapStepLayerEditor
+        map={map}
+        geojson={geojson}
+        setGeojson={(geojson) => {
+          setIsUpdated(true);
+          setGeojson(geojson);
+        }}
+      />
+    </Box>
+  );
 }

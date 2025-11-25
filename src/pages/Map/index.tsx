@@ -6,21 +6,18 @@ import Map from '../../components/Map';
 import MapTabNavigation from '../../components/MapTabNavigation';
 import MapInputControls from '../../components/MapInputControls';
 import MapFinanceSection from '../../components/MapFinanceSection';
-import { useCurrentDefinition } from '../../redux/selectors/definitionSelector';
 import { useCurrentRightSideOpened } from '../../redux/selectors/globalSelector.ts';
 import { toggleRightSide } from '../../redux/reducers/global.ts';
 import ProjectControl from '../../components/ProjectControl';
+import ProjectDescription from '../../components/ProjectDescription';
 
 import './style.scss';
-import ProjectDescription from '../../components/ProjectDescription';
 
 export default function MapPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navbarRef = useRef<HTMLDivElement>(null);
   const isOpened = useCurrentRightSideOpened();
   const [mapHeight, setMapHeight] = useState<string>('calc(100vh - 60px)'); // Default fallback
-
-  const currentDefinition = useCurrentDefinition();
 
   useEffect(() => {
     const updateMapHeight = () => {
@@ -54,7 +51,7 @@ export default function MapPage() {
           <MapTabNavigation />
         </div>
         <div className="map-wrapper" style={{ height: mapHeight }}>
-          <Map currentDefinition={currentDefinition} />
+          <Map />
         </div>
       </div>
 
