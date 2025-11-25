@@ -23,6 +23,7 @@ export const createProject = createAsyncThunk(
     if (!API_URL) {
       const token = 'Demo token';
       localStorage.setItem('token', token);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       return {
         uuid: '00000000-0000-0000-0000-000000000000',
         name: parameters.name,

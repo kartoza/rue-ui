@@ -2,7 +2,7 @@ import { Col, Container, Row } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import Accordion from 'react-bootstrap/Accordion';
 import { Button, Spinner } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ProjectParameters } from '../../redux/reducers/project';
 import type { AppDispatch, RootState } from '../../redux/store';
 import {
@@ -11,18 +11,21 @@ import {
   setSelectedDefinition,
 } from '../../redux/reducers/definitionSlice';
 import { createProject } from '../../redux/reducers/projectSlice';
-
-import projectParametersDefault from './general_input.json';
-
-import './style.scss';
 import NeighbourhoodPublicScapeOpenSpace from './Results/NeighbourhoodPublicScapeOpenSpace.tsx';
 import NeighbourhoodPublicScapeAmenities from './Results/NeighbourhoodPublicScapeAmenities.tsx';
 import { useCurrentProjectDone } from '../../redux/selectors/projectSelector.ts';
 
+import projectParametersDefault from './general_input.json';
+
+import './style.scss';
+
 export default function MapInputControls() {
   const dispatch = useDispatch<AppDispatch>();
-  const [activeKeys, setActiveKeys] = useState<string[]>(['0', '0-0']);
   const isProjectDone = useCurrentProjectDone();
+
+  const [submitted, setSubmitted] = useState<boolean>(false);
+
+  const [activeKeys, setActiveKeys] = useState<string[]>(['0', '0-0']);
 
   // City - Site Definition
   const siteDefinition = useSelector((state: RootState) => state.definition.selectedDefinition);
@@ -53,7 +56,12 @@ export default function MapInputControls() {
 
   const isActive = (key: string) => activeKeys.includes(key);
 
+  useEffect(() => {
+    setSubmitted(false);
+  }, [isProjectDone]);
+
   const apply = () => {
+    setSubmitted(true);
     dispatch(
       createProject({
         name: 'Demo project',
@@ -2923,9 +2931,9 @@ export default function MapInputControls() {
             textAlign: 'center',
             width: '100%',
           }}
-          disabled={!isProjectDone}
+          disabled={submitted}
         >
-          Apply {!isProjectDone && <Spinner />}
+          Apply {submitted && <Spinner />}
         </Button>
       </div>
     </Container>
