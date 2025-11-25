@@ -4,12 +4,17 @@
 }
 
 .map-left-sidebar {
+  height: 100vh;
   width: 410px;
   border: lightgray 1px solid;
+  display: flex;
+  flex-direction: column;
 
   .map-input-parent {
     padding-left: 0;
     padding-right: 0;
+    flex-grow: 1;
+    overflow-y: auto;
   }
 }
 

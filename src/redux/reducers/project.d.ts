@@ -174,8 +174,8 @@ interface ProjectPayload {
   name: string;
   description: string;
   parameters: ProjectParameters;
-  site: FeatureCollection<Polygon> | null;
-  roads: FeatureCollection<LineString> | null;
+  site?: FeatureCollection<Polygon> | null;
+  roads?: FeatureCollection<LineString> | null;
 }
 
 interface Project {

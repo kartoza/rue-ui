@@ -1,7 +1,7 @@
-import { Col, Container, Row } from 'react-bootstrap';
+import { Col, Row } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import Accordion from 'react-bootstrap/Accordion';
-import { Button, Spinner } from '@chakra-ui/react';
+import { Box, Button, Spinner } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
 import { toaster, ToasterType } from '../Toaster/toaster';
@@ -96,14 +96,16 @@ export default function MapInputControls() {
       name: 'Demo project',
       description: 'This is demo project',
       parameters: parameters,
-      site: site,
-      roads: roads,
     };
+    if (site && roads) {
+      payload.site = site;
+      payload.roads = roads;
+    }
     dispatch(createProject(payload));
   };
 
   return (
-    <Container className="map-input-parent">
+    <Box className="map-input-parent">
       <Accordion
         activeKey={activeKeys}
         onSelect={handleSelect}
@@ -2792,7 +2794,7 @@ export default function MapInputControls() {
           Apply {submitted && <Spinner />}
         </Button>
       </div>
-      {errors && (
+      {!!errors.length && (
         <div
           className="ErrorMessage"
           style={{
@@ -2803,6 +2805,6 @@ export default function MapInputControls() {
           {errors.join(', ')}
         </div>
       )}
-    </Container>
+    </Box>
   );
 }

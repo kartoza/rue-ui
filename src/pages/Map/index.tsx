@@ -7,11 +7,12 @@ import MapTabNavigation from '../../components/MapTabNavigation';
 import MapInputControls from '../../components/MapInputControls';
 import MapFinanceSection from '../../components/MapFinanceSection';
 import { useCurrentDefinition } from '../../redux/selectors/definitionSelector';
-import { useCurrentStep } from '../../redux/selectors/stepSelector';
 import { useCurrentRightSideOpened } from '../../redux/selectors/globalSelector.ts';
 import { toggleRightSide } from '../../redux/reducers/global.ts';
+import ProjectControl from '../../components/ProjectControl';
 
 import './style.scss';
+import ProjectDescription from '../../components/ProjectDescription';
 
 export default function MapPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -20,7 +21,6 @@ export default function MapPage() {
   const [mapHeight, setMapHeight] = useState<string>('calc(100vh - 60px)'); // Default fallback
 
   const currentDefinition = useCurrentDefinition();
-  const currentStep = useCurrentStep();
 
   useEffect(() => {
     const updateMapHeight = () => {
@@ -43,8 +43,10 @@ export default function MapPage() {
 
   return (
     <div className="map-container-parent">
+      <ProjectControl />
       <div className="map-left-sidebar">
         <MapInputControls />
+        <ProjectDescription />
       </div>
 
       <div className="map-container">
@@ -52,7 +54,7 @@ export default function MapPage() {
           <MapTabNavigation />
         </div>
         <div className="map-wrapper" style={{ height: mapHeight }}>
-          <Map currentDefinition={currentDefinition} currentStep={currentStep} />
+          <Map currentDefinition={currentDefinition} />
         </div>
       </div>
 

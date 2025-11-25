@@ -4,58 +4,204 @@ import maplibregl, { Map } from 'maplibre-gl';
 import * as THREE from 'three';
 import { Vector3 } from 'three';
 import turf from 'turf';
+import type { FeatureCollection } from 'geojson';
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { StepType } from '../../redux/reducers/stepSlice.ts';
 import {
   useCurrentProjectStep,
   useCurrentProjectUUID,
 } from '../../redux/selectors/projectSelector';
-import { removeLayer, removeSource } from '../../utils/maplibre.tsx';
+import { useCurrentStep } from '../../redux/selectors/stepSelector.ts';
+import { hasLayer, removeLayer, removeSource } from '../../utils/maplibre.tsx';
+import { StepType } from '../../redux/reducers/stepSlice.ts';
 
 import './style.scss';
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 
 const GLTF_ID: string = '3d-model';
-const GEOJSON_ID: string = 'geojson-comparison';
-const GEOJSON_ID_POINT: string = 'geojson-comparison-point';
-const GEOJSON_ID_LINE: string = 'geojson-comparison-line';
+const GEOJSON_ID: string = 'task-layer';
+const GEOJSON_ID_FILL: string = 'task-layer-fill';
+const GEOJSON_ID_LINE: string = 'task-layer-line';
 
-export default function MapTaskDisplay({
-  map,
-  currentStep,
-}: {
-  map: Map | null;
-  currentStep: StepType;
-}) {
+let globalCurrentStep: string = '';
+
+export default function MapStepLayer({ map }: { map: Map | null }) {
+  const currentStep = useCurrentStep();
   const currentStepState = useCurrentProjectStep(currentStep);
-  const [isInit, setIsInit] = useState<boolean>(true);
   const currentUUID = useCurrentProjectUUID();
+
+  const [isInit, setIsInit] = useState<boolean>(true);
+  const [geojson, setGeojson] = useState<FeatureCollection | null>(null);
+
+  const style = () => {
+    switch (currentStep) {
+      case StepType.site.toString(): {
+        return {
+          'fill-color': [
+            'match',
+            ['get', 'type'], // <-- get the property "type"
+            'landowner',
+            '#00FF00', // type = forest
+            'road_art',
+            '#c28823', // type = water
+            'road_sec',
+            '#eba936', // type = water
+            '#c2882300',
+          ],
+          'fill-outline-color': 'rgba(0, 0, 0, 1)',
+        };
+      }
+    }
+
+    return {
+      'fill-color': 'rgba(0, 255, 0, 0.5)',
+      'fill-outline-color': 'rgba(0, 0, 0, 1)',
+    };
+  };
 
   /** Set init when current UUID changes */
   useEffect(() => {
     setIsInit(true);
   }, [currentUUID]);
 
+  /** When map or current step changes, load GeoJSON*/
   useEffect(() => {
     if (!map) return;
 
-    removeSource(map, GLTF_ID);
-    removeLayer(map, GLTF_ID);
-    removeSource(map, GEOJSON_ID);
+    setGeojson(null);
 
     // Load files
-    const file = currentStepState?.step?.file;
-    if (file) {
-      createCustomLayerFromGeoJSON(file, file.replace('gltf', 'geojson'));
+    const geojsonUrl = currentStepState?.step?.file?.replace('gltf', 'geojson');
+    const gltfUrl = currentStepState?.step?.file?.replace('geojson', 'gltf');
+    if (geojsonUrl && gltfUrl) {
+      const step = currentStep;
+      globalCurrentStep = step;
+      fetch(geojsonUrl)
+        .then((res) => res.json())
+        .then((data: FeatureCollection) => {
+          if (globalCurrentStep !== step) return;
+          setGeojson(data);
+        });
     }
   }, [map, currentStepState]);
 
-  async function createCustomLayerFromGeoJSON(modelUrl: string, geojsonUrl: string) {
+  /** Render geojson */
+  useEffect(() => {
     if (!map) return;
-    const response = await fetch(geojsonUrl);
-    const geojson = await response.json();
+    removeSource(map, GEOJSON_ID);
+    if (geojson) {
+      let before: string | undefined = undefined;
+      if (hasLayer(map, GLTF_ID)) {
+        before = GLTF_ID;
+      }
 
+      map.addSource(GEOJSON_ID, {
+        type: 'geojson',
+        data: geojson,
+      });
+      map.addLayer(
+        {
+          id: GEOJSON_ID_FILL,
+          type: 'fill',
+          source: GEOJSON_ID,
+          filter: ['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]],
+          // @ts-expect-error: Custom style function
+          paint: style(),
+        },
+        before
+      );
+      map.addLayer(
+        {
+          id: GEOJSON_ID_LINE,
+          type: 'line',
+          source: GEOJSON_ID,
+          filter: ['in', ['geometry-type'], ['literal', ['LineString', 'MultiLineString']]],
+          paint: {
+            'line-color': '#000000',
+            'line-width': 1,
+          },
+        },
+        before
+      );
+
+      if (isInit) {
+        const bbox = turf.bbox(geojson);
+        map.fitBounds(
+          [
+            [bbox[0], bbox[1]],
+            [bbox[2], bbox[3]],
+          ],
+          {
+            padding: 50,
+            duration: 1000,
+          }
+        );
+      }
+    }
+  }, [map, geojson]);
+
+  /** Add click handler to show feature properties */
+  useEffect(() => {
+    if (!map) return;
+
+    /** Handle click on a feature */
+    const handleClick = (e: maplibregl.MapMouseEvent) => {
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: [GEOJSON_ID_FILL],
+      });
+
+      if (!features.length) return;
+
+      const feature = features[0];
+      const properties = feature.properties || {};
+
+      // Create HTML content from properties
+      const content = Object.entries(properties)
+        .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
+        .join('<br>');
+
+      new maplibregl.Popup().setLngLat(e.lngLat).setHTML(content).addTo(map);
+    };
+
+    const handleMouseEnter = () => {
+      map.getCanvas().style.cursor = 'pointer';
+    };
+
+    const handleMouseLeave = () => {
+      map.getCanvas().style.cursor = '';
+    };
+
+    map.on('click', GEOJSON_ID_FILL, handleClick);
+    map.on('mouseenter', GEOJSON_ID_FILL, handleMouseEnter);
+    map.on('mouseleave', GEOJSON_ID_FILL, handleMouseLeave);
+
+    return () => {
+      map.off('click', GEOJSON_ID_FILL, handleClick);
+      map.off('mouseenter', GEOJSON_ID_FILL, handleMouseEnter);
+      map.off('mouseleave', GEOJSON_ID_FILL, handleMouseLeave);
+    };
+  }, [map]);
+
+  /** Render gltf */
+  useEffect(() => {
+    if (!map) return;
+    if (!geojson) return;
+    removeSource(map, GLTF_ID);
+    removeLayer(map, GLTF_ID);
+    if (geojson) {
+      createGltf();
+    }
+  }, [map, geojson]);
+
+  async function createGltf() {
+    if ([StepType.site.toString(), StepType.streets.toString()].includes(currentStep.toString()))
+      return;
+    if (!map) return;
+    if (!geojson) return;
+    const modelUrl = currentStepState?.step?.file?.replace('geojson', 'gltf');
+    if (!modelUrl) return;
+
+    // Add GeoJSON source and layer for comparison
     const modelOrigin = (turf.centroid(geojson).geometry.coordinates as [number, number]) || [0, 0];
     const modelAltitude = 0;
     const modelAsMercator = maplibregl.MercatorCoordinate.fromLngLat(modelOrigin, modelAltitude);
@@ -173,57 +319,8 @@ export default function MapTaskDisplay({
         mapInstance.triggerRepaint();
       },
     };
-
     map.addLayer(layer);
-
-    // Zoom to the model
-    if (isInit) {
-      map.flyTo({
-        center: modelOrigin as [number, number],
-        zoom: 18,
-        pitch: 60,
-        bearing: 0,
-        essential: true,
-        speed: 2.5,
-      });
-    }
-    setIsInit(false);
-
-    // Add GeoJSON source and layer for comparison
-    removeSource(map, GEOJSON_ID);
-
-    map.addSource(GEOJSON_ID, {
-      type: 'geojson',
-      data: geojson,
-    });
-    map.addLayer(
-      {
-        id: GEOJSON_ID_POINT,
-        type: 'circle',
-        source: GEOJSON_ID,
-        paint: {
-          'circle-radius': 2,
-          'circle-color': '#ff0000',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#fff',
-        },
-      },
-      GLTF_ID
-    );
-
-    map.addLayer(
-      {
-        id: GEOJSON_ID_LINE,
-        type: 'line',
-        source: GEOJSON_ID,
-        paint: {
-          'line-color': '#ff0000',
-          'line-width': 2,
-        },
-      },
-      GLTF_ID
-    );
   }
 
-  return <div></div>;
+  return <></>;
 }
