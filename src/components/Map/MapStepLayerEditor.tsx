@@ -40,21 +40,21 @@ export default function MapStepLayerEditor({
           id: 'gl-draw-polygon-fill-inactive',
           type: 'fill',
           filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'active', 'true']],
-          paint: { 'fill-color': '#3bb2d0', 'fill-opacity': 0.1 },
+          paint: { 'fill-color': '#3bb2d0', 'fill-outline-color': '#000000' },
         },
         // Active polygon fill
         {
           id: 'gl-draw-polygon-fill-active',
           type: 'fill',
           filter: ['all', ['==', '$type', 'Polygon'], ['==', 'active', 'true']],
-          paint: { 'fill-color': '#fbb03b', 'fill-opacity': 0.3 },
+          paint: { 'fill-color': '#fbb03b', 'fill-outline-color': '#000000' },
         },
         // Inactive polygon stroke
         {
           id: 'gl-draw-polygon-stroke-inactive',
           type: 'line',
           filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'active', 'true']],
-          paint: { 'line-color': '#3bb2d0', 'line-width': 1 },
+          paint: { 'line-color': '#3bb2d0' },
         },
         // Active polygon stroke
         {
@@ -150,6 +150,23 @@ export default function MapStepLayerEditor({
     // @ts-expect-error: Delete all features
     drawRef.current.deleteAll();
     setIsEditing(false);
+  }, [setIsEditing]);
+
+  /** Delete selected features */
+  const deleteSelected = useCallback(() => {
+    if (!drawRef.current) return;
+
+    const selectedFeatures = drawRef.current.getSelected();
+    if (selectedFeatures.features.length === 0) {
+      return;
+    }
+
+    // Delete selected features
+    selectedFeatures.features.forEach((feature) => {
+      if (feature.id) {
+        drawRef.current!.delete(feature.id.toString());
+      }
+    });
   }, []);
 
   /** Save edited features */
@@ -205,9 +222,14 @@ export default function MapStepLayerEditor({
       {/* Edit Controls - shown when editing */}
       {isEditing && (
         <>
-          <Text fontSize="xs" color="gray.500" mb={3}>
+          <Text fontSize="xs" color="gray.500" mb={2}>
             Click features to select. Drag vertices to edit.
           </Text>
+          <Flex gap={2} mb={2}>
+            <Button colorScheme="red" variant="outline" size="sm" onClick={deleteSelected} flex={1}>
+              🗑️ Delete Selected
+            </Button>
+          </Flex>
           <Flex gap={2}>
             {/* @ts-expect-error: A custom variant */}
             <Button variant="primary" size="sm" onClick={saveEdits} flex={1}>

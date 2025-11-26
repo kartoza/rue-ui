@@ -187,6 +187,9 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
 
     /** Handle click on a feature */
     const handleClick = (e: maplibregl.MapMouseEvent) => {
+      // Don't show popup when in editing mode
+      if (isEditing) return;
+
       const features = map.queryRenderedFeatures(e.point, {
         layers: [GEOJSON_ID_FILL],
       });
@@ -205,10 +208,14 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
     };
 
     const handleMouseEnter = () => {
+      // Don't change cursor when in editing mode
+      if (isEditing) return;
       map.getCanvas().style.cursor = 'pointer';
     };
 
     const handleMouseLeave = () => {
+      // Don't change cursor when in editing mode
+      if (isEditing) return;
       map.getCanvas().style.cursor = '';
     };
 
@@ -221,7 +228,7 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
       map.off('mouseenter', GEOJSON_ID_FILL, handleMouseEnter);
       map.off('mouseleave', GEOJSON_ID_FILL, handleMouseLeave);
     };
-  }, [map]);
+  }, [map, isEditing]);
 
   /** Render gltf */
   useEffect(() => {
