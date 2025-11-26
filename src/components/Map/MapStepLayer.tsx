@@ -20,6 +20,7 @@ import { useCurrentStepUpdate } from '../../redux/selectors/stepUpdateSelector.t
 import { updateStep } from '../../redux/reducers/stepUpdateSlice.ts';
 import type { AppDispatch } from '../../redux/store.ts';
 import { resetStepAfter } from '../../redux/reducers/projectSlice.ts';
+import { toaster, ToasterType } from '../Toaster/toaster.ts';
 
 import './style.scss';
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
@@ -50,16 +51,12 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
         return {
           'fill-color': [
             'match',
-            ['get', 'type'], // <-- get the property "type"
-            'landowner',
-            '#00FF00', // type = forest
-            'site',
-            '#00FF00', // type = forest
+            ['get', 'type'],
             'road_art',
-            '#c28823', // type = water
+            '#c28823',
             'road_sec',
-            '#eba936', // type = water
-            '#c2882300',
+            '#eba936',
+            '#00FF00',
           ],
           'fill-outline-color': 'rgba(0, 0, 0, 1)',
         };
@@ -170,6 +167,19 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
       doInit();
     }
   }, [currentStepUpdate.lastRequest]);
+
+  /** When current step update fails, show error toast */
+  useEffect(() => {
+    if (currentStepUpdate.error) {
+      toaster.create({
+        title: 'Failed',
+        description: currentStepUpdate.error.message
+          ? currentStepUpdate.error.message
+          : currentStepUpdate.error.toString(),
+        type: ToasterType.error,
+      });
+    }
+  }, [currentStepUpdate.error]);
 
   /** Add click handler to show feature properties */
   useEffect(() => {

@@ -42,9 +42,13 @@ export const updateStep = createAsyncThunk(
     // -----------------------------
     const token = localStorage.getItem('token');
     try {
-      const response = await axios.post(API_URL + `projects/${uuid}/${step}`, geojson, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.put(
+        API_URL + `projects/${uuid}/${step}`,
+        { geojson: geojson },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       return response.data;
     } catch (error) {
       let errorMessage = 'Unknown error';
