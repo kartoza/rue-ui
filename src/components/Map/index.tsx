@@ -8,6 +8,7 @@ import MapStepLayer from './MapStepLayer.tsx';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.scss';
+import MapSiteLayer from './MapSiteLayer.tsx';
 
 /** MapLibre component. */
 export default function MapLibre() {
@@ -81,6 +82,7 @@ export default function MapLibre() {
   return (
     <Box position="relative" width="100%" height="100%" minHeight="400px">
       <Box id="map" width="100%" height="100%" />
+      {map && <MapSiteLayer map={map} />}
       {map && <MapStepLayer map={map} />}
       {map && <MapLocation map={map} />}
       {map && <BaseMaps map={map} />}

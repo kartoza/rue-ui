@@ -23,6 +23,7 @@ import { resetStepAfter } from '../../redux/reducers/projectSlice.ts';
 import { toaster, ToasterType } from '../Toaster/toaster.ts';
 import { getAuthHeaders } from '../../utils/api.ts';
 import layerStyle from './layer_style.json';
+import { ROAD_ID } from './MapSiteLayer.tsx';
 
 import './style.scss';
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
@@ -104,6 +105,9 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
     removeSource(map, GEOJSON_ID);
     if (geojson) {
       let before: string | undefined = undefined;
+      if (hasLayer(map, ROAD_ID)) {
+        before = ROAD_ID;
+      }
       if (hasLayer(map, GLTF_ID)) {
         before = GLTF_ID;
       }
