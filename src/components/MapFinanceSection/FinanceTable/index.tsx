@@ -18,7 +18,9 @@ import { toggleRightSide } from '../../../redux/reducers/global.ts';
 function FinanceTable() {
   const dispatch = useDispatch<AppDispatch>();
   const [showLuckySheet, setShowLuckySheet] = useState<boolean>(false);
-  const [selectedOption, setSelectedOption] = useState<OptionType>(OptionType.CityScaleProforma);
+  const [selectedOption, setSelectedOption] = useState<OptionType>(
+    OptionType.NeighborhoodScaleProforma
+  );
 
   const renderSelectedTable = () => {
     switch (selectedOption) {

@@ -4,14 +4,14 @@ import * as api from '../../utils/api';
 
 const API_URL: string = import.meta.env.VITE_API_URL;
 
-interface ProjectsState {
-  projects: Project[] | null;
+export interface ProjectsState {
+  projects: Project[];
   loading: boolean;
   error: string | null;
 }
 
 const initialState: ProjectsState = {
-  projects: null,
+  projects: [],
   loading: false,
   error: null,
 };
@@ -45,8 +45,7 @@ const projectSlice = createSlice({
       })
       .addCase(getProjects.fulfilled, (state, action) => {
         state.loading = false;
-        // @ts-expect-error: Save by step
-        state.project = { ...action.payload, steps: {} };
+        state.projects = action.payload;
       })
       .addCase(getProjects.rejected, (state, action) => {
         state.loading = false;

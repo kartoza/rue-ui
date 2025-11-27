@@ -47,9 +47,18 @@ const luckySheetSlice = createSlice({
     setSpider: (state, action: PayloadAction<Spider>) => {
       state.Spider = action.payload;
     },
+    resetLuckySheet: (state) => {
+      state.S1DB = null;
+      state.S2DB = null;
+      state.S3DB = null;
+      state.S4DB = null;
+      state.S5DB = null;
+      state.S6DB = null;
+      state.Spider = null;
+    },
   },
 });
 
-export const { setS1DB, setS2DB, setS3DB, setS4DB, setS5DB, setS6DB, setSpider } =
+export const { setS1DB, setS2DB, setS3DB, setS4DB, setS5DB, setS6DB, setSpider, resetLuckySheet } =
   luckySheetSlice.actions;
 export default luckySheetSlice.reducer;

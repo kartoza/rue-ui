@@ -40,6 +40,9 @@ export default function MapInputControls() {
   const siteDefinition = useSelector((state: RootState) => state.definition.selectedDefinition);
 
   // Parameters
+  const [name, setName] = useState<string>('');
+  const [description, setDescription] = useState<string | null>('');
+
   const [parameters, setParameters] = useState<ProjectParameters>(projectParametersDefault);
   const [site, setSite] = useState<FeatureCollection<Polygon> | null>(null);
   const [roads, setRoads] = useState<FeatureCollection<LineString> | null>(null);
@@ -50,6 +53,9 @@ export default function MapInputControls() {
       if (!site || !roads) {
         errors.push('Please select a site and roads in the city');
       }
+  }
+  if (!name) {
+    errors.push('Please enter project name');
   }
 
   const isActive = (key: string) => activeKeys.includes(key);
@@ -81,6 +87,16 @@ export default function MapInputControls() {
         type: ToasterType.error,
       });
     }
+    if (!currentProject.loading) {
+      const project = currentProject.project;
+      if (project) {
+        setName(project.name);
+        setDescription(project.description);
+        if (project.parameters) {
+          setParameters(project.parameters);
+        }
+      }
+    }
   }, [currentProject]);
 
   // Apply the form
@@ -96,9 +112,10 @@ export default function MapInputControls() {
       }
     }
     setSubmitted(true);
+
     const payload: ProjectPayload = {
-      name: 'Demo project',
-      description: 'This is demo project',
+      name: name,
+      description: description,
       parameters: parameters,
     };
     if (site && roads) {
@@ -109,13 +126,33 @@ export default function MapInputControls() {
   };
 
   return (
-    <Box className="map-input-parent">
-      <Accordion
-        activeKey={activeKeys}
-        onSelect={handleSelect}
-        alwaysOpen
-        style={{ marginTop: '10px' }}
-      >
+    <Box className="map-input-parent" style={{ position: 'relative' }}>
+      <Box className="project-info-inputs">
+        <Box className="input-field">
+          <label htmlFor="project-name">Project Name</label>
+          <input
+            id="project-name"
+            type="text"
+            className="form-control"
+            placeholder="Enter project name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Box>
+        <Box className="input-field">
+          <label htmlFor="project-description">Description</label>
+          <textarea
+            id="project-description"
+            className="form-control"
+            placeholder="Enter project description"
+            rows={3}
+            value={description || ''}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </Box>
+      </Box>
+
+      <Accordion activeKey={activeKeys} onSelect={handleSelect} alwaysOpen>
         <Accordion.Item eventKey="0">
           <Accordion.Header>
             <span className={`circle-number-lg${isActive('0') ? ' active' : ''}`}>1</span>City
@@ -2778,26 +2815,29 @@ export default function MapInputControls() {
           </Accordion.Body>
         </Accordion.Item>
       </Accordion>
-      <div
-        style={{
-          marginTop: '10px',
-          marginBottom: '1rem',
-          padding: '0 1rem',
-        }}
-        onClick={apply}
-      >
-        <Button
-          // @ts-expect-error: A custom variant
-          variant="primary"
+      {/* TODO: We need to add API for update */}
+      {!currentProject.project?.uuid && (
+        <div
           style={{
-            textAlign: 'center',
-            width: '100%',
+            marginTop: '10px',
+            marginBottom: '1rem',
+            padding: '0 1rem',
           }}
-          disabled={!!errors.length || !isProjectDone || submitted || currentStepUpdateLoading}
+          onClick={apply}
         >
-          Apply {(submitted || currentStepUpdateLoading || !isProjectDone) && <Spinner />}
-        </Button>
-      </div>
+          <Button
+            // @ts-expect-error: A custom variant
+            variant="primary"
+            style={{
+              textAlign: 'center',
+              width: '100%',
+            }}
+            disabled={!!errors.length || !isProjectDone || submitted || currentStepUpdateLoading}
+          >
+            {currentProject.project?.uuid ? 'Update' : 'Create'} project
+          </Button>
+        </div>
+      )}
       {!!errors.length && (
         <div
           className="ErrorMessage"
@@ -2808,6 +2848,21 @@ export default function MapInputControls() {
         >
           {errors.join(', ')}
         </div>
+      )}
+      {(submitted || currentStepUpdateLoading || !isProjectDone) && (
+        <Box
+          position="absolute"
+          width="100%"
+          height="100% "
+          top={0}
+          left={0}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          backgroundColor="rgba(255, 255, 255, 0.8)"
+        >
+          <Spinner size="xl" />
+        </Box>
       )}
     </Box>
   );

@@ -47,6 +47,23 @@ export const createProject = createAsyncThunk(
     }
   }
 );
+
+// Async thunk for project
+export const getProject = createAsyncThunk(
+  'project/get',
+  // @ts-expect-error: Name is for args
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async ({ uuid, name }: { uuid: string; name: string }, thunkAPI) => {
+    // -----------------------------
+    try {
+      return await api.get('projects/' + uuid);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return thunkAPI.rejectWithValue(errorMessage);
+    }
+  }
+);
+
 // Async thunk for project
 export const getStepStatus = createAsyncThunk(
   'project/step/get',
@@ -94,6 +111,9 @@ const projectSlice = createSlice({
   name: 'project',
   initialState,
   reducers: {
+    resetProject: (state: ProjectState) => {
+      state.project = null;
+    },
     resetStepAfter: (state: ProjectState, action: PayloadAction<StepType>) => {
       if (!state.project) return;
 
@@ -121,6 +141,26 @@ const projectSlice = createSlice({
         state.project = { ...action.payload, steps: {} };
       })
       .addCase(createProject.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // ----------------------------------
+      // getProject
+      // ----------------------------------
+      .addCase(getProject.pending, (state, action) => {
+        const { uuid, name } = action.meta.arg;
+        // @ts-expect-error: Save by step
+        state.project = { uuid, name, parameters: null, steps: {} };
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getProject.fulfilled, (state, action) => {
+        state.loading = false;
+        // @ts-expect-error: Save by step
+        state.project = { ...action.payload, steps: {} };
+      })
+      .addCase(getProject.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
@@ -158,5 +198,5 @@ const projectSlice = createSlice({
   },
 });
 
-export const { resetStepAfter } = projectSlice.actions;
+export const { resetStepAfter, resetProject } = projectSlice.actions;
 export default projectSlice.reducer;

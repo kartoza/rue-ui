@@ -10,14 +10,24 @@ import { useCurrentRightSideOpened } from '../../redux/selectors/globalSelector.
 import { toggleRightSide } from '../../redux/reducers/global.ts';
 import ProjectControl from '../../components/ProjectControl';
 import ProjectDescription from '../../components/ProjectDescription';
+import ProjectList from '../../components/ProjectList';
+import { resetLuckySheet } from '../../redux/reducers/luckySheetSlice.ts';
 
 import './style.scss';
 
+export const SideBarTabs = {
+  projectList: 'projectList',
+  projectDetail: 'projectDetail',
+} as const;
+
+export type SideBarTabs = (typeof SideBarTabs)[keyof typeof SideBarTabs];
 export default function MapPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navbarRef = useRef<HTMLDivElement>(null);
   const isOpened = useCurrentRightSideOpened();
   const [mapHeight, setMapHeight] = useState<string>('calc(100vh - 60px)'); // Default fallback
+
+  const [sideBarTab, setSiteBarTab] = useState<SideBarTabs>(SideBarTabs.projectList);
 
   useEffect(() => {
     const updateMapHeight = () => {
@@ -42,8 +52,22 @@ export default function MapPage() {
     <div className="map-container-parent">
       <ProjectControl />
       <div className="map-left-sidebar">
-        <MapInputControls />
-        <ProjectDescription />
+        {sideBarTab === SideBarTabs.projectDetail && (
+          <>
+            <ProjectDescription toList={() => setSiteBarTab(SideBarTabs.projectList)} />
+            <MapInputControls />
+          </>
+        )}
+        {sideBarTab === SideBarTabs.projectList && (
+          <>
+            <ProjectList
+              toDetail={() => {
+                dispatch(resetLuckySheet());
+                setSiteBarTab(SideBarTabs.projectDetail);
+              }}
+            />
+          </>
+        )}
       </div>
 
       <div className="map-container">
