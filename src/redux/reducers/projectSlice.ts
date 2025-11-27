@@ -99,7 +99,11 @@ export const getStepStatus = createAsyncThunk(
     }
     // -----------------------------
     try {
-      return await api.get<Step>(`projects/${uuid}/${step}`);
+      const data = await api.get<Step>(`projects/${uuid}/${step}`);
+      if (data.file && API_URL.includes('https')) {
+        data.file = data.file.replace('http://', 'https://');
+      }
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return thunkAPI.rejectWithValue(errorMessage);
