@@ -1,0 +1,15 @@
+{
+  "grid_type": [
+    "match",
+    ["get", "grid_type"],
+    "on_grid_art",
+    "rgb(235,201,199)",
+    "on_grid_intersected",
+    "rgb(235,201,199)",
+    "on_grid_sec",
+    "rgb(250,232,219)",
+    "off_grid",
+    "rgb(250,242,212)",
+    "#7FBA7F"
+  ]
+}

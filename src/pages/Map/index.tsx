@@ -12,6 +12,7 @@ import ProjectControl from '../../components/ProjectControl';
 import ProjectDescription from '../../components/ProjectDescription';
 import ProjectList from '../../components/ProjectList';
 import { resetLuckySheet } from '../../redux/reducers/luckySheetSlice.ts';
+import { resetProject } from '../../redux/reducers/projectSlice.ts';
 
 import './style.scss';
 
@@ -54,7 +55,13 @@ export default function MapPage() {
       <div className="map-left-sidebar">
         {sideBarTab === SideBarTabs.projectDetail && (
           <>
-            <ProjectDescription toList={() => setSiteBarTab(SideBarTabs.projectList)} />
+            <ProjectDescription
+              toList={() => {
+                dispatch(resetLuckySheet());
+                dispatch(resetProject());
+                setSiteBarTab(SideBarTabs.projectList);
+              }}
+            />
             <MapInputControls />
           </>
         )}
@@ -62,7 +69,6 @@ export default function MapPage() {
           <>
             <ProjectList
               toDetail={() => {
-                dispatch(resetLuckySheet());
                 setSiteBarTab(SideBarTabs.projectDetail);
               }}
             />

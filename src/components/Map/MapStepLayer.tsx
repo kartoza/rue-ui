@@ -22,6 +22,7 @@ import type { AppDispatch } from '../../redux/store.ts';
 import { resetStepAfter } from '../../redux/reducers/projectSlice.ts';
 import { toaster, ToasterType } from '../Toaster/toaster.ts';
 import { getAuthHeaders } from '../../utils/api.ts';
+import layerStyle from './layer_style.json';
 
 import './style.scss';
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
@@ -48,24 +49,16 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
 
   const style = () => {
     switch (currentStep) {
-      case StepType.site.toString(): {
+      case StepType.streets.toString(): {
         return {
-          'fill-color': [
-            'match',
-            ['get', 'type'],
-            'road_art',
-            '#c28823',
-            'road_sec',
-            '#eba936',
-            '#00FF00',
-          ],
+          'fill-color': layerStyle.grid_type,
           'fill-outline-color': 'rgba(0, 0, 0, 1)',
         };
       }
     }
 
     return {
-      'fill-color': 'rgba(0, 255, 0, 0.5)',
+      'fill-color': '#7FBA7F',
       'fill-outline-color': 'rgba(0, 0, 0, 1)',
     };
   };

@@ -54,7 +54,7 @@ export default function MapStepLayerEditor({
           id: 'gl-draw-polygon-stroke-inactive',
           type: 'line',
           filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'active', 'true']],
-          paint: { 'line-color': '#3bb2d0' },
+          paint: { 'line-color': '#000000' },
         },
         // Active polygon stroke
         {
