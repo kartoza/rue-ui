@@ -77,7 +77,7 @@ export default function MapInputControls() {
       setSubmitted(false);
       toaster.create({
         title: 'Failed',
-        description: currentProject?.error?.message,
+        description: currentProject?.error,
         type: ToasterType.error,
       });
     }

@@ -21,6 +21,7 @@ import { updateStep } from '../../redux/reducers/stepUpdateSlice.ts';
 import type { AppDispatch } from '../../redux/store.ts';
 import { resetStepAfter } from '../../redux/reducers/projectSlice.ts';
 import { toaster, ToasterType } from '../Toaster/toaster.ts';
+import { getAuthHeaders } from '../../utils/api.ts';
 
 import './style.scss';
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
@@ -87,7 +88,9 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
     if (geojsonUrl && gltfUrl) {
       const step = currentStep;
       globalCurrentStep = step;
-      fetch(geojsonUrl)
+      fetch(geojsonUrl, {
+        headers: getAuthHeaders(),
+      })
         .then((res) => res.json())
         .then((data: FeatureCollection) => {
           if (globalCurrentStep !== step) return;
@@ -173,9 +176,7 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
     if (currentStepUpdate.error) {
       toaster.create({
         title: 'Failed',
-        description: currentStepUpdate.error.message
-          ? currentStepUpdate.error.message
-          : currentStepUpdate.error.toString(),
+        description: currentStepUpdate.error,
         type: ToasterType.error,
       });
     }
@@ -257,7 +258,9 @@ export default function MapStepLayer({ map }: { map: Map | null }) {
     // Calculate GLTF centroid before adding to map
     let gltfCentroid: any = null;
     try {
-      const gltfResponse = await fetch(modelUrl);
+      const gltfResponse = await fetch(modelUrl, {
+        headers: getAuthHeaders(),
+      });
       const gltfArrayBuffer = await gltfResponse.arrayBuffer();
       const loader = new GLTFLoader();
       const gltf = await new Promise<any>((resolve) => {

@@ -1,14 +1,14 @@
-import axios from 'axios';
-import { createAsyncThunk, createSlice, type SerializedError } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { FeatureCollection } from 'geojson';
 import type { StepType } from './stepSlice.ts';
+import * as api from '../../utils/api';
 
 const API_URL: string = import.meta.env.VITE_API_URL;
 
 export interface StepUpdateState {
   lastRequest: number | null;
   loading: boolean;
-  error: SerializedError | null;
+  error: string | null;
 }
 
 const initialState: StepUpdateState = {
@@ -40,22 +40,10 @@ export const updateStep = createAsyncThunk(
       return null;
     }
     // -----------------------------
-    const token = localStorage.getItem('token');
     try {
-      const response = await axios.put(
-        API_URL + `projects/${uuid}/${step}`,
-        { geojson: geojson },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      return response.data;
+      return await api.put(`projects/${uuid}/${step}`, { geojson });
     } catch (error) {
-      let errorMessage = 'Unknown error';
-      if (axios.isAxiosError(error) && error.response) {
-        const data = error.response.data as { detail?: string };
-        errorMessage = data.detail || JSON.stringify(data);
-      }
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return thunkAPI.rejectWithValue(errorMessage);
     }
   }
@@ -78,7 +66,7 @@ const stepUpdateSlice = createSlice({
       })
       .addCase(updateStep.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error as SerializedError;
+        state.error = action.payload as string;
       });
   },
 });

@@ -1,4 +1,3 @@
-import type { SerializedError } from '@reduxjs/toolkit';
 import type {
   StepBuildingMaxState,
   StepBuildingStartState,
@@ -197,5 +196,5 @@ interface Project {
 interface ProjectState {
   project: Project | null;
   loading: boolean;
-  error: SerializedError | null;
+  error: string | null;
 }
