@@ -65,7 +65,7 @@ export default function MapPage() {
                 setSiteBarTab(SideBarTabs.projectList);
               }}
             />
-            <MapInputControls />
+            <MapInputControls map={map} />
           </>
         )}
         {sideBarTab === SideBarTabs.projectList && (

@@ -14,3 +14,13 @@ export const toaster = createToaster({
   placement: 'top-end',
   pauseOnPageIdle: true,
 });
+
+export const Toaster = {
+  error: (title: string, description: string) => {
+    toaster.create({
+      title: title,
+      description: description,
+      type: ToasterType.error,
+    });
+  },
+};

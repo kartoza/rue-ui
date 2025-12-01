@@ -19,7 +19,7 @@ import { useCurrentStepUpdate } from '../../../redux/selectors/stepUpdateSelecto
 import { updateStep } from '../../../redux/reducers/stepUpdateSlice.ts';
 import type { AppDispatch } from '../../../redux/store.ts';
 import { resetStepAfter } from '../../../redux/reducers/projectSlice.ts';
-import { toaster, ToasterType } from '../../Toaster/toaster.ts';
+import { Toaster } from '../../Toaster/toaster.ts';
 import { getAuthHeaders } from '../../../utils/api';
 import MapStepLayerEditor from './Editor.tsx';
 import { ROAD_ID } from '../SiteLayer';
@@ -35,7 +35,6 @@ export const GEOJSON_ID_LINE: string = 'task-layer-line';
 let globalCurrentStep: string = '';
 
 export default function StepLayer({ map }: { map: Map | null }) {
-  console.log('StepLayer');
   const dispatch = useDispatch<AppDispatch>();
   const currentStep = useCurrentStep();
   const currentStepState = useCurrentProjectStep(currentStep);
@@ -170,11 +169,7 @@ export default function StepLayer({ map }: { map: Map | null }) {
   /** When current step update fails, show error toast */
   useEffect(() => {
     if (currentStepUpdate.error) {
-      toaster.create({
-        title: 'Failed',
-        description: currentStepUpdate.error,
-        type: ToasterType.error,
-      });
+      Toaster.error('Failed', currentStepUpdate.error);
     }
   }, [currentStepUpdate.error]);
 

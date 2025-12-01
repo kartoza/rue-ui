@@ -1,14 +1,31 @@
 import { useState } from 'react';
 import type { FeatureCollection, GeoJsonObject, LineString, Polygon } from 'geojson';
+import { Map } from 'maplibre-gl';
+import ExtractRoads from '../ExtractRoads.tsx';
 
 interface Props {
+  map: Map | null;
   setRoads: (input: FeatureCollection<LineString> | null) => void;
   setSite: (input: FeatureCollection<Polygon> | null) => void;
 }
 
-export default function LoadSite({ setRoads, setSite }: Props) {
+export default function LoadSite({ map, setRoads, setSite }: Props) {
   const [roadsError, setRoadsError] = useState<string | null>(null);
   const [siteError, setSiteError] = useState<string | null>(null);
+
+  /** Download roads as GeoJSON file */
+  const downloadRoadsAsGeoJSON = (roads: FeatureCollection<LineString>) => {
+    const geojsonStr = JSON.stringify(roads, null, 2);
+    const blob = new Blob([geojsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'roads.geojson';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const validateGeoJSON = (
     data: unknown,
@@ -105,73 +122,83 @@ export default function LoadSite({ setRoads, setSite }: Props) {
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-        padding: '16px',
-        marginLeft: '1rem',
-      }}
-    >
-      <div>
-        <label
-          htmlFor="site-input"
-          style={{
-            display: 'block',
-            marginBottom: '8px',
-            fontWeight: 'bold',
-          }}
-        >
-          Load Site
-        </label>
-        <input
-          id="site-input"
-          type="file"
-          accept=".geojson"
-          onChange={handleSiteFileChange}
-          style={{ display: 'block' }}
-        />
-        {siteError && (
-          <div
-            className="ErrorMessage"
+    <>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+          padding: '16px',
+          marginLeft: '1rem',
+        }}
+      >
+        <div>
+          <label
+            htmlFor="site-input"
             style={{
-              marginTop: '4px',
+              display: 'block',
+              marginBottom: '8px',
+              fontWeight: 'bold',
             }}
           >
-            {siteError}
-          </div>
-        )}
-      </div>
-      <div>
-        <label
-          htmlFor="roads-input"
-          style={{
-            display: 'block',
-            marginBottom: '8px',
-            fontWeight: 'bold',
-          }}
-        >
-          Set roads
-        </label>
-        <input
-          id="roads-input"
-          type="file"
-          accept=".geojson"
-          onChange={handleRoadsFileChange}
-          style={{ display: 'block' }}
-        />
-        {roadsError && (
-          <div
-            className="ErrorMessage"
+            Load Site
+          </label>
+          <input
+            id="site-input"
+            type="file"
+            accept=".geojson"
+            onChange={handleSiteFileChange}
+            style={{ display: 'block' }}
+          />
+          {siteError && (
+            <div
+              className="ErrorMessage"
+              style={{
+                marginTop: '4px',
+              }}
+            >
+              {siteError}
+            </div>
+          )}
+        </div>
+        <div>
+          <label
+            htmlFor="roads-input"
             style={{
-              marginTop: '4px',
+              display: 'block',
+              marginBottom: '8px',
+              fontWeight: 'bold',
             }}
           >
-            {roadsError}
-          </div>
-        )}
+            Set roads
+          </label>
+          <input
+            id="roads-input"
+            type="file"
+            accept=".geojson"
+            onChange={handleRoadsFileChange}
+            style={{ display: 'block' }}
+          />
+          {roadsError && (
+            <div
+              className="ErrorMessage"
+              style={{
+                marginTop: '4px',
+              }}
+            >
+              {roadsError}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+      <ExtractRoads
+        map={map}
+        setRoads={(roads) => {
+          if (roads) {
+            downloadRoadsAsGeoJSON(roads);
+          }
+        }}
+      />
+    </>
   );
 }

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Map as MaplibreMap } from 'maplibre-gl';
 import { HStack, IconButton } from '@chakra-ui/react';
 import { useDispatch } from 'react-redux';
@@ -10,6 +10,7 @@ import { useCurrentDrawMode } from '../../../redux/selectors/globalSelector.ts';
 import { DrawingMode } from '../../../redux/reducers/global.ts';
 import MapEditor, { type MapLayerEditorRef } from '../MapEditor.tsx';
 import { updateRoads, updateSite } from '../../../redux/reducers/projectInputSlice.ts';
+import { useCurrentProjectInput } from '../../../redux/selectors/projectInputSelector.ts';
 
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 
@@ -26,11 +27,75 @@ export const DrawMode = {
 export type DrawMode = (typeof DrawMode)[keyof typeof DrawMode];
 
 export default function SiteEditor({ map }: { map: MaplibreMap | null }) {
-  console.log('SiteEditor');
   const dispatch = useDispatch<AppDispatch>();
   const editorRef = useRef<MapLayerEditorRef | null>(null);
   const [mode, setMode] = useState<DrawMode | null>(null);
+  const roads = useCurrentProjectInput().roads;
+
   const isDrawSite = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
+
+  /** Update editor when roads updated */
+  useEffect(() => {
+    if (JSON.stringify(roads) === JSON.stringify(getRoads())) return;
+
+    const drawRef = editorRef.current?.getDrawRef();
+    if (!drawRef?.current) return;
+
+    const drawControl = drawRef.current;
+
+    // Get all current features
+    const allFeatures = drawControl.getAll();
+
+    // Remove all existing road features (LineStrings)
+    const roadFeatures = allFeatures.features.filter((f) => f.geometry.type === 'LineString');
+    roadFeatures.forEach((feature) => {
+      if (feature.id) {
+        drawControl.delete(feature.id as string);
+      }
+    });
+
+    // Add new road features from Redux state
+    if (roads?.features) {
+      roads.features.forEach((feature) => {
+        drawControl.add(feature);
+      });
+    }
+  }, [roads]);
+
+  /** Log properties when a feature is clicked */
+  useEffect(() => {
+    if (!map) return;
+
+    const onSelectionChange = (e: { features: GeoJSON.Feature[] }) => {
+      if (e.features && e.features.length > 0) {
+        console.log('Selected feature properties:', e.features[0].properties);
+      }
+    };
+
+    map.on('draw.selectionchange', onSelectionChange);
+
+    return () => {
+      map.off('draw.selectionchange', onSelectionChange);
+    };
+  }, [map]);
+
+  const getRoads = (): FeatureCollection<LineString> | null => {
+    const drawRef = editorRef.current?.getDrawRef();
+    if (!drawRef?.current) return null;
+
+    const drawControl = drawRef.current;
+
+    const allFeatures = drawControl.getAll();
+
+    const roadsFeatures = allFeatures.features.filter((f) => f.geometry.type === 'LineString');
+    return roadsFeatures.length > 0
+      ? {
+          type: 'FeatureCollection',
+          // @ts-expect-error: This is correct
+          features: roadsFeatures,
+        }
+      : null;
+  };
 
   const onFeaturesChanged = () => {
     const drawRef = editorRef.current?.getDrawRef();
@@ -49,17 +114,7 @@ export default function SiteEditor({ map }: { map: MaplibreMap | null }) {
           }
         : null;
     dispatch(updateSite(site));
-
-    const roadsFeatures = allFeatures.features.filter((f) => f.geometry.type === 'LineString');
-    // @ts-expect-error: This is correct
-    const roads: FeatureCollection<LineString> | null =
-      roadsFeatures.length > 0
-        ? {
-            type: 'FeatureCollection',
-            features: roadsFeatures,
-          }
-        : null;
-    dispatch(updateRoads(roads));
+    dispatch(updateRoads(getRoads()));
   };
 
   const startDrawPolygon = () => {

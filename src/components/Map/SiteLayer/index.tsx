@@ -15,7 +15,6 @@ const API_URL: string = import.meta.env.VITE_API_URL;
 export const ROAD_ID: string = 'road-layer';
 
 export default function SiteLayer({ map }: { map: Map | null }) {
-  console.log('SiteLayer');
   const currentProjectState = useCurrentProjectState();
   const [roads, setRoads] = useState<FeatureCollection<LineString> | null>(null);
 

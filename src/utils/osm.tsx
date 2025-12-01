@@ -1,4 +1,5 @@
 import { Map } from 'maplibre-gl';
+import type { FeatureCollection, GeoJsonProperties, LineString } from 'geojson';
 
 interface OSMNode {
   lat: number;
@@ -20,19 +21,19 @@ interface OSMResponse {
  * Fetch roads from OSM
  * @param map
  */
-export const fetchRoads = async (map: Map): Promise<string> => {
+export const fetchRoads = async (
+  map: Map
+): Promise<FeatureCollection<LineString, GeoJsonProperties>> => {
   // Get current map bounds
   const bounds = map.getBounds();
   const bbox = [bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()].join(',');
+  if (map.getZoom() < 14) throw new Error('Zoom in to extract roads, the minimum zoom is 14.');
 
   // Construct Overpass QL query for primary and secondary roads only
   const query = `
     [out:json];
     (
-      way["highway"="primary"](${bbox});
-      way["highway"="primary_link"](${bbox});
-      way["highway"="secondary"](${bbox});
-      way["highway"="secondary_link"](${bbox});
+      way["highway"](${bbox});
     );
     out geom;
   `;
@@ -68,7 +69,7 @@ export const fetchRoads = async (map: Map): Promise<string> => {
         })),
     };
 
-    return JSON.stringify(geojson);
+    return geojson as FeatureCollection<LineString, GeoJsonProperties>;
   } catch (error) {
     console.error('Error fetching roads from OSM:', error);
     throw error;

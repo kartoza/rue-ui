@@ -4,7 +4,9 @@ import Accordion from 'react-bootstrap/Accordion';
 import { Box, Button, Spinner } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
-import { toaster, ToasterType } from '../Toaster/toaster';
+import { Map } from 'maplibre-gl';
+
+import { Toaster } from '../Toaster/toaster';
 import type { ProjectParameters, ProjectPayload } from '../../redux/reducers/project';
 import type { AppDispatch } from '../../redux/store';
 import { createProject } from '../../redux/reducers/projectSlice';
@@ -14,12 +16,15 @@ import {
   useCurrentProjectDone,
   useCurrentProjectState,
 } from '../../redux/selectors/projectSelector.ts';
-import DummySite from './SiteDefinitionInput/DummySite.tsx';
-import LoadSite from './SiteDefinitionInput/LoadSite.tsx';
 import { useCurrentStepUpdateLoading } from '../../redux/selectors/stepUpdateSelector.ts';
 import { DrawingMode, setDrawingMode } from '../../redux/reducers/global.ts';
 import { useCurrentProjectInput } from '../../redux/selectors/projectInputSelector.ts';
 import { updateRoads, updateSite } from '../../redux/reducers/projectInputSlice.ts';
+
+import DummySite from './SiteDefinitionInput/DummySite.tsx';
+import LoadSite from './SiteDefinitionInput/LoadSite.tsx';
+import DrawYourOwn from './SiteDefinitionInput/DrawYourOwn.tsx';
+
 import projectParametersDefault from './general_input.json';
 
 import './style.scss';
@@ -40,7 +45,7 @@ const DEFINITION_LABELS: Record<DefinitionType, string> = {
   dummy_site: 'Dummy Site',
 };
 
-export default function MapInputControls() {
+export default function MapInputControls({ map }: { map: Map | null }) {
   const dispatch = useDispatch<AppDispatch>();
   const isProjectDone = useCurrentProjectDone();
   const currentProject = useCurrentProjectState();
@@ -91,11 +96,7 @@ export default function MapInputControls() {
   useEffect(() => {
     if (currentProject?.error) {
       setSubmitted(false);
-      toaster.create({
-        title: 'Failed',
-        description: currentProject?.error,
-        type: ToasterType.error,
-      });
+      Toaster.error('Failed', currentProject?.error);
     }
     if (!currentProject.loading) {
       const project = currentProject.project;
@@ -113,11 +114,7 @@ export default function MapInputControls() {
   const apply = () => {
     if (siteDefinition === DefinitionType.load_site) {
       if (!site || !roads) {
-        toaster.create({
-          title: 'Failed',
-          description: 'Please select a site and roads in the city',
-          type: ToasterType.error,
-        });
+        Toaster.error('Failed', 'Please select a site and roads in the city');
         return;
       }
     }
@@ -216,8 +213,9 @@ export default function MapInputControls() {
                 <DummySite activeKeys={activeKeys} />
               )}
               {siteDefinition === DefinitionType.load_site && (
-                <LoadSite setSite={setSite} setRoads={setRoads} />
+                <LoadSite map={map} setSite={setSite} setRoads={setRoads} />
               )}
+              {siteDefinition === DefinitionType.draw_your_own && <DrawYourOwn map={map} />}
             </Accordion>
           </Accordion.Body>
         </Accordion.Item>

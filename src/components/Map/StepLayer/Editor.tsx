@@ -27,7 +27,6 @@ export default function StepLayerEditor({
   isEditing,
   setIsEditing,
 }: MapStepLayerEditorProps) {
-  console.log('StepLayerEditor');
   const isDrawSite = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
   const editorRef = useRef<MapLayerEditorRef | null>(null);
 
