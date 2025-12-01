@@ -2,7 +2,6 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './reducers/authSlice';
 import globalReducer from './reducers/global';
 import luckySheetReducer from './reducers/luckySheetSlice';
-import siteDefinitionReducer from './reducers/definitionSlice';
 import projectReducer from './reducers/projectSlice';
 import projectsReducer from './reducers/projectsSlice';
 import stepReducer from './reducers/stepSlice';
@@ -14,7 +13,6 @@ export const store = configureStore({
     auth: authReducer,
     step: stepReducer,
     stepUpdate: stepUpdateReducer,
-    definition: siteDefinitionReducer,
     project: projectReducer,
     projects: projectsReducer,
     luckySheet: luckySheetReducer,

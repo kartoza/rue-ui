@@ -22,8 +22,9 @@ import type { AppDispatch } from '../../redux/store.ts';
 import { resetStepAfter } from '../../redux/reducers/projectSlice.ts';
 import { toaster, ToasterType } from '../Toaster/toaster.ts';
 import { getAuthHeaders } from '../../utils/api.ts';
-import layerStyle from './layer_style.json';
 import { ROAD_ID } from './MapSiteLayer.tsx';
+
+import layerStyle from './layer_style.json';
 
 import './style.scss';
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
@@ -31,8 +32,8 @@ import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 const GLTF_ID: string = '3d-model';
 const GEOJSON_ID: string = 'task-layer';
-const GEOJSON_ID_FILL: string = 'task-layer-fill';
-const GEOJSON_ID_LINE: string = 'task-layer-line';
+export const GEOJSON_ID_FILL: string = 'task-layer-fill';
+export const GEOJSON_ID_LINE: string = 'task-layer-line';
 
 let globalCurrentStep: string = '';
 

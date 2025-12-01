@@ -19,7 +19,7 @@ const initialState: StepUpdateState = {
 
 // Update step of project
 export const updateStep = createAsyncThunk(
-  'project/get',
+  'step/update',
   async (
     {
       uuid,

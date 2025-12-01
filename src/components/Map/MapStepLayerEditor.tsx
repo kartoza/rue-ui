@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { Map } from 'maplibre-gl';
-import maplibregl from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
 import MaplibreDraw from 'maplibre-gl-draw';
 import { Box, Button, Flex, Text } from '@chakra-ui/react';
+import { useCurrentDrawMode } from '../../redux/selectors/globalSelector.ts';
+import { DrawingMode } from '../../redux/reducers/global.ts';
+import MapLayerEditor from './MapLayerEditor.tsx';
+import { GEOJSON_ID_FILL, GEOJSON_ID_LINE } from './MapStepLayer.tsx';
+import { hasLayer } from '../../utils/maplibre.tsx';
 
 interface MapStepLayerEditorProps {
   map: Map | null;
@@ -24,133 +28,34 @@ export default function MapStepLayerEditor({
   isEditing,
   setIsEditing,
 }: MapStepLayerEditorProps) {
+  const isDrawSite = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
   const drawRef = useRef<MaplibreDraw | null>(null);
-
-  /** Initialize MaplibreDraw control */
-  useEffect(() => {
-    if (!map) return;
-    if (drawRef.current) return;
-
-    const draw = new MaplibreDraw({
-      displayControlsDefault: false,
-      controls: {},
-      styles: [
-        // Inactive polygon fill
-        {
-          id: 'gl-draw-polygon-fill-inactive',
-          type: 'fill',
-          filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'active', 'true']],
-          paint: { 'fill-color': '#3bb2d0', 'fill-outline-color': '#000000' },
-        },
-        // Active polygon fill
-        {
-          id: 'gl-draw-polygon-fill-active',
-          type: 'fill',
-          filter: ['all', ['==', '$type', 'Polygon'], ['==', 'active', 'true']],
-          paint: { 'fill-color': '#fbb03b', 'fill-outline-color': '#000000' },
-        },
-        // Inactive polygon stroke
-        {
-          id: 'gl-draw-polygon-stroke-inactive',
-          type: 'line',
-          filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'active', 'true']],
-          paint: { 'line-color': '#000000' },
-        },
-        // Active polygon stroke
-        {
-          id: 'gl-draw-polygon-stroke-active',
-          type: 'line',
-          filter: ['all', ['==', '$type', 'Polygon'], ['==', 'active', 'true']],
-          paint: { 'line-color': '#fbb03b', 'line-width': 3 },
-        },
-        // Inactive line
-        {
-          id: 'gl-draw-line-inactive',
-          type: 'line',
-          filter: ['all', ['==', '$type', 'LineString'], ['!=', 'active', 'true']],
-          paint: { 'line-color': '#3bb2d0', 'line-width': 2 },
-        },
-        // Active line
-        {
-          id: 'gl-draw-line-active',
-          type: 'line',
-          filter: ['all', ['==', '$type', 'LineString'], ['==', 'active', 'true']],
-          paint: { 'line-color': '#fbb03b', 'line-width': 3 },
-        },
-        // Vertex points
-        {
-          id: 'gl-draw-polygon-and-line-vertex-active',
-          type: 'circle',
-          filter: ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point']],
-          paint: {
-            'circle-radius': 6,
-            'circle-color': '#fbb03b',
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#fff',
-          },
-        },
-        // Midpoint handles
-        {
-          id: 'gl-draw-polygon-and-line-midpoint',
-          type: 'circle',
-          filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
-          paint: {
-            'circle-radius': 5,
-            'circle-color': '#fbb03b',
-            'circle-opacity': 0.8,
-            'circle-stroke-width': 1,
-            'circle-stroke-color': '#fff',
-          },
-        },
-      ],
-    });
-
-    map.addControl(draw as unknown as maplibregl.IControl);
-    drawRef.current = draw;
-
-    return () => {
-      if (drawRef.current) {
-        try {
-          map.removeControl(drawRef.current as unknown as maplibregl.IControl);
-        } catch (e) {
-          console.error('Error removing draw control:', e);
-        }
-        drawRef.current = null;
-      }
-    };
-  }, [map]);
 
   /** Enable editing for the whole layer (all features) */
   const enableEditing = () => {
-    if (!drawRef.current || !geojson) return;
-    if (!map) return;
-
-    // Clear any existing features in draw
-    // @ts-expect-error: Delete all features
-    drawRef.current.deleteAll();
-
-    // Add all features to draw control
-    geojson.features
-      .filter((f) => ['Polygon', 'MultiPolygon'].includes(f.geometry?.type))
-      .forEach((f) => {
-        drawRef.current!.add(f);
-      });
-
-    // Use direct_select mode - this allows vertex editing but prevents feature dragging
-    // Users click on a feature to select it, then can edit vertices
-    drawRef.current.changeMode('simple_select');
-
+    // Just set isEditing to true - the useEffect will create the draw control and load features
     setIsEditing(true);
   };
 
   /** Cancel editing */
   const cancelEditing = useCallback(() => {
-    if (!drawRef.current) return;
-
-    // @ts-expect-error: Delete all features
-    drawRef.current.deleteAll();
+    // Just set isEditing to false - the useEffect will clean up the draw control
     setIsEditing(false);
   }, [setIsEditing]);
+
+  /** On change is editing */
+  useEffect(() => {
+    if (!map) return;
+    if (!hasLayer(map, GEOJSON_ID_FILL)) return;
+    if (!hasLayer(map, GEOJSON_ID_LINE)) return;
+    if (isEditing) {
+      map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'none');
+      map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'none');
+    } else {
+      map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'visible');
+      map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'visible');
+    }
+  }, [map, isEditing]);
 
   /** Delete selected features */
   const deleteSelected = useCallback(() => {
@@ -203,8 +108,21 @@ export default function MapStepLayerEditor({
   if (!(geojson && geojson.features.length > 0)) {
     return null;
   }
+  if (isDrawSite) {
+    return null;
+  }
+  geojson.features = geojson.features.filter((f) =>
+    ['Polygon', 'MultiPolygon'].includes(f.geometry?.type)
+  );
   return (
     <Box bg="white" borderRadius="md" boxShadow="md" p={2} zIndex={1}>
+      <MapLayerEditor
+        map={map}
+        drawRef={drawRef}
+        defaultGeojson={geojson}
+        enabled={!isEditing || isDrawSite}
+        activeByDefault={true}
+      />
       {/* Edit Whole Layer Button - shown when not editing */}
       {!isEditing && (
         <Button

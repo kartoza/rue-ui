@@ -4,39 +4,52 @@ import type { Feature, FeatureCollection, LineString, Polygon, Position } from '
 import MaplibreDraw from 'maplibre-gl-draw';
 import { HStack, IconButton } from '@chakra-ui/react';
 import { MdCropSquare, MdDelete, MdTimeline } from 'react-icons/md';
-
-import type { DefinitionType } from '../../redux/reducers/definitionSlice.ts';
+import { useCurrentDrawMode } from '../../redux/selectors/globalSelector.ts';
+import { DrawingMode } from '../../redux/reducers/global.ts';
 
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 import './style.scss';
 
-export default function MapDrawing({
-  map,
-  currentDefinition,
-}: {
-  map: MaplibreMap | null;
-  currentDefinition: DefinitionType;
-}) {
+export default function MapSiteEditor({ map }: { map: MaplibreMap | null }) {
   const drawRef = useRef<MaplibreDraw | null>(null);
   const drawFeaturesSource = useRef<GeoJSONSource | null>(null);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [activePolylineButton, setActivePolylineButton] = useState<string | null>(null);
   const isRightClicking = useRef<boolean>(false);
+  const isDrawSite = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
 
   useEffect(() => {
     if (!map) return;
 
+    // Only initialize draw control when isDrawSite is true
+    if (!isDrawSite) {
+      // Clean up any existing draw control
+      if (drawRef.current) {
+        const cleanupFn = (
+          drawRef.current as MaplibreDraw & {
+            cleanup?: () => void;
+          }
+        ).cleanup;
+        if (typeof cleanupFn === 'function') cleanupFn();
+      }
+      return;
+    }
+
     let drawControl: MaplibreDraw;
     let handleKeyDown: (e: KeyboardEvent) => void;
 
-    if (currentDefinition === 'draw_your_own') {
-      map.setLayoutProperty('gl-draw-polygon-fill', 'visibility', 'visible');
-      map.setLayoutProperty('gl-draw-line-red', 'visibility', 'visible');
-      map.setLayoutProperty('gl-draw-polygon-stroke-active', 'visibility', 'visible');
-      map.setLayoutProperty('gl-draw-line-yellow', 'visibility', 'visible');
-      map.setLayoutProperty('gl-draw-line-label-0', 'visibility', 'visible');
-      map.setLayoutProperty('gl-draw-line-label-50', 'visibility', 'visible');
-      map.setLayoutProperty('gl-draw-line-label-100', 'visibility', 'visible');
+    // Initialize draw control when isDrawSite is true
+    if (isDrawSite) {
+      // Add drawnFeatures source if it doesn't exist
+      if (!map.getSource('drawnFeatures')) {
+        map.addSource('drawnFeatures', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [],
+          },
+        });
+      }
 
       drawControl = new MaplibreDraw({
         displayControlsDefault: false,
@@ -67,7 +80,7 @@ export default function MapDrawing({
             filter: ['==', '$type', 'LineString'],
             layout: {
               'symbol-placement': 'line',
-              'text-field': ['get', 'line_number'],
+              'text-field': ['get', 'road_pcent'],
               'text-size': 14,
               'text-allow-overlap': true,
             },
@@ -90,7 +103,7 @@ export default function MapDrawing({
             filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
             paint: {
               'circle-radius': 6,
-              'circle-color': '#00CCFF',
+              'circle-color': '#FFFF00',
               'circle-opacity': 1,
               'circle-stroke-width': 2,
               'circle-stroke-color': '#FFF',
@@ -313,11 +326,68 @@ export default function MapDrawing({
       document.addEventListener('keydown', handleKeyDown);
 
       const cleanup = () => {
+        // Remove event listeners first
         map.off('draw.selectionchange', onSelectionChange);
         map.off('click', onClick);
         map.off('contextmenu', onContextMenu);
         document.removeEventListener('keydown', handleKeyDown);
-        map.removeControl(drawControl as unknown as maplibregl.IControl);
+
+        // Get all layers from the map
+        const mapStyle = map.getStyle();
+        if (mapStyle && mapStyle.layers) {
+          // Remove all layers that belong to MaplibreDraw or drawnFeatures
+          const layersToRemove = mapStyle.layers
+            .filter((layer) => {
+              const layerId = layer.id;
+              // Remove MaplibreDraw's internal layers (start with gl-draw-) and our custom layers
+              return (
+                layerId.startsWith('gl-draw-') ||
+                layerId === 'gl-draw-polygon-fill' ||
+                layerId === 'gl-draw-polygon-stroke-active' ||
+                layerId === 'gl-draw-line-yellow' ||
+                layerId === 'gl-draw-line-red' ||
+                layerId === 'gl-draw-line-label-0' ||
+                layerId === 'gl-draw-line-label-50' ||
+                layerId === 'gl-draw-line-label-100'
+              );
+            })
+            .map((layer) => layer.id);
+
+          // Remove all these layers
+          layersToRemove.forEach((layerId) => {
+            try {
+              if (map.getLayer(layerId)) {
+                map.removeLayer(layerId);
+              }
+            } catch (e) {
+              console.warn(`Error removing layer ${layerId}:`, e);
+            }
+          });
+        }
+
+        // Now remove the draw control (after layers are removed)
+        try {
+          map.removeControl(drawControl as unknown as maplibregl.IControl);
+        } catch (e) {
+          console.warn('Error removing draw control:', e);
+        }
+
+        // Remove all draw-related sources
+        const sources = map.getStyle()?.sources;
+        if (sources) {
+          Object.keys(sources).forEach((sourceId) => {
+            if (sourceId.startsWith('mapbox-gl-draw-') || sourceId === 'drawnFeatures') {
+              try {
+                if (map.getSource(sourceId)) {
+                  map.removeSource(sourceId);
+                }
+              } catch (e) {
+                console.warn(`Error removing source ${sourceId}:`, e);
+              }
+            }
+          });
+        }
+
         drawRef.current = null;
       };
       (
@@ -325,42 +395,6 @@ export default function MapDrawing({
           cleanup?: () => void;
         }
       ).cleanup = cleanup;
-    } else {
-      try {
-        map.setLayoutProperty('gl-draw-polygon-fill', 'visibility', 'none');
-        map.setLayoutProperty('gl-draw-line-red', 'visibility', 'none');
-        map.setLayoutProperty('gl-draw-polygon-stroke-active', 'visibility', 'none');
-        map.setLayoutProperty('gl-draw-line-yellow', 'visibility', 'none');
-        map.setLayoutProperty('gl-draw-line-label-0', 'visibility', 'none');
-        map.setLayoutProperty('gl-draw-line-label-50', 'visibility', 'none');
-        map.setLayoutProperty('gl-draw-line-label-100', 'visibility', 'none');
-
-        if (
-          drawRef.current &&
-          'hasControl' in map &&
-          typeof (
-            map as MaplibreMap & {
-              hasControl?: (control: maplibregl.IControl) => boolean;
-            }
-          ).hasControl === 'function' &&
-          (
-            map as MaplibreMap & {
-              hasControl?: (control: maplibregl.IControl) => boolean;
-            }
-          ).hasControl(drawRef.current as unknown as maplibregl.IControl)
-        ) {
-          map.removeControl(drawRef.current as unknown as maplibregl.IControl);
-          const cleanupFn = (
-            drawRef.current as MaplibreDraw & {
-              cleanup?: () => void;
-            }
-          ).cleanup;
-          if (typeof cleanupFn === 'function') cleanupFn();
-          drawRef.current = null;
-        }
-      } catch (err) {
-        console.log('Error hiding draw controls:', err);
-      }
     }
 
     return () => {
@@ -373,7 +407,7 @@ export default function MapDrawing({
         if (typeof cleanupFn === 'function') cleanupFn();
       }
     };
-  }, [map, currentDefinition]);
+  }, [map, isDrawSite]);
 
   const isPointInPolygon = (point: Position, polygon: Position[]) => {
     const x = point[0];
@@ -474,7 +508,7 @@ export default function MapDrawing({
           const f = e.features[0];
           f.properties = f.properties || {};
           f.properties.line_color = color;
-          f.properties.line_number = String(num);
+          f.properties.road_pcent = String(num);
 
           if (f.id !== undefined && typeof f.id === 'string') drawControl.delete(f.id);
 
@@ -565,85 +599,86 @@ export default function MapDrawing({
     return Math.sqrt((lng - xx) ** 2 + (lat - yy) ** 2);
   }
 
+  if (!isDrawSite) {
+    return null;
+  }
   return (
-    currentDefinition === 'draw_your_own' && (
-      <HStack
-        position="absolute"
-        top="10px"
-        right="10px"
-        bg="white"
-        borderRadius="md"
-        boxShadow="md"
-        p={2}
-        zIndex={1}
+    <HStack
+      position="absolute"
+      top="10px"
+      right="10px"
+      bg="white"
+      borderRadius="md"
+      boxShadow="md"
+      p={2}
+      zIndex={1}
+    >
+      <IconButton
+        onClick={handleDrawPolygon}
+        size="md"
+        disabled={!map}
+        bg={isDrawingMode ? '#fdf3c0' : 'white'}
+        color={isDrawingMode ? '#000' : '#cca12b'}
+        border="1px solid"
+        borderColor={isDrawingMode ? '#cca12b' : 'gray.300'}
+        padding={2}
+        aria-label="Draw polygon"
       >
+        <MdCropSquare />
+      </IconButton>
+
+      {/* --- RED polyline buttons --- */}
+      {['0', '50', '100'].map((n) => (
         <IconButton
-          onClick={handleDrawPolygon}
+          key={`red-${n}`}
+          onClick={() => handleDrawPolyline('red', n)}
           size="md"
           disabled={!map}
-          bg={isDrawingMode ? '#fdf3c0' : 'white'}
-          color={isDrawingMode ? '#000' : '#cca12b'}
+          bg={activePolylineButton === `red-${n}` ? '#cc362bff' : 'white'}
+          color={activePolylineButton === `red-${n}` ? '#000' : '#cc362bff'}
           border="1px solid"
-          borderColor={isDrawingMode ? '#cca12b' : 'gray.300'}
+          borderColor={activePolylineButton === `red-${n}` ? '#cc362bff' : 'gray.300'}
           padding={2}
-          aria-label="Draw polygon"
+          aria-label="Draw polyline"
         >
-          <MdCropSquare />
+          {n}
+          <MdTimeline />
         </IconButton>
+      ))}
 
-        {/* --- RED polyline buttons --- */}
-        {['0', '50', '100'].map((n) => (
-          <IconButton
-            key={`red-${n}`}
-            onClick={() => handleDrawPolyline('red', n)}
-            size="md"
-            disabled={!map}
-            bg={activePolylineButton === `red-${n}` ? '#cc362bff' : 'white'}
-            color={activePolylineButton === `red-${n}` ? '#000' : '#cc362bff'}
-            border="1px solid"
-            borderColor={activePolylineButton === `red-${n}` ? '#cc362bff' : 'gray.300'}
-            padding={2}
-            aria-label="Draw polyline"
-          >
-            {n}
-            <MdTimeline />
-          </IconButton>
-        ))}
-
-        {/* --- YELLOW polyline buttons --- */}
-        {['0', '50', '100'].map((n) => (
-          <IconButton
-            key={`yellow-${n}`}
-            onClick={() => handleDrawPolyline('yellow', n)}
-            size="md"
-            disabled={!map}
-            bg={activePolylineButton === `yellow-${n}` ? '#fdf3c0' : 'white'}
-            color={activePolylineButton === `yellow-${n}` ? '#000' : '#cca12b'}
-            border="1px solid"
-            borderColor={activePolylineButton === `yellow-${n}` ? '#cca12b' : 'gray.300'}
-            padding={2}
-            aria-label="Draw polyline"
-          >
-            {n}
-            <MdTimeline />
-          </IconButton>
-        ))}
-
-        {/* DELETE button */}
+      {/* --- YELLOW polyline buttons --- */}
+      {['0', '50', '100'].map((n) => (
         <IconButton
-          aria-label="Delete selected features"
-          onClick={handleDeleteSelected}
+          key={`yellow-${n}`}
+          onClick={() => handleDrawPolyline('yellow', n)}
           size="md"
           disabled={!map}
-          bg="white"
-          color="black"
+          bg={activePolylineButton === `yellow-${n}` ? '#fdf3c0' : 'white'}
+          color={activePolylineButton === `yellow-${n}` ? '#000' : '#cca12b'}
           border="1px solid"
-          borderColor="gray.300"
+          borderColor={activePolylineButton === `yellow-${n}` ? '#cca12b' : 'gray.300'}
           padding={2}
+          aria-label="Draw polyline"
         >
-          <MdDelete />
+          {n}
+          <MdTimeline />
         </IconButton>
-      </HStack>
-    )
+      ))}
+
+      {/* DELETE button */}
+      <IconButton
+        aria-label="Delete selected features"
+        onClick={handleDeleteSelected}
+        size="md"
+        disabled={!map}
+        bg="white"
+        color="black"
+        border="1px solid"
+        borderColor="gray.300"
+        padding={2}
+      >
+        <MdDelete />
+      </IconButton>
+    </HStack>
   );
 }

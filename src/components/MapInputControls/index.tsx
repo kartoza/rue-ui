@@ -1,17 +1,12 @@
 import { Col, Row } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import Accordion from 'react-bootstrap/Accordion';
 import { Box, Button, Spinner } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
 import { toaster, ToasterType } from '../Toaster/toaster';
 import type { ProjectParameters, ProjectPayload } from '../../redux/reducers/project';
-import type { AppDispatch, RootState } from '../../redux/store';
-import {
-  DEFINITION_LABELS,
-  DefinitionType,
-  setSelectedDefinition,
-} from '../../redux/reducers/definitionSlice';
+import type { AppDispatch } from '../../redux/store';
 import { createProject } from '../../redux/reducers/projectSlice';
 import NeighbourhoodPublicScapeOpenSpace from './Results/NeighbourhoodPublicScapeOpenSpace.tsx';
 import NeighbourhoodPublicScapeAmenities from './Results/NeighbourhoodPublicScapeAmenities.tsx';
@@ -22,10 +17,27 @@ import {
 import DummySite from './SiteDefinitionInput/DummySite.tsx';
 import LoadSite from './SiteDefinitionInput/LoadSite.tsx';
 import { useCurrentStepUpdateLoading } from '../../redux/selectors/stepUpdateSelector.ts';
+import { DrawingMode, setDrawingMode } from '../../redux/reducers/global.ts';
 
 import projectParametersDefault from './general_input.json';
 
 import './style.scss';
+
+const DefinitionType = {
+  vmc_demo: 'vmc_demo',
+  draw_your_own: 'draw_your_own',
+  load_site: 'load_site',
+  dummy_site: 'dummy_site',
+} as const;
+
+type DefinitionType = (typeof DefinitionType)[keyof typeof DefinitionType];
+
+const DEFINITION_LABELS: Record<DefinitionType, string> = {
+  vmc_demo: 'VMC Demo',
+  draw_your_own: 'Draw your own',
+  load_site: 'Load site',
+  dummy_site: 'Dummy Site',
+};
 
 export default function MapInputControls() {
   const dispatch = useDispatch<AppDispatch>();
@@ -34,10 +46,8 @@ export default function MapInputControls() {
   const currentStepUpdateLoading = useCurrentStepUpdateLoading();
 
   const [submitted, setSubmitted] = useState<boolean>(false);
+  const [siteDefinition, setSiteDefinition] = useState<DefinitionType>(DefinitionType.vmc_demo);
   const [activeKeys, setActiveKeys] = useState<string[]>(['0', '0-0']);
-
-  // City - Site Definition
-  const siteDefinition = useSelector((state: RootState) => state.definition.selectedDefinition);
 
   // Parameters
   const [name, setName] = useState<string>('');
@@ -176,7 +186,12 @@ export default function MapInputControls() {
                     onChange={(e) => {
                       setSite(null);
                       setRoads(null);
-                      dispatch(setSelectedDefinition(e.target.value as DefinitionType));
+                      setSiteDefinition(e.target.value as DefinitionType);
+                      if (e.target.value === DefinitionType.draw_your_own) {
+                        dispatch(setDrawingMode(DrawingMode.DRAW_SITE));
+                      } else {
+                        dispatch(setDrawingMode(null));
+                      }
                     }}
                   >
                     {Object.entries(DEFINITION_LABELS).map(([value, label]) => (

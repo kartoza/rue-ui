@@ -4,10 +4,14 @@ import { useEffect, useState } from 'react';
 import { useCurrentProjectState } from '../../redux/selectors/projectSelector';
 import type { FeatureCollection, LineString } from 'geojson';
 import { getAuthHeaders } from '../../utils/api';
-import { removeSource } from '../../utils/maplibre';
+import { hasLayer, removeSource } from '../../utils/maplibre';
+import layerStyle from './layer_style.json';
 
 import './style.scss';
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
+
+const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
+const GLTF_ID: string = '3d-model';
 
 const API_URL: string = import.meta.env.VITE_API_URL;
 export const ROAD_ID: string = 'road-layer';
@@ -56,6 +60,13 @@ export default function MapSiteLayer({ map }: { map: Map | null }) {
 
     if (!arteries || !secondaries) return;
 
+    let before: string | undefined = undefined;
+    if (hasLayer(map, GLTF_ID)) {
+      before = GLTF_ID;
+    }
+    if (hasLayer(map, GL_DRAW_POLYGON)) {
+      before = GL_DRAW_POLYGON;
+    }
     if (roads) {
       // Add source
       map.addSource(ROAD_ID, {
@@ -64,47 +75,47 @@ export default function MapSiteLayer({ map }: { map: Map | null }) {
       });
 
       // Add line layer
-      map.addLayer({
-        id: ROAD_ID,
-        type: 'line',
-        source: ROAD_ID,
-        paint: {
-          'line-color': [
-            'match',
-            ['get', 'road_type'],
-            'road_art',
-            'rgb(237,150,143)',
-            'road_sec',
-            'rgb(250,191,150)',
-            '#00000000',
-          ],
-          'line-width': [
-            'interpolate',
-            ['exponential', 2],
-            ['zoom'],
-            0,
-            [
-              'match',
-              ['get', 'road_type'],
-              'road_art',
-              arteries * 0.00001,
-              'road_sec',
-              secondaries * 0.00001,
+      map.addLayer(
+        {
+          id: ROAD_ID,
+          type: 'line',
+          source: ROAD_ID,
+          paint: {
+            // @ts-expect-error: Custom style function
+            'line-color': layerStyle.road_color,
+            'line-width': [
+              'interpolate',
+              ['exponential', 2],
+              ['zoom'],
               0,
+              [
+                'match',
+                ['get', 'road_type'],
+                'road_art',
+                arteries * 0.00001,
+                'road_sec',
+                secondaries * 0.00001,
+                0,
+              ],
+              22,
+              [
+                'match',
+                ['get', 'road_type'],
+                'road_art',
+                arteries * 50,
+                'road_sec',
+                secondaries * 50,
+                0,
+              ],
             ],
-            22,
-            [
-              'match',
-              ['get', 'road_type'],
-              'road_art',
-              arteries * 50,
-              'road_sec',
-              secondaries * 50,
-              0,
-            ],
-          ],
+          },
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round',
+          },
         },
-      });
+        before
+      );
     }
 
     return () => {

@@ -11,5 +11,15 @@
     "off_grid",
     "rgb(250,242,212)",
     "#7FBA7F"
-  ]
+  ],
+  "road_color": [
+    "match",
+    ["get", "road_type"],
+    "road_art",
+    "#FF6666",
+    "road_sec",
+    "#FFB24D",
+    "#00000000"
+  ],
+  "road_width": ["match", ["get", "road_type"], "road_art", 8, "road_sec", 6, 0]
 }
