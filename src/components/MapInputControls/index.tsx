@@ -18,7 +18,8 @@ import DummySite from './SiteDefinitionInput/DummySite.tsx';
 import LoadSite from './SiteDefinitionInput/LoadSite.tsx';
 import { useCurrentStepUpdateLoading } from '../../redux/selectors/stepUpdateSelector.ts';
 import { DrawingMode, setDrawingMode } from '../../redux/reducers/global.ts';
-
+import { useCurrentProjectInput } from '../../redux/selectors/projectInputSelector.ts';
+import { updateRoads, updateSite } from '../../redux/reducers/projectInputSlice.ts';
 import projectParametersDefault from './general_input.json';
 
 import './style.scss';
@@ -44,6 +45,7 @@ export default function MapInputControls() {
   const isProjectDone = useCurrentProjectDone();
   const currentProject = useCurrentProjectState();
   const currentStepUpdateLoading = useCurrentStepUpdateLoading();
+  const { site, roads } = useCurrentProjectInput();
 
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [siteDefinition, setSiteDefinition] = useState<DefinitionType>(DefinitionType.vmc_demo);
@@ -52,14 +54,12 @@ export default function MapInputControls() {
   // Parameters
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string | null>('');
-
   const [parameters, setParameters] = useState<ProjectParameters>(projectParametersDefault);
-  const [site, setSite] = useState<FeatureCollection<Polygon> | null>(null);
-  const [roads, setRoads] = useState<FeatureCollection<LineString> | null>(null);
 
   const errors: string[] = [];
   switch (siteDefinition) {
     case DefinitionType.load_site:
+    case DefinitionType.draw_your_own:
       if (!site || !roads) {
         errors.push('Please select a site and roads in the city');
       }
@@ -133,6 +133,16 @@ export default function MapInputControls() {
       payload.roads = roads;
     }
     dispatch(createProject(payload));
+  };
+
+  /** Set site */
+  const setSite = (site: FeatureCollection<Polygon> | null) => {
+    dispatch(updateSite(site));
+  };
+
+  /** Set roads */
+  const setRoads = (roads: FeatureCollection<LineString> | null) => {
+    dispatch(updateRoads(roads));
   };
 
   return (

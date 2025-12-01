@@ -14,12 +14,20 @@
   ],
   "road_color": [
     "match",
-    ["get", "road_type"],
+    ["coalesce", ["get", "road_type"], ["get", "user_road_type"]],
     "road_art",
     "#FF6666",
     "road_sec",
     "#FFB24D",
-    "#00000000"
+    "#000000"
   ],
-  "road_width": ["match", ["get", "road_type"], "road_art", 8, "road_sec", 6, 0]
+  "road_width": [
+    "match",
+    ["coalesce", ["get", "road_type"], ["get", "user_road_type"]],
+    "road_art",
+    8,
+    "road_sec",
+    6,
+    1
+  ]
 }

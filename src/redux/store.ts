@@ -4,6 +4,7 @@ import globalReducer from './reducers/global';
 import luckySheetReducer from './reducers/luckySheetSlice';
 import projectReducer from './reducers/projectSlice';
 import projectsReducer from './reducers/projectsSlice';
+import projectInputReducer from './reducers/projectInputSlice';
 import stepReducer from './reducers/stepSlice';
 import stepUpdateReducer from './reducers/stepUpdateSlice';
 
@@ -15,6 +16,7 @@ export const store = configureStore({
     stepUpdate: stepUpdateReducer,
     project: projectReducer,
     projects: projectsReducer,
+    projectInput: projectInputReducer,
     luckySheet: luckySheetReducer,
   },
 });

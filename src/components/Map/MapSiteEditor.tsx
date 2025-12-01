@@ -1,684 +1,245 @@
-import { useEffect, useRef, useState } from 'react';
-import type { GeoJSONSource, Map as MaplibreMap, MapMouseEvent } from 'maplibre-gl';
-import type { Feature, FeatureCollection, LineString, Polygon, Position } from 'geojson';
-import MaplibreDraw from 'maplibre-gl-draw';
+import { useRef, useState } from 'react';
+import type { Map as MaplibreMap } from 'maplibre-gl';
 import { HStack, IconButton } from '@chakra-ui/react';
+import { useDispatch } from 'react-redux';
+import type { FeatureCollection, LineString, Polygon } from 'geojson';
+import type { AppDispatch } from '../../redux/store.ts';
 import { MdCropSquare, MdDelete, MdTimeline } from 'react-icons/md';
 import { useCurrentDrawMode } from '../../redux/selectors/globalSelector.ts';
 import { DrawingMode } from '../../redux/reducers/global.ts';
+import MapLayerEditor, { type MapLayerEditorRef } from './MapLayerEditor.tsx';
+import { updateRoads, updateSite } from '../../redux/reducers/projectInputSlice.ts';
 
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 import './style.scss';
 
+export const DrawMode = {
+  polygon: 'polygon',
+  road_art_0: 'road_art_0',
+  road_art_50: 'road_art_50',
+  road_art_100: 'road_art_100',
+  road_sec_0: 'road_sec_0',
+  road_sec_50: 'road_sec_50',
+  road_sec_100: 'road_sec_100',
+} as const;
+
+export type DrawMode = (typeof DrawMode)[keyof typeof DrawMode];
+
 export default function MapSiteEditor({ map }: { map: MaplibreMap | null }) {
-  const drawRef = useRef<MaplibreDraw | null>(null);
-  const drawFeaturesSource = useRef<GeoJSONSource | null>(null);
-  const [isDrawingMode, setIsDrawingMode] = useState(false);
-  const [activePolylineButton, setActivePolylineButton] = useState<string | null>(null);
-  const isRightClicking = useRef<boolean>(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const editorRef = useRef<MapLayerEditorRef | null>(null);
+  const [mode, setMode] = useState<DrawMode | null>(null);
   const isDrawSite = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
 
-  useEffect(() => {
-    if (!map) return;
+  const onFeaturesChanged = () => {
+    const drawRef = editorRef.current?.getDrawRef();
+    if (!drawRef?.current) return;
 
-    // Only initialize draw control when isDrawSite is true
-    if (!isDrawSite) {
-      // Clean up any existing draw control
-      if (drawRef.current) {
-        const cleanupFn = (
-          drawRef.current as MaplibreDraw & {
-            cleanup?: () => void;
-          }
-        ).cleanup;
-        if (typeof cleanupFn === 'function') cleanupFn();
-      }
-      return;
-    }
+    const drawControl = drawRef.current;
 
-    let drawControl: MaplibreDraw;
-    let handleKeyDown: (e: KeyboardEvent) => void;
-
-    // Initialize draw control when isDrawSite is true
-    if (isDrawSite) {
-      // Add drawnFeatures source if it doesn't exist
-      if (!map.getSource('drawnFeatures')) {
-        map.addSource('drawnFeatures', {
-          type: 'geojson',
-          data: {
+    const allFeatures = drawControl.getAll();
+    const siteFeatures = allFeatures.features.filter((f) => f.geometry.type === 'Polygon');
+    // @ts-expect-error: This is correct
+    const site: FeatureCollection<Polygon> | null =
+      siteFeatures.length > 0
+        ? {
             type: 'FeatureCollection',
-            features: [],
-          },
-        });
-      }
-
-      drawControl = new MaplibreDraw({
-        displayControlsDefault: false,
-        controls: {},
-        styles: [
-          {
-            id: 'gl-draw-polygon-fill',
-            type: 'fill',
-            filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
-            paint: { 'fill-color': '#FFFF00', 'fill-opacity': 0.4 },
-          },
-          {
-            id: 'gl-draw-polygon-stroke-active',
-            type: 'line',
-            filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
-            paint: { 'line-color': '#FFFF00', 'line-width': 2 },
-          },
-          {
-            id: 'gl-draw-line',
-            type: 'line',
-            filter: ['all', ['==', '$type', 'LineString']],
-            layout: { 'line-cap': 'round', 'line-join': 'round' },
-            paint: { 'line-color': 'black', 'line-width': 4 },
-          },
-          {
-            id: 'gl-draw-line-label',
-            type: 'symbol',
-            filter: ['==', '$type', 'LineString'],
-            layout: {
-              'symbol-placement': 'line',
-              'text-field': ['get', 'road_pcent'],
-              'text-size': 14,
-              'text-allow-overlap': true,
-            },
-            paint: { 'text-color': '#000000' },
-          },
-          {
-            id: 'gl-draw-polygon-and-line-vertex-active',
-            type: 'circle',
-            filter: ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point']],
-            paint: {
-              'circle-radius': 5,
-              'circle-color': '#FFFF00',
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#FFF',
-            },
-          },
-          {
-            id: 'gl-draw-polygon-and-line-midpoint',
-            type: 'circle',
-            filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
-            paint: {
-              'circle-radius': 6,
-              'circle-color': '#FFFF00',
-              'circle-opacity': 1,
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#FFF',
-            },
-          },
-        ],
-      });
-
-      map.addControl(drawControl as unknown as maplibregl.IControl);
-      drawRef.current = drawControl;
-      drawFeaturesSource.current = map.getSource('drawnFeatures') as GeoJSONSource | null;
-
-      const onSelectionChange = () => {
-        const drawnSource = map.getSource('drawnFeatures') as GeoJSONSource | undefined;
-        if (!drawnSource || typeof drawnSource.setData !== 'function') return;
-
-        const existingData: FeatureCollection = (
-          drawnSource as GeoJSONSource & { _data?: FeatureCollection }
-        )._data || { type: 'FeatureCollection', features: [] };
-        const selected = drawRef.current!.getSelected().features as Feature[];
-        const all = drawRef.current!.getAll().features as Feature[];
-
-        const toMoveBack = all.filter((f) => !selected.some((sf) => sf.id === f.id));
-        if (toMoveBack.length > 0) {
-          toMoveBack.forEach((f) => {
-            existingData.features.push(f);
-            if (f.id !== undefined) drawRef.current!.delete(f.id as string);
-          });
-          drawnSource.setData(existingData);
-        }
-
-        if (selected.length > 0) {
-          selected.forEach((f) => {
-            existingData.features = existingData.features.filter((x) => x.id !== f.id);
-            drawnSource.setData(existingData);
-            if (!all.some((x) => x.id === f.id) && f) {
-              drawRef.current!.add(f);
-            }
-          });
-        }
-
-        if (selected.length === 0) {
-          const all = drawRef.current!.getAll().features as Feature[];
-          if (all.length > 0) {
-            all.forEach((f) => {
-              existingData.features.push(f);
-              if (f.id !== undefined) drawRef.current!.delete(f.id as string);
-            });
-            drawnSource.setData(existingData);
+            features: siteFeatures,
           }
-        }
-      };
+        : null;
+    dispatch(updateSite(site));
 
-      map.on('draw.selectionchange', onSelectionChange);
-
-      const onClick = (e: MapMouseEvent) => {
-        const mode = drawRef.current?.getMode();
-        if (mode === 'draw_polygon' || mode === 'draw_line_string') return;
-        removeAllDrawFeatures();
-
-        const drawnSource = map.getSource('drawnFeatures') as GeoJSONSource | undefined;
-        const features: FeatureCollection = (
-          drawnSource as GeoJSONSource & { _data?: FeatureCollection }
-        )?._data || { type: 'FeatureCollection', features: [] };
-
-        const point: Position = [e.lngLat.lng, e.lngLat.lat];
-        let selectedFeature: Feature | null = null;
-
-        for (const f of features.features) {
-          if (f.geometry.type === 'Polygon') {
-            const poly = (f.geometry as Polygon).coordinates[0] as Position[];
-            if (isPointInPolygon(point, poly)) {
-              selectedFeature = f;
-              break;
-            }
+    const roadsFeatures = allFeatures.features.filter((f) => f.geometry.type === 'LineString');
+    // @ts-expect-error: This is correct
+    const roads: FeatureCollection<LineString> | null =
+      roadsFeatures.length > 0
+        ? {
+            type: 'FeatureCollection',
+            features: roadsFeatures,
           }
-          if (f.geometry.type === 'LineString') {
-            const line = (f.geometry as LineString).coordinates as Position[];
-            if (isPointNearLine(point, line, 0.2)) {
-              selectedFeature = f;
-              break;
-            }
-            for (let i = 0; i < line.length; i++) {
-              if (pointToVertexDistance(point, line[i] as Position) < 0.2) {
-                selectedFeature = f;
-                break;
-              }
-            }
-            if (selectedFeature) break;
-          }
-        }
-
-        if (selectedFeature) {
-          features.features = features.features.filter((x) => x.id !== selectedFeature!.id);
-          drawnSource?.setData(features);
-          drawRef.current!.add(selectedFeature);
-          if (selectedFeature.id !== undefined) {
-            drawRef.current!.changeMode('simple_select', { featureIds: [selectedFeature.id] });
-          }
-        }
-      };
-
-      map.on('click', onClick);
-
-      const onContextMenu = (e: MapMouseEvent) => {
-        isRightClicking.current = true;
-        setTimeout(() => {
-          const mode = drawRef.current?.getMode();
-          if (mode === 'draw_polygon' || mode === 'draw_line_string') {
-            isRightClicking.current = false;
-            return;
-          }
-
-          e.preventDefault();
-
-          const selected = drawRef.current!.getSelected();
-          if (mode === 'direct_select') {
-            if (selected.features.length > 0) {
-              const id = selected.features[0].id;
-              drawRef.current?.changeMode('direct_select', { featureId: id });
-            } else {
-              const drawnSource = map.getSource('drawnFeatures') as GeoJSONSource | undefined;
-              const features: FeatureCollection = (
-                drawnSource as GeoJSONSource & { _data?: FeatureCollection }
-              )?._data || { type: 'FeatureCollection', features: [] };
-              const all = drawRef.current!.getAll().features as Feature[];
-              all.forEach((f) => {
-                features.features.push(f);
-                if (f.id !== undefined) drawRef.current!.delete(f.id as string);
-              });
-              drawnSource?.setData(features);
-              drawRef.current!.changeMode('simple_select', { featureIds: [] });
-            }
-          } else {
-            const drawnSource = map.getSource('drawnFeatures') as GeoJSONSource | undefined;
-            const features: FeatureCollection = (
-              drawnSource as GeoJSONSource & { _data?: FeatureCollection }
-            )?._data || { type: 'FeatureCollection', features: [] };
-            const point: Position = [e.lngLat.lng, e.lngLat.lat];
-            let cf: Feature | null = null;
-
-            for (const f of features.features) {
-              if (f.geometry.type === 'Polygon') {
-                if (isPointInPolygon(point, (f.geometry as Polygon).coordinates[0] as Position[])) {
-                  cf = f;
-                  break;
-                }
-              }
-              if (f.geometry.type === 'LineString') {
-                const line = (f.geometry as LineString).coordinates as Position[];
-                if (isPointNearLine(point, line, 0.2)) {
-                  cf = f;
-                  break;
-                }
-                for (let i = 0; i < line.length; i++) {
-                  if (pointToVertexDistance(point, line[i] as Position) < 0.2) {
-                    cf = f;
-                    break;
-                  }
-                }
-                if (cf) break;
-              }
-            }
-
-            if (cf) {
-              features.features = features.features.filter((x) => x.id !== cf!.id);
-              drawnSource?.setData(features);
-              drawRef.current!.add(cf);
-              if (cf.id !== undefined) {
-                drawRef.current!.changeMode('direct_select', { featureId: cf.id });
-              }
-            }
-          }
-
-          isRightClicking.current = false;
-        }, 0);
-      };
-
-      map.on('contextmenu', onContextMenu);
-
-      handleKeyDown = (e: KeyboardEvent) => {
-        const mode = drawRef.current?.getMode();
-        if (mode === 'direct_select' && (e.key === 'Delete' || e.key === 'Backspace')) {
-          const selected = drawRef.current!.getSelected();
-          if (selected.features.length > 0) {
-            const feature = selected.features[0];
-            const selectedCoordPaths = drawRef.current!.getSelectedPoints();
-            if (selectedCoordPaths.features.length > 0) {
-              e.preventDefault();
-
-              const coordPath = selectedCoordPaths?.features[0]?.properties?.coord_path as string;
-              const pathParts = coordPath.split('.');
-              const index = parseInt(pathParts[pathParts.length - 1]);
-
-              if (feature.geometry.type === 'Polygon') {
-                const coords = (feature.geometry as GeoJSON.Polygon).coordinates[0];
-                if (coords.length > 4) {
-                  coords.splice(index, 1);
-                  coords[coords.length - 1] = coords[0];
-                  (feature.geometry as GeoJSON.Polygon).coordinates[0] = coords;
-                  drawRef.current!.add(feature);
-                  drawRef.current!.changeMode('direct_select', { featureId: feature.id });
-                }
-              }
-
-              if (feature.geometry.type === 'LineString') {
-                const coords = (feature.geometry as GeoJSON.LineString).coordinates;
-                if (coords.length > 2) {
-                  coords.splice(index, 1);
-                  (feature.geometry as GeoJSON.LineString).coordinates = coords;
-                  drawRef.current!.add(feature);
-                  drawRef.current!.changeMode('direct_select', { featureId: feature.id });
-                }
-              }
-            }
-          }
-        }
-      };
-
-      document.addEventListener('keydown', handleKeyDown);
-
-      const cleanup = () => {
-        // Remove event listeners first
-        map.off('draw.selectionchange', onSelectionChange);
-        map.off('click', onClick);
-        map.off('contextmenu', onContextMenu);
-        document.removeEventListener('keydown', handleKeyDown);
-
-        // Get all layers from the map
-        const mapStyle = map.getStyle();
-        if (mapStyle && mapStyle.layers) {
-          // Remove all layers that belong to MaplibreDraw or drawnFeatures
-          const layersToRemove = mapStyle.layers
-            .filter((layer) => {
-              const layerId = layer.id;
-              // Remove MaplibreDraw's internal layers (start with gl-draw-) and our custom layers
-              return (
-                layerId.startsWith('gl-draw-') ||
-                layerId === 'gl-draw-polygon-fill' ||
-                layerId === 'gl-draw-polygon-stroke-active' ||
-                layerId === 'gl-draw-line-yellow' ||
-                layerId === 'gl-draw-line-red' ||
-                layerId === 'gl-draw-line-label-0' ||
-                layerId === 'gl-draw-line-label-50' ||
-                layerId === 'gl-draw-line-label-100'
-              );
-            })
-            .map((layer) => layer.id);
-
-          // Remove all these layers
-          layersToRemove.forEach((layerId) => {
-            try {
-              if (map.getLayer(layerId)) {
-                map.removeLayer(layerId);
-              }
-            } catch (e) {
-              console.warn(`Error removing layer ${layerId}:`, e);
-            }
-          });
-        }
-
-        // Now remove the draw control (after layers are removed)
-        try {
-          map.removeControl(drawControl as unknown as maplibregl.IControl);
-        } catch (e) {
-          console.warn('Error removing draw control:', e);
-        }
-
-        // Remove all draw-related sources
-        const sources = map.getStyle()?.sources;
-        if (sources) {
-          Object.keys(sources).forEach((sourceId) => {
-            if (sourceId.startsWith('mapbox-gl-draw-') || sourceId === 'drawnFeatures') {
-              try {
-                if (map.getSource(sourceId)) {
-                  map.removeSource(sourceId);
-                }
-              } catch (e) {
-                console.warn(`Error removing source ${sourceId}:`, e);
-              }
-            }
-          });
-        }
-
-        drawRef.current = null;
-      };
-      (
-        drawRef.current as MaplibreDraw & {
-          cleanup?: () => void;
-        }
-      ).cleanup = cleanup;
-    }
-
-    return () => {
-      if (drawRef.current) {
-        const cleanupFn = (
-          drawRef.current as MaplibreDraw & {
-            cleanup?: () => void;
-          }
-        ).cleanup;
-        if (typeof cleanupFn === 'function') cleanupFn();
-      }
-    };
-  }, [map, isDrawSite]);
-
-  const isPointInPolygon = (point: Position, polygon: Position[]) => {
-    const x = point[0];
-    const y = point[1];
-    let inside = false;
-    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-      const xi = polygon[i][0];
-      const yi = polygon[i][1];
-      const xj = polygon[j][0];
-      const yj = polygon[j][1];
-      const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-      if (intersect) inside = !inside;
-    }
-    return inside;
+        : null;
+    dispatch(updateRoads(roads));
   };
 
-  const removeAllDrawFeatures = () => {
-    const drawnSource = map?.getSource('drawnFeatures') as maplibregl.GeoJSONSource | undefined;
-    const all = (drawRef.current?.getAll()?.features as GeoJSON.Feature[]) || [];
-    const features: GeoJSON.FeatureCollection = (
-      drawnSource as maplibregl.GeoJSONSource & {
-        _data?: GeoJSON.FeatureCollection;
-      }
-    )?._data || { type: 'FeatureCollection', features: [] };
+  const startDrawPolygon = () => {
+    const drawRef = editorRef.current?.getDrawRef();
+    if (!drawRef?.current) return;
 
-    all.forEach((f) => {
-      features.features.push(f);
-      if (f.id !== undefined && typeof f.id === 'string') drawRef.current!.delete(f.id);
-    });
+    const drawControl = drawRef.current;
+    const isNewMode = mode !== DrawMode.polygon;
 
-    drawnSource?.setData(features);
-  };
-
-  const handleDrawPolygon = () => {
-    if (!drawRef.current) return;
-
-    const newMode = !isDrawingMode;
-    const drawControl = drawRef.current!;
-
-    removeAllDrawFeatures();
-
-    if (newMode) {
+    if (isNewMode) {
       drawControl.changeMode('draw_polygon');
 
-      const onDrawCreate = (e: { features: GeoJSON.Feature[] }) => {
-        if (e.features?.length > 0) {
-          const feature = e.features[0];
-          if (feature.id !== undefined && typeof feature.id === 'string')
-            drawControl.delete(feature.id);
-
-          const drawnSource = map?.getSource('drawnFeatures') as
-            | maplibregl.GeoJSONSource
-            | undefined;
-          if (drawnSource?.setData) {
-            const existing: GeoJSON.FeatureCollection = (
-              drawnSource as maplibregl.GeoJSONSource & {
-                _data?: GeoJSON.FeatureCollection;
-              }
-            )._data || { type: 'FeatureCollection', features: [] };
-            existing.features.push(feature);
-            drawnSource.setData(existing);
-          }
-        }
-
+      const onDrawCreate = () => {
         map?.off('draw.create', onDrawCreate);
+
         requestAnimationFrame(() => {
-          removeAllDrawFeatures();
+          setMode(null);
           drawControl.changeMode('simple_select');
-          drawControl.trash();
-          setIsDrawingMode(false);
-          setActivePolylineButton(null);
+          onFeaturesChanged();
         });
       };
 
       map?.on('draw.create', onDrawCreate);
-      setActivePolylineButton(null);
+      setMode(DrawMode.polygon);
     } else {
-      drawRef.current!.changeMode('simple_select');
+      setMode(null);
+      drawControl.changeMode('simple_select');
     }
-
-    setIsDrawingMode(newMode);
   };
 
-  const handleDrawPolyline = (color: string, num: string) => {
-    if (!drawRef.current || !map) return;
+  const startDrawRoad = (road_type: string, road_pcent: number) => {
+    const drawRef = editorRef.current?.getDrawRef();
+    if (!drawRef?.current || !map) return;
 
-    const drawControl = drawRef.current!;
-    const key = `${color}-${num}`;
-    const newMode = activePolylineButton !== key;
+    const drawControl = drawRef.current;
+    const key = `${road_type}_${road_pcent}`;
+    const newMode = DrawMode[key];
+    const isNewMode = mode !== newMode;
 
-    removeAllDrawFeatures();
-
-    if (newMode) {
+    if (isNewMode) {
       drawControl.changeMode('draw_line_string');
 
       const onDrawCreate = (e: { features: GeoJSON.Feature[] }) => {
+        map.off('draw.create', onDrawCreate);
+
         if (e.features?.length > 0) {
-          const f = e.features[0];
-          f.properties = f.properties || {};
-          f.properties.line_color = color;
-          f.properties.road_pcent = String(num);
+          const feature = e.features[0];
+          const featureId = feature.id as string;
 
-          if (f.id !== undefined && typeof f.id === 'string') drawControl.delete(f.id);
+          // Delete the feature and add it back with properties
+          drawControl.delete(featureId);
 
-          const drawnSource = map.getSource('drawnFeatures') as
-            | maplibregl.GeoJSONSource
-            | undefined;
-          if (drawnSource?.setData) {
-            const existing: GeoJSON.FeatureCollection = (
-              drawnSource as maplibregl.GeoJSONSource & {
-                _data?: GeoJSON.FeatureCollection;
-              }
-            )._data || { type: 'FeatureCollection', features: [] };
-            existing.features.push(f);
-            drawnSource.setData(existing);
-          }
+          // Add properties to the feature
+          const updatedFeature = {
+            ...feature,
+            properties: {
+              ...feature.properties,
+              road_type: road_type,
+              road_pcent: road_pcent,
+            },
+          };
+
+          drawControl.add(updatedFeature);
         }
 
-        map.off('draw.create', onDrawCreate);
         requestAnimationFrame(() => {
-          removeAllDrawFeatures();
+          setMode(null);
           drawControl.changeMode('simple_select');
-          drawControl.trash();
-          setIsDrawingMode(false);
-          setActivePolylineButton(null);
+          onFeaturesChanged();
         });
       };
 
       map.on('draw.create', onDrawCreate);
-      setActivePolylineButton(key);
+      setMode(newMode);
     } else {
       drawControl.changeMode('simple_select');
-      setActivePolylineButton(null);
+      setMode(null);
     }
   };
 
-  const handleDeleteSelected = () => {
-    if (!drawRef.current) return;
-
-    const sel = drawRef.current!.getSelected();
-    (sel.features as Feature[]).forEach((f) => {
-      if (f.id !== undefined && typeof f.id === 'string') drawRef.current!.delete(f.id);
-    });
-
-    setIsDrawingMode(false);
-    setActivePolylineButton(null);
+  const deleteSelected = () => {
+    editorRef.current?.deleteSelected();
   };
-
-  const isPointNearLine = (point: Position, line: Position[], tolerance = 0.2) => {
-    for (let i = 0; i < line.length - 1; i++) {
-      if (pointToSegmentDistance(point, line[i], line[i + 1]) < tolerance) return true;
-    }
-    return false;
-  };
-
-  const pointToVertexDistance = (p: Position, v: Position) => {
-    const dx = p[0] - v[0];
-    const dy = p[1] - v[1];
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  function pointToSegmentDistance(p: Position, v: Position, w: Position) {
-    const [lng, lat] = p;
-    const [lng1, lat1] = v;
-    const [lng2, lat2] = w;
-
-    const A = lng - lng1;
-    const B = lat - lat1;
-    const C = lng2 - lng1;
-    const D = lat2 - lat1;
-
-    const dot = A * C + B * D;
-    const len = C * C + D * D;
-
-    const param = len !== 0 ? dot / len : -1;
-
-    let xx, yy;
-    if (param < 0) {
-      xx = lng1;
-      yy = lat1;
-    } else if (param > 1) {
-      xx = lng2;
-      yy = lat2;
-    } else {
-      xx = lng1 + param * C;
-      yy = lat1 + param * D;
-    }
-
-    return Math.sqrt((lng - xx) ** 2 + (lat - yy) ** 2);
-  }
-
   if (!isDrawSite) {
     return null;
   }
+
   return (
-    <HStack
-      position="absolute"
-      top="10px"
-      right="10px"
-      bg="white"
-      borderRadius="md"
-      boxShadow="md"
-      p={2}
-      zIndex={1}
-    >
-      <IconButton
-        onClick={handleDrawPolygon}
-        size="md"
-        disabled={!map}
-        bg={isDrawingMode ? '#fdf3c0' : 'white'}
-        color={isDrawingMode ? '#000' : '#cca12b'}
-        border="1px solid"
-        borderColor={isDrawingMode ? '#cca12b' : 'gray.300'}
-        padding={2}
-        aria-label="Draw polygon"
-      >
-        <MdCropSquare />
-      </IconButton>
-
-      {/* --- RED polyline buttons --- */}
-      {['0', '50', '100'].map((n) => (
-        <IconButton
-          key={`red-${n}`}
-          onClick={() => handleDrawPolyline('red', n)}
-          size="md"
-          disabled={!map}
-          bg={activePolylineButton === `red-${n}` ? '#cc362bff' : 'white'}
-          color={activePolylineButton === `red-${n}` ? '#000' : '#cc362bff'}
-          border="1px solid"
-          borderColor={activePolylineButton === `red-${n}` ? '#cc362bff' : 'gray.300'}
-          padding={2}
-          aria-label="Draw polyline"
-        >
-          {n}
-          <MdTimeline />
-        </IconButton>
-      ))}
-
-      {/* --- YELLOW polyline buttons --- */}
-      {['0', '50', '100'].map((n) => (
-        <IconButton
-          key={`yellow-${n}`}
-          onClick={() => handleDrawPolyline('yellow', n)}
-          size="md"
-          disabled={!map}
-          bg={activePolylineButton === `yellow-${n}` ? '#fdf3c0' : 'white'}
-          color={activePolylineButton === `yellow-${n}` ? '#000' : '#cca12b'}
-          border="1px solid"
-          borderColor={activePolylineButton === `yellow-${n}` ? '#cca12b' : 'gray.300'}
-          padding={2}
-          aria-label="Draw polyline"
-        >
-          {n}
-          <MdTimeline />
-        </IconButton>
-      ))}
-
-      {/* DELETE button */}
-      <IconButton
-        aria-label="Delete selected features"
-        onClick={handleDeleteSelected}
-        size="md"
-        disabled={!map}
+    <>
+      <MapLayerEditor
+        ref={editorRef}
+        map={map}
+        defaultGeojson={null}
+        enabled={isDrawSite}
+        activeByDefault={true}
+        onFeaturesChanged={onFeaturesChanged}
+      />
+      <HStack
+        position="absolute"
+        top="10px"
+        right="10px"
         bg="white"
-        color="black"
-        border="1px solid"
-        borderColor="gray.300"
-        padding={2}
+        borderRadius="md"
+        boxShadow="md"
+        p={2}
+        zIndex={1}
       >
-        <MdDelete />
-      </IconButton>
-    </HStack>
+        <IconButton
+          onClick={startDrawPolygon}
+          size="md"
+          disabled={!map}
+          bg={mode === DrawMode.polygon ? '#fdf3c0' : 'white'}
+          color={mode === DrawMode.polygon ? '#000' : '#cca12b'}
+          border="1px solid"
+          borderColor={mode === DrawMode.polygon ? '#cca12b' : 'gray.300'}
+          padding={2}
+          aria-label="Draw polygon"
+        >
+          <MdCropSquare />
+        </IconButton>
+
+        {/* --- Road Artery polyline buttons --- */}
+        {[0, 50, 100].map((n) => {
+          const key = `road_art_${n}`;
+          const active = mode === DrawMode[key];
+          return (
+            <IconButton
+              key={key}
+              onClick={() => startDrawRoad('road_art', n)}
+              size="md"
+              disabled={!map}
+              bg={active ? '#FF6666' : 'white'}
+              color={active ? 'white' : '#FF6666'}
+              border="1px solid"
+              borderColor={active ? '#FF6666' : 'gray.300'}
+              padding={2}
+              aria-label="Draw polyline"
+            >
+              {n}
+              <MdTimeline />
+            </IconButton>
+          );
+        })}
+
+        {/* --- Road secondary polyline buttons --- */}
+        {[0, 50, 100].map((n) => {
+          const key = `road_sec_${n}`;
+          const active = mode === DrawMode[key];
+          return (
+            <IconButton
+              key={key}
+              onClick={() => startDrawRoad('road_sec', n)}
+              size="md"
+              disabled={!map}
+              bg={active ? '#FFB24D' : 'white'}
+              color={active ? '#000' : '#FFB24D'}
+              border="1px solid"
+              borderColor={active ? '#FFB24D' : 'gray.300'}
+              padding={2}
+              aria-label="Draw polyline"
+            >
+              {n}
+              <MdTimeline />
+            </IconButton>
+          );
+        })}
+        {/* DELETE button */}
+        <IconButton
+          aria-label="Delete selected features"
+          onClick={deleteSelected}
+          size="md"
+          disabled={!map}
+          bg="white"
+          color="black"
+          border="1px solid"
+          borderColor="gray.300"
+          padding={2}
+        >
+          <MdDelete />
+        </IconButton>
+      </HStack>
+    </>
   );
 }

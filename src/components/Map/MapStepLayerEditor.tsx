@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { Map } from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
-import MaplibreDraw from 'maplibre-gl-draw';
 import { Box, Button, Flex, Text } from '@chakra-ui/react';
 import { useCurrentDrawMode } from '../../redux/selectors/globalSelector.ts';
 import { DrawingMode } from '../../redux/reducers/global.ts';
-import MapLayerEditor from './MapLayerEditor.tsx';
-import { GEOJSON_ID_FILL, GEOJSON_ID_LINE } from './MapStepLayer.tsx';
-import { hasLayer } from '../../utils/maplibre.tsx';
+import MapLayerEditor, { type MapLayerEditorRef } from './MapLayerEditor.tsx';
 
 interface MapStepLayerEditorProps {
   map: Map | null;
@@ -29,7 +26,7 @@ export default function MapStepLayerEditor({
   setIsEditing,
 }: MapStepLayerEditorProps) {
   const isDrawSite = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
-  const drawRef = useRef<MaplibreDraw | null>(null);
+  const editorRef = useRef<MapLayerEditorRef | null>(null);
 
   /** Enable editing for the whole layer (all features) */
   const enableEditing = () => {
@@ -43,40 +40,10 @@ export default function MapStepLayerEditor({
     setIsEditing(false);
   }, [setIsEditing]);
 
-  /** On change is editing */
-  useEffect(() => {
-    if (!map) return;
-    if (!hasLayer(map, GEOJSON_ID_FILL)) return;
-    if (!hasLayer(map, GEOJSON_ID_LINE)) return;
-    if (isEditing) {
-      map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'none');
-      map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'none');
-    } else {
-      map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'visible');
-      map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'visible');
-    }
-  }, [map, isEditing]);
-
-  /** Delete selected features */
-  const deleteSelected = useCallback(() => {
-    if (!drawRef.current) return;
-
-    const selectedFeatures = drawRef.current.getSelected();
-    if (selectedFeatures.features.length === 0) {
-      return;
-    }
-
-    // Delete selected features
-    selectedFeatures.features.forEach((feature) => {
-      if (feature.id) {
-        drawRef.current!.delete(feature.id.toString());
-      }
-    });
-  }, []);
-
   /** Save edited features */
   const saveEdits = useCallback(() => {
-    if (!drawRef.current) return;
+    const drawRef = editorRef.current?.getDrawRef();
+    if (!drawRef?.current) return;
 
     const allDrawFeatures = drawRef.current.getAll();
 
@@ -118,10 +85,10 @@ export default function MapStepLayerEditor({
     <Box bg="white" borderRadius="md" boxShadow="md" p={2} zIndex={1}>
       <MapLayerEditor
         map={map}
-        drawRef={drawRef}
         defaultGeojson={geojson}
-        enabled={!isEditing || isDrawSite}
+        enabled={isEditing}
         activeByDefault={true}
+        ref={editorRef}
       />
       {/* Edit Whole Layer Button - shown when not editing */}
       {!isEditing && (
@@ -144,7 +111,15 @@ export default function MapStepLayerEditor({
             Click features to select. Drag vertices to edit.
           </Text>
           <Flex gap={2} mb={2}>
-            <Button colorScheme="red" variant="outline" size="sm" onClick={deleteSelected} flex={1}>
+            <Button
+              colorScheme="red"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                editorRef?.current?.deleteSelected();
+              }}
+              flex={1}
+            >
               🗑️ Delete Selected
             </Button>
           </Flex>
