@@ -1,7 +1,8 @@
 import React from 'react';
-import { useS1DB } from '../../../../redux/selectors/luckySheet.ts';
 import { Box } from '@chakra-ui/react';
-import { financeClass, formatCurrency } from '../../../../utils/format.ts';
+
+import { useS1DB } from '../../../../redux/selectors/luckySheet';
+import { financeClass, formatCurrency } from '../../../../utils/format';
 
 const CityScaleProforma: React.FC = () => {
   const s1db = useS1DB();

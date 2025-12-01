@@ -2,16 +2,16 @@ import { useRef, useState } from 'react';
 import type { Map as MaplibreMap } from 'maplibre-gl';
 import { HStack, IconButton } from '@chakra-ui/react';
 import { useDispatch } from 'react-redux';
-import type { FeatureCollection, LineString, Polygon } from 'geojson';
-import type { AppDispatch } from '../../redux/store.ts';
 import { MdCropSquare, MdDelete, MdTimeline } from 'react-icons/md';
-import { useCurrentDrawMode } from '../../redux/selectors/globalSelector.ts';
-import { DrawingMode } from '../../redux/reducers/global.ts';
-import MapLayerEditor, { type MapLayerEditorRef } from './MapLayerEditor.tsx';
-import { updateRoads, updateSite } from '../../redux/reducers/projectInputSlice.ts';
+import type { FeatureCollection, LineString, Polygon } from 'geojson';
+
+import type { AppDispatch } from '../../../redux/store.ts';
+import { useCurrentDrawMode } from '../../../redux/selectors/globalSelector.ts';
+import { DrawingMode } from '../../../redux/reducers/global.ts';
+import MapEditor, { type MapLayerEditorRef } from '../MapEditor.tsx';
+import { updateRoads, updateSite } from '../../../redux/reducers/projectInputSlice.ts';
 
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
-import './style.scss';
 
 export const DrawMode = {
   polygon: 'polygon',
@@ -25,7 +25,8 @@ export const DrawMode = {
 
 export type DrawMode = (typeof DrawMode)[keyof typeof DrawMode];
 
-export default function MapSiteEditor({ map }: { map: MaplibreMap | null }) {
+export default function SiteEditor({ map }: { map: MaplibreMap | null }) {
+  console.log('SiteEditor');
   const dispatch = useDispatch<AppDispatch>();
   const editorRef = useRef<MapLayerEditorRef | null>(null);
   const [mode, setMode] = useState<DrawMode | null>(null);
@@ -148,7 +149,7 @@ export default function MapSiteEditor({ map }: { map: MaplibreMap | null }) {
 
   return (
     <>
-      <MapLayerEditor
+      <MapEditor
         ref={editorRef}
         map={map}
         defaultGeojson={null}

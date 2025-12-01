@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { FeatureCollection } from 'geojson';
 import type { StepType } from './stepSlice.ts';
-import * as api from '../../utils/api';
+import * as api from '../../utils/api.tsx';
 
 const API_URL: string = import.meta.env.VITE_API_URL;
 

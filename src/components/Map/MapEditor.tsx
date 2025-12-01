@@ -4,8 +4,10 @@ import maplibregl from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
 import MaplibreDraw from 'maplibre-gl-draw';
 import { hasLayer } from '../../utils/maplibre.tsx';
-import { GEOJSON_ID_FILL, GEOJSON_ID_LINE } from './MapStepLayer.tsx';
 import layerStyle from './layer_style.json';
+
+export const GEOJSON_ID_FILL: string = 'task-layer-fill';
+export const GEOJSON_ID_LINE: string = 'task-layer-line';
 
 interface Props {
   map: Map | null;
@@ -21,7 +23,7 @@ export interface MapLayerEditorRef {
 }
 
 /** This is editor for layer editor */
-const MapLayerEditor = forwardRef<MapLayerEditorRef, Props>(
+const MapEditor = forwardRef<MapLayerEditorRef, Props>(
   ({ map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged }, ref) => {
     const drawRef = useRef<MaplibreDraw | null>(null);
 
@@ -374,4 +376,4 @@ const MapLayerEditor = forwardRef<MapLayerEditorRef, Props>(
   }
 );
 
-export default MapLayerEditor;
+export default MapEditor;

@@ -4,7 +4,7 @@ import { STEP_LABELS, type StepType } from './stepSlice';
 import { TaskStatus } from './task';
 import type { ProjectPayload, ProjectState } from './project';
 import type { Step } from './step';
-import * as api from '../../utils/api';
+import * as api from '../../utils/api.tsx';
 
 const API_URL: string = import.meta.env.VITE_API_URL;
 

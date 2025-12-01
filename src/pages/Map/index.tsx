@@ -13,6 +13,7 @@ import ProjectDescription from '../../components/ProjectDescription';
 import ProjectList from '../../components/ProjectList';
 import { resetLuckySheet } from '../../redux/reducers/luckySheetSlice.ts';
 import { resetProject } from '../../redux/reducers/projectSlice.ts';
+import { Map as MapLibreMap } from 'maplibre-gl';
 
 import './style.scss';
 
@@ -26,6 +27,8 @@ export default function MapPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navbarRef = useRef<HTMLDivElement>(null);
   const isOpened = useCurrentRightSideOpened();
+
+  const [map, setMap] = useState<MapLibreMap | null>(null);
   const [mapHeight, setMapHeight] = useState<string>('calc(100vh - 60px)'); // Default fallback
 
   const [sideBarTab, setSiteBarTab] = useState<SideBarTabs>(SideBarTabs.projectList);
@@ -81,7 +84,7 @@ export default function MapPage() {
           <MapTabNavigation />
         </div>
         <div className="map-wrapper" style={{ height: mapHeight }}>
-          <Map />
+          <Map map={map} setMap={setMap} />
         </div>
       </div>
 

@@ -1,19 +1,21 @@
-import { useEffect, useState } from 'react';
-import maplibregl, { Map as MapLibreMap } from 'maplibre-gl';
+import { useEffect } from 'react';
+import maplibregl, { type Map } from 'maplibre-gl';
 import { Box } from '@chakra-ui/react';
 import MapLocation from './MapLocation';
 import BaseMaps from './BaseMaps';
-import MapSiteLayer from './MapSiteLayer.tsx';
-import MapSiteEditor from './MapSiteEditor.tsx';
-import MapStepLayer from './MapStepLayer.tsx';
+import SiteLayer from './SiteLayer';
+import StepLayer from './StepLayer';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.scss';
 
-/** MapLibre component. */
-export default function MapLibre() {
-  const [map, setMap] = useState<MapLibreMap | null>(null);
+interface Props {
+  map: Map | null;
+  setMap: (map: Map | null) => void;
+}
 
+/** MapLibre component. */
+export default function MapLibre({ map, setMap }: Props) {
   // Initialize map
   useEffect(() => {
     if (map) return;
@@ -60,9 +62,8 @@ export default function MapLibre() {
   return (
     <Box position="relative" width="100%" height="100%" minHeight="400px">
       <Box id="map" width="100%" height="100%" />
-      {map && <MapSiteLayer map={map} />}
-      {map && <MapSiteEditor map={map} />}
-      {map && <MapStepLayer map={map} />}
+      {map && <SiteLayer map={map} />}
+      {map && <StepLayer map={map} />}
       {map && <MapLocation map={map} />}
       {map && <BaseMaps map={map} />}
     </Box>

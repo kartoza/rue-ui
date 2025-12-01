@@ -2,9 +2,11 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { Map } from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
 import { Box, Button, Flex, Text } from '@chakra-ui/react';
-import { useCurrentDrawMode } from '../../redux/selectors/globalSelector.ts';
-import { DrawingMode } from '../../redux/reducers/global.ts';
-import MapLayerEditor, { type MapLayerEditorRef } from './MapLayerEditor.tsx';
+import { useCurrentDrawMode } from '../../../redux/selectors/globalSelector.ts';
+import { DrawingMode } from '../../../redux/reducers/global.ts';
+import MapEditor, { type MapLayerEditorRef } from '../MapEditor.tsx';
+
+import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 
 interface MapStepLayerEditorProps {
   map: Map | null;
@@ -15,16 +17,17 @@ interface MapStepLayerEditorProps {
 }
 
 /**
- * Editor component for the GEOJSON_ID_FILL layer in MapStepLayer
+ * Editor component for the GEOJSON_ID_FILL layer in Index
  * Provides click-to-edit functionality with save/cancel controls
  */
-export default function MapStepLayerEditor({
+export default function StepLayerEditor({
   map,
   geojson,
   setGeojson,
   isEditing,
   setIsEditing,
 }: MapStepLayerEditorProps) {
+  console.log('StepLayerEditor');
   const isDrawSite = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
   const editorRef = useRef<MapLayerEditorRef | null>(null);
 
@@ -83,7 +86,7 @@ export default function MapStepLayerEditor({
   );
   return (
     <Box bg="white" borderRadius="md" boxShadow="md" p={2} zIndex={1}>
-      <MapLayerEditor
+      <MapEditor
         map={map}
         defaultGeojson={geojson}
         enabled={isEditing}

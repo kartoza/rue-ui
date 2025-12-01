@@ -1,7 +1,8 @@
 import React from 'react';
-import { useS4DB } from '../../../../redux/selectors/luckySheet.ts';
 import { Box } from '@chakra-ui/react';
-import { financeClass, formatCurrency } from '../../../../utils/format.ts';
+
+import { useS4DB } from '../../../../redux/selectors/luckySheet';
+import { financeClass, formatCurrency } from '../../../../utils/format';
 
 const StarterBuildingsProforma: React.FC = () => {
   const s4db = useS4DB();

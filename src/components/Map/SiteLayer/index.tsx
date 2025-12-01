@@ -1,14 +1,12 @@
 import { Map } from 'maplibre-gl';
-import type { ProjectParameters } from '../../redux/reducers/project';
-import { useEffect, useState } from 'react';
-import { useCurrentProjectState } from '../../redux/selectors/projectSelector';
 import type { FeatureCollection, LineString } from 'geojson';
-import { getAuthHeaders } from '../../utils/api';
-import { hasLayer, removeSource } from '../../utils/maplibre';
-import layerStyle from './layer_style.json';
-
-import './style.scss';
-import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
+import type { ProjectParameters } from '../../../redux/reducers/project';
+import { useEffect, useState } from 'react';
+import { useCurrentProjectState } from '../../../redux/selectors/projectSelector';
+import { getAuthHeaders } from '../../../utils/api';
+import { hasLayer, removeSource } from '../../../utils/maplibre';
+import layerStyle from '../layer_style.json';
+import SiteEditor from './Editor.tsx';
 
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 const GLTF_ID: string = '3d-model';
@@ -16,7 +14,8 @@ const GLTF_ID: string = '3d-model';
 const API_URL: string = import.meta.env.VITE_API_URL;
 export const ROAD_ID: string = 'road-layer';
 
-export default function MapSiteLayer({ map }: { map: Map | null }) {
+export default function SiteLayer({ map }: { map: Map | null }) {
+  console.log('SiteLayer');
   const currentProjectState = useCurrentProjectState();
   const [roads, setRoads] = useState<FeatureCollection<LineString> | null>(null);
 
@@ -125,5 +124,5 @@ export default function MapSiteLayer({ map }: { map: Map | null }) {
     };
   }, [map, roads, parameters]);
 
-  return null;
+  return <SiteEditor map={map} />;
 }

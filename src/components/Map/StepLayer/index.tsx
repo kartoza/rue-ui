@@ -7,27 +7,24 @@ import { Vector3 } from 'three';
 import turf from 'turf';
 import type { FeatureCollection } from 'geojson';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { Box, Button, Spinner } from '@chakra-ui/react';
 import {
   useCurrentProjectStep,
   useCurrentProjectUUID,
-} from '../../redux/selectors/projectSelector';
-import { useCurrentStep } from '../../redux/selectors/stepSelector.ts';
-import { hasLayer, removeLayer, removeSource } from '../../utils/maplibre.tsx';
-import { StepType } from '../../redux/reducers/stepSlice.ts';
-import MapStepLayerEditor from './MapStepLayerEditor.tsx';
-import { Box, Button, Spinner } from '@chakra-ui/react';
-import { useCurrentStepUpdate } from '../../redux/selectors/stepUpdateSelector.ts';
-import { updateStep } from '../../redux/reducers/stepUpdateSlice.ts';
-import type { AppDispatch } from '../../redux/store.ts';
-import { resetStepAfter } from '../../redux/reducers/projectSlice.ts';
-import { toaster, ToasterType } from '../Toaster/toaster.ts';
-import { getAuthHeaders } from '../../utils/api.ts';
-import { ROAD_ID } from './MapSiteLayer.tsx';
+} from '../../../redux/selectors/projectSelector';
+import { useCurrentStep } from '../../../redux/selectors/stepSelector.ts';
+import { hasLayer, removeLayer, removeSource } from '../../../utils/maplibre.tsx';
+import { StepType } from '../../../redux/reducers/stepSlice.ts';
+import { useCurrentStepUpdate } from '../../../redux/selectors/stepUpdateSelector.ts';
+import { updateStep } from '../../../redux/reducers/stepUpdateSlice.ts';
+import type { AppDispatch } from '../../../redux/store.ts';
+import { resetStepAfter } from '../../../redux/reducers/projectSlice.ts';
+import { toaster, ToasterType } from '../../Toaster/toaster.ts';
+import { getAuthHeaders } from '../../../utils/api';
+import MapStepLayerEditor from './Editor.tsx';
+import { ROAD_ID } from '../SiteLayer';
 
-import layerStyle from './layer_style.json';
-
-import './style.scss';
-import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
+import layerStyle from '../layer_style.json';
 
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 const GLTF_ID: string = '3d-model';
@@ -37,7 +34,8 @@ export const GEOJSON_ID_LINE: string = 'task-layer-line';
 
 let globalCurrentStep: string = '';
 
-export default function MapStepLayer({ map }: { map: Map | null }) {
+export default function StepLayer({ map }: { map: Map | null }) {
+  console.log('StepLayer');
   const dispatch = useDispatch<AppDispatch>();
   const currentStep = useCurrentStep();
   const currentStepState = useCurrentProjectStep(currentStep);

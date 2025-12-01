@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { Project } from './project';
-import * as api from '../../utils/api';
+import * as api from '../../utils/api.tsx';
 
 const API_URL: string = import.meta.env.VITE_API_URL;
 

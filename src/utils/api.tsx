@@ -28,7 +28,7 @@ const createConfig = (config?: AxiosRequestConfig): AxiosRequestConfig => {
 /**
  * GET request with authorization
  */
-export const get = async <T = unknown>(endpoint: string): Promise<T> => {
+export const get = async <T = unknown,>(endpoint: string): Promise<T> => {
   try {
     const response = await axios.get(API_URL + endpoint, createConfig());
     return response.data;
@@ -44,7 +44,7 @@ export const get = async <T = unknown>(endpoint: string): Promise<T> => {
 /**
  * POST request with authorization
  */
-export const post = async <T = unknown>(endpoint: string, data?: unknown): Promise<T> => {
+export const post = async <T = unknown,>(endpoint: string, data?: unknown): Promise<T> => {
   try {
     const response = await axios.post(API_URL + endpoint, data, createConfig());
     return response.data;
@@ -60,7 +60,7 @@ export const post = async <T = unknown>(endpoint: string, data?: unknown): Promi
 /**
  * PUT request with authorization
  */
-export const put = async <T = unknown>(endpoint: string, data?: unknown): Promise<T> => {
+export const put = async <T = unknown,>(endpoint: string, data?: unknown): Promise<T> => {
   try {
     const response = await axios.put(API_URL + endpoint, data, createConfig());
     return response.data;
@@ -76,7 +76,7 @@ export const put = async <T = unknown>(endpoint: string, data?: unknown): Promis
 /**
  * DELETE request with authorization
  */
-export const del = async <T = unknown>(endpoint: string): Promise<T> => {
+export const del = async <T = unknown,>(endpoint: string): Promise<T> => {
   try {
     const response = await axios.delete(API_URL + endpoint, createConfig());
     return response.data;
@@ -92,7 +92,7 @@ export const del = async <T = unknown>(endpoint: string): Promise<T> => {
 /**
  * PATCH request with authorization
  */
-export const patch = async <T = unknown>(endpoint: string, data?: unknown): Promise<T> => {
+export const patch = async <T = unknown,>(endpoint: string, data?: unknown): Promise<T> => {
   try {
     const response = await axios.patch(API_URL + endpoint, data, createConfig());
     return response.data;
