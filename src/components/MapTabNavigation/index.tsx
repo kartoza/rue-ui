@@ -1,6 +1,7 @@
 import type { RootState } from '../../redux/store';
 import { Spinner, TabsList, TabsRoot, TabsTrigger } from '@chakra-ui/react';
 import { useDispatch, useSelector } from 'react-redux';
+import { MdError } from 'react-icons/md';
 import { setCurrentStep, STEP_LABELS, type StepType } from '../../redux/reducers/stepSlice.ts';
 import { useCurrentProjectStep } from '../../redux/selectors/projectSelector.ts';
 import { TaskStatus } from '../../redux/reducers/task.ts';
@@ -26,6 +27,9 @@ function TabPanel({ value, label }: TabPanelProps) {
       {label}{' '}
       {(currentStep?.step?.task?.status === TaskStatus.pending ||
         currentStep?.step?.task?.status === TaskStatus.running) && <Spinner />}
+      {currentStep?.step?.task?.status === TaskStatus.failed && (
+        <MdError style={{ color: 'red' }} title={currentStep?.step?.task?.message || ''} />
+      )}
     </TabsTrigger>
   );
 }
