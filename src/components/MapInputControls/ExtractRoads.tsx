@@ -39,8 +39,8 @@ export default function ExtractRoads({ map, setRoads }: Props) {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        padding: '16px',
-        marginLeft: '1rem',
+        marginLeft: '2rem',
+        marginRight: '1rem',
         gap: '8px',
       }}
     >
