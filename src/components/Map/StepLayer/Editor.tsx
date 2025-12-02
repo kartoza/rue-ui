@@ -90,6 +90,7 @@ export default function StepLayerEditor({
         defaultGeojson={geojson}
         enabled={isEditing}
         activeByDefault={true}
+        hideRoad={false}
         ref={editorRef}
       />
       {/* Edit Whole Layer Button - shown when not editing */}

@@ -16,6 +16,7 @@ interface Props {
   enabled: boolean;
   activeByDefault: boolean;
   onFeaturesChanged?: () => void;
+  hideRoad: boolean;
 }
 
 export interface MapLayerEditorRef {
@@ -25,7 +26,7 @@ export interface MapLayerEditorRef {
 
 /** This is editor for layer editor */
 const MapEditor = forwardRef<MapLayerEditorRef, Props>(
-  ({ map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged }, ref) => {
+  ({ map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged, hideRoad }, ref) => {
     const drawRef = useRef<MaplibreDraw | null>(null);
 
     // Expose deleteSelected method to parent components
@@ -57,15 +58,21 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
     /** On change is editing */
     useEffect(() => {
       if (!map) return;
-      if (!hasLayer(map, ROAD_ID)) return;
+
+      // Hide road layer
+      if (hasLayer(map, ROAD_ID) && enabled && hideRoad) {
+        map.setLayoutProperty(ROAD_ID, 'visibility', 'none');
+      }
+
       if (!hasLayer(map, GEOJSON_ID_FILL)) return;
       if (!hasLayer(map, GEOJSON_ID_LINE)) return;
       if (enabled) {
-        map.setLayoutProperty(ROAD_ID, 'visibility', 'none');
         map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'none');
         map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'none');
       } else {
-        map.setLayoutProperty(ROAD_ID, 'visibility', 'visible');
+        if (hasLayer(map, ROAD_ID)) {
+          map.setLayoutProperty(ROAD_ID, 'visibility', 'visible');
+        }
         map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'visible');
         map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'visible');
       }
