@@ -1,12 +1,16 @@
 import { Map } from 'maplibre-gl';
-import type { FeatureCollection, LineString } from 'geojson';
+import type { FeatureCollection, LineString, Polygon } from 'geojson';
 import type { ProjectParameters } from '../../../redux/reducers/project';
 import { useEffect, useState } from 'react';
-import { useCurrentProjectState } from '../../../redux/selectors/projectSelector';
+import {
+  useCurrentProjectDone,
+  useCurrentProjectState,
+} from '../../../redux/selectors/projectSelector';
 import { getAuthHeaders } from '../../../utils/api';
 import { hasLayer, removeSource } from '../../../utils/maplibre';
 import layerStyle from '../layer_style.json';
 import SiteEditor from './Editor.tsx';
+import { Toaster } from '../../Toaster/toaster.ts';
 
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 const GLTF_ID: string = '3d-model';
@@ -15,8 +19,10 @@ const API_URL: string = import.meta.env.VITE_API_URL;
 export const ROAD_ID: string = 'road-layer';
 
 export default function SiteLayer({ map }: { map: Map | null }) {
+  const isProjectDone = useCurrentProjectDone();
   const currentProjectState = useCurrentProjectState();
   const [roads, setRoads] = useState<FeatureCollection<LineString> | null>(null);
+  const [site, setSite] = useState<FeatureCollection<Polygon> | null>(null);
 
   const parameters: ProjectParameters | undefined = currentProjectState?.project?.parameters;
   const uuid = currentProjectState?.project?.uuid;
@@ -29,13 +35,11 @@ export default function SiteLayer({ map }: { map: Map | null }) {
     }
 
     if (!API_URL) return;
-    if (!parameters) return;
-    if (currentProjectState.loading) return;
+    if (!isProjectDone) return;
 
     setRoads(null);
-
-    const roadsUrl = `${API_URL}projects/${uuid}/roads.geojson`;
-    fetch(roadsUrl, {
+    setSite(null);
+    fetch(`${API_URL}projects/${uuid}/roads_input.geojson`, {
       headers: getAuthHeaders(),
     })
       .then((res) => res.json())
@@ -43,13 +47,24 @@ export default function SiteLayer({ map }: { map: Map | null }) {
         setRoads(data);
       })
       .catch((err) => {
-        console.error('Failed to load roads:', err);
+        Toaster.error('Failed to load roads', err);
       });
-  }, [uuid, currentProjectState.loading]);
+    fetch(`${API_URL}projects/${uuid}/site_input.geojson`, {
+      headers: getAuthHeaders(),
+    })
+      .then((res) => res.json())
+      .then((data: FeatureCollection<Polygon>) => {
+        setSite(data);
+      })
+      .catch((err) => {
+        Toaster.error('Failed to load site', err);
+      });
+  }, [uuid, currentProjectState.loading, isProjectDone]);
 
   /** Render roads layer */
   useEffect(() => {
     if (!map) return;
+    if (!parameters) return;
 
     // Remove existing layer and source
     removeSource(map, ROAD_ID);
@@ -123,5 +138,14 @@ export default function SiteLayer({ map }: { map: Map | null }) {
     };
   }, [map, roads, parameters]);
 
-  return <SiteEditor map={map} />;
+  // Merge site and roads into a single geojson
+  const geojson: FeatureCollection | null =
+    site || roads
+      ? {
+          type: 'FeatureCollection',
+          features: [...(roads?.features || []), ...(site?.features || [])],
+        }
+      : null;
+
+  return <SiteEditor map={map} geojson={geojson} />;
 }

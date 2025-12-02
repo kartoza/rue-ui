@@ -26,7 +26,13 @@ export const DrawMode = {
 
 export type DrawMode = (typeof DrawMode)[keyof typeof DrawMode];
 
-export default function SiteEditor({ map }: { map: MaplibreMap | null }) {
+export default function SiteEditor({
+  map,
+  geojson,
+}: {
+  map: MaplibreMap | null;
+  geojson: FeatureCollection | null;
+}) {
   const dispatch = useDispatch<AppDispatch>();
   const editorRef = useRef<MapLayerEditorRef | null>(null);
   const [mode, setMode] = useState<DrawMode | null>(null);
@@ -207,7 +213,7 @@ export default function SiteEditor({ map }: { map: MaplibreMap | null }) {
       <MapEditor
         ref={editorRef}
         map={map}
-        defaultGeojson={null}
+        defaultGeojson={geojson}
         enabled={isDrawSite}
         activeByDefault={true}
         onFeaturesChanged={onFeaturesChanged}

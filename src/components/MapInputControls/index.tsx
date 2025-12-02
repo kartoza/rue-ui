@@ -9,7 +9,7 @@ import { Map } from 'maplibre-gl';
 import { Toaster } from '../Toaster/toaster';
 import type { ProjectParameters, ProjectPayload } from '../../redux/reducers/project';
 import type { AppDispatch } from '../../redux/store';
-import { createProject } from '../../redux/reducers/projectSlice';
+import { createProject, updateProject } from '../../redux/reducers/projectSlice';
 import NeighbourhoodPublicScapeOpenSpace from './Results/NeighbourhoodPublicScapeOpenSpace.tsx';
 import NeighbourhoodPublicScapeAmenities from './Results/NeighbourhoodPublicScapeAmenities.tsx';
 import {
@@ -85,10 +85,23 @@ export default function MapInputControls({ map }: { map: Map | null }) {
     }
   };
 
+  /* Change definition */
+  const changeDefinition = (definition: DefinitionType) => {
+    setSite(null);
+    setRoads(null);
+    setSiteDefinition(definition);
+    if (definition === DefinitionType.draw_your_own) {
+      dispatch(setDrawingMode(DrawingMode.DRAW_SITE));
+    } else {
+      dispatch(setDrawingMode(null));
+    }
+  };
+
   // When project done, make submitted false
   useEffect(() => {
     if (isProjectDone) {
       setSubmitted(false);
+      changeDefinition(DefinitionType.vmc_demo);
     }
   }, [isProjectDone]);
 
@@ -104,7 +117,7 @@ export default function MapInputControls({ map }: { map: Map | null }) {
         setName(project.name);
         setDescription(project.description);
         if (project.parameters) {
-          setParameters(project.parameters);
+          setParameters(JSON.parse(JSON.stringify(project.parameters)));
         }
       }
     }
@@ -118,7 +131,6 @@ export default function MapInputControls({ map }: { map: Map | null }) {
         return;
       }
     }
-    setSubmitted(true);
 
     const payload: ProjectPayload = {
       name: name,
@@ -129,7 +141,12 @@ export default function MapInputControls({ map }: { map: Map | null }) {
       payload.site = site;
       payload.roads = roads;
     }
-    dispatch(createProject(payload));
+    if (currentProject.project?.uuid) {
+      dispatch(updateProject({ uuid: currentProject.project?.uuid, payload }));
+    } else {
+      dispatch(createProject(payload));
+    }
+    setSubmitted(true);
   };
 
   /** Set site */
@@ -191,19 +208,14 @@ export default function MapInputControls({ map }: { map: Map | null }) {
                     className="form-control"
                     value={siteDefinition}
                     onChange={(e) => {
-                      setSite(null);
-                      setRoads(null);
-                      setSiteDefinition(e.target.value as DefinitionType);
-                      if (e.target.value === DefinitionType.draw_your_own) {
-                        dispatch(setDrawingMode(DrawingMode.DRAW_SITE));
-                      } else {
-                        dispatch(setDrawingMode(null));
-                      }
+                      changeDefinition(e.target.value as DefinitionType);
                     }}
                   >
                     {Object.entries(DEFINITION_LABELS).map(([value, label]) => (
                       <option key={value} value={value}>
-                        {label}
+                        {value === DefinitionType.vmc_demo && currentProject?.project?.uuid
+                          ? 'Keep existing'
+                          : label}
                       </option>
                     ))}
                   </select>
@@ -2838,29 +2850,26 @@ export default function MapInputControls({ map }: { map: Map | null }) {
           </Accordion.Body>
         </Accordion.Item>
       </Accordion>
-      {/* TODO: We need to add API for update */}
-      {!currentProject.project?.uuid && (
-        <div
+      <div
+        style={{
+          marginTop: '10px',
+          marginBottom: '1rem',
+          padding: '0 1rem',
+        }}
+        onClick={apply}
+      >
+        <Button
+          // @ts-expect-error: A custom variant
+          variant="primary"
           style={{
-            marginTop: '10px',
-            marginBottom: '1rem',
-            padding: '0 1rem',
+            textAlign: 'center',
+            width: '100%',
           }}
-          onClick={apply}
+          disabled={!!errors.length || !isProjectDone || submitted || currentStepUpdateLoading}
         >
-          <Button
-            // @ts-expect-error: A custom variant
-            variant="primary"
-            style={{
-              textAlign: 'center',
-              width: '100%',
-            }}
-            disabled={!!errors.length || !isProjectDone || submitted || currentStepUpdateLoading}
-          >
-            {currentProject.project?.uuid ? 'Update' : 'Create'} project
-          </Button>
-        </div>
-      )}
+          {currentProject.project?.uuid ? 'Update' : 'Create'} project
+        </Button>
+      </div>
       {!!errors.length && (
         <div
           className="ErrorMessage"

@@ -39,7 +39,48 @@ export const createProject = createAsyncThunk(
       }>('projects', payload);
       return {
         ...data,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return thunkAPI.rejectWithValue(errorMessage);
+    }
+  }
+);
+
+// Async thunk for update project
+export const updateProject = createAsyncThunk(
+  'project/update',
+  async (
+    {
+      uuid,
+      payload,
+    }: {
+      uuid: string;
+      payload: ProjectPayload;
+    },
+    thunkAPI
+  ) => {
+    // -----------------------------
+    // FOR DEMO
+    // -----------------------------
+    if (!API_URL) {
+      const token = 'Demo token';
+      localStorage.setItem('token', token);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return {
+        uuid: '00000000-0000-0000-0000-000000000000',
+        name: payload.name,
         parameters: payload.parameters,
+      };
+    }
+    // -----------------------------
+    try {
+      const data = await api.put<{
+        uuid: string;
+        name: string;
+      }>('projects/' + uuid, payload);
+      return {
+        ...data,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -145,6 +186,23 @@ const projectSlice = createSlice({
         state.project = { ...action.payload, steps: {} };
       })
       .addCase(createProject.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // ----------------------------------
+      // Update project
+      // ----------------------------------
+      .addCase(updateProject.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateProject.fulfilled, (state, action) => {
+        state.loading = false;
+        // @ts-expect-error: Save by step
+        state.project = { ...action.payload, steps: {} };
+      })
+      .addCase(updateProject.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })

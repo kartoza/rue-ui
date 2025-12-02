@@ -5,6 +5,7 @@ import type { FeatureCollection } from 'geojson';
 import MaplibreDraw from 'maplibre-gl-draw';
 import { hasLayer } from '../../utils/maplibre.tsx';
 import layerStyle from './layer_style.json';
+import { ROAD_ID } from './SiteLayer';
 
 export const GEOJSON_ID_FILL: string = 'task-layer-fill';
 export const GEOJSON_ID_LINE: string = 'task-layer-line';
@@ -56,12 +57,15 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
     /** On change is editing */
     useEffect(() => {
       if (!map) return;
+      if (!hasLayer(map, ROAD_ID)) return;
       if (!hasLayer(map, GEOJSON_ID_FILL)) return;
       if (!hasLayer(map, GEOJSON_ID_LINE)) return;
       if (enabled) {
+        map.setLayoutProperty(ROAD_ID, 'visibility', 'none');
         map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'none');
         map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'none');
       } else {
+        map.setLayoutProperty(ROAD_ID, 'visibility', 'visible');
         map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'visible');
         map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'visible');
       }
