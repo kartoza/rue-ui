@@ -7,7 +7,7 @@ import MapTabNavigation from '../../components/MapTabNavigation';
 import MapInputControls from '../../components/MapInputControls';
 import MapFinanceSection from '../../components/MapFinanceSection';
 import { useCurrentRightSideOpened } from '../../redux/selectors/globalSelector.ts';
-import { toggleRightSide } from '../../redux/reducers/global.ts';
+import { setDrawingMode, toggleRightSide } from '../../redux/reducers/global.ts';
 import ProjectControl from '../../components/ProjectControl';
 import ProjectDescription from '../../components/ProjectDescription';
 import ProjectList from '../../components/ProjectList';
@@ -60,6 +60,7 @@ export default function MapPage() {
           <>
             <ProjectDescription
               toList={() => {
+                dispatch(setDrawingMode(null));
                 dispatch(resetLuckySheet());
                 dispatch(resetProject());
                 setSiteBarTab(SideBarTabs.projectList);

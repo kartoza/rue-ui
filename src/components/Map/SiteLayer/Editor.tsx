@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Map as MaplibreMap } from 'maplibre-gl';
-import { HStack, IconButton } from '@chakra-ui/react';
+import { Box, HStack, IconButton } from '@chakra-ui/react';
 import { useDispatch } from 'react-redux';
-import { MdCropSquare, MdDelete, MdTimeline } from 'react-icons/md';
+import { MdDelete, MdTimeline } from 'react-icons/md';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
 
 import type { AppDispatch } from '../../../redux/store.ts';
@@ -219,28 +219,23 @@ export default function SiteEditor({
         onFeaturesChanged={onFeaturesChanged}
         hideRoad={true}
       />
-      <HStack
-        position="absolute"
-        top="10px"
-        right="10px"
-        bg="white"
-        borderRadius="md"
-        boxShadow="md"
-        p={2}
-        zIndex={1}
-      >
+      <HStack className="editor-stack" borderRadius="md" boxShadow="md">
         <IconButton
           onClick={startDrawPolygon}
           size="md"
           disabled={!map}
-          bg={mode === DrawMode.polygon ? '#fdf3c0' : 'white'}
-          color={mode === DrawMode.polygon ? '#000' : '#cca12b'}
-          border="1px solid"
-          borderColor={mode === DrawMode.polygon ? '#cca12b' : 'gray.300'}
-          padding={2}
-          aria-label="Draw polygon"
+          padding={1}
+          title={`Draw site`}
+          // @ts-expect-error: A custom variant
+          variant={'base'}
         >
-          <MdCropSquare />
+          <Box
+            width="100%"
+            height="100%"
+            bg={mode === DrawMode.polygon ? '#fbb03b' : 'rgba(153, 153, 34, 0.3)'}
+            border="1px solid"
+            borderColor={mode === DrawMode.polygon ? '#fbb03b' : 'rgb(235,201,199)'}
+          />
         </IconButton>
 
         {/* --- Road Artery polyline buttons --- */}
@@ -253,12 +248,12 @@ export default function SiteEditor({
               onClick={() => startDrawRoad('road_art', n)}
               size="md"
               disabled={!map}
-              bg={active ? '#FF6666' : 'white'}
+              bg={active ? '#FF6666 !important' : 'white'}
               color={active ? 'white' : '#FF6666'}
               border="1px solid"
               borderColor={active ? '#FF6666' : 'gray.300'}
               padding={2}
-              aria-label="Draw polyline"
+              title={`Draw road artery at ${n}%`}
             >
               {n}
               <MdTimeline />
@@ -276,12 +271,12 @@ export default function SiteEditor({
               onClick={() => startDrawRoad('road_sec', n)}
               size="md"
               disabled={!map}
-              bg={active ? '#FFB24D' : 'white'}
-              color={active ? '#000' : '#FFB24D'}
+              bg={active ? '#FFB24D !important' : 'white'}
+              color={active ? 'white' : '#FFB24D'}
               border="1px solid"
               borderColor={active ? '#FFB24D' : 'gray.300'}
               padding={2}
-              aria-label="Draw polyline"
+              title={`Draw road secondary at ${n}%`}
             >
               {n}
               <MdTimeline />
@@ -294,11 +289,9 @@ export default function SiteEditor({
           onClick={deleteSelected}
           size="md"
           disabled={!map}
-          bg="white"
-          color="black"
-          border="1px solid"
-          borderColor="gray.300"
-          padding={2}
+          // @ts-expect-error: A custom variant
+          variant="danger.basic"
+          title={`Delete selected features`}
         >
           <MdDelete />
         </IconButton>

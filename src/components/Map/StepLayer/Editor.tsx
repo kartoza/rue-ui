@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { Map } from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
-import { Box, Button, Flex, Text } from '@chakra-ui/react';
+import { IconButton } from '@chakra-ui/react';
 import { useCurrentDrawMode } from '../../../redux/selectors/globalSelector.ts';
 import { DrawingMode } from '../../../redux/reducers/global.ts';
 import MapEditor, { type MapLayerEditorRef } from '../MapEditor.tsx';
 
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
+import { MdCancel, MdCheckCircle, MdDelete, MdModeEdit } from 'react-icons/md';
 
 interface MapStepLayerEditorProps {
   map: Map | null;
@@ -84,7 +85,7 @@ export default function StepLayerEditor({
     ['Polygon', 'MultiPolygon'].includes(f.geometry?.type)
   );
   return (
-    <Box bg="white" borderRadius="md" boxShadow="md" p={2} zIndex={1}>
+    <>
       <MapEditor
         map={map}
         defaultGeojson={geojson}
@@ -93,56 +94,50 @@ export default function StepLayerEditor({
         hideRoad={false}
         ref={editorRef}
       />
-      {/* Edit Whole Layer Button - shown when not editing */}
       {!isEditing && (
-        <Button
-          size="sm"
-          backgroundColor="white"
-          color="inherit"
+        <IconButton
           onClick={enableEditing}
-          fontWeight="semibold"
-          width="100%"
+          size="md"
+          disabled={!map}
+          title={`Edit current layer`}
+          // @ts-expect-error: A custom variant
+          variant={'base'}
         >
-          ✏️ Edit Layer
-        </Button>
+          <MdModeEdit />
+        </IconButton>
       )}
-
-      {/* Edit Controls - shown when editing */}
       {isEditing && (
         <>
-          <Text fontSize="xs" color="gray.500" mb={2}>
-            Click features to select. Drag vertices to edit.
-          </Text>
-          <Flex gap={2} mb={2}>
-            <Button
-              colorScheme="red"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                editorRef?.current?.deleteSelected();
-              }}
-              flex={1}
-            >
-              🗑️ Delete Selected
-            </Button>
-          </Flex>
-          <Flex gap={2}>
-            {/* @ts-expect-error: A custom variant */}
-            <Button variant="primary" size="sm" onClick={saveEdits} flex={1}>
-              ✓ Save
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={cancelEditing}
-              fontWeight="semibold"
-              flex={1}
-            >
-              ✕ Cancel
-            </Button>
-          </Flex>
+          <IconButton
+            onClick={() => {
+              editorRef?.current?.deleteSelected();
+            }}
+            size="md"
+            // @ts-expect-error: A custom variant
+            variant="danger.basic"
+            title={`Delete selected features`}
+          >
+            <MdDelete />
+          </IconButton>
+          <IconButton
+            onClick={saveEdits}
+            size="md"
+            // @ts-expect-error: A custom variant
+            variant="success.basic"
+            title={`Apply changes to the map`}
+          >
+            <MdCheckCircle />
+          </IconButton>
+          <IconButton
+            onClick={cancelEditing}
+            size="md"
+            // @ts-expect-error: A custom variant
+            variant="base"
+          >
+            <MdCancel />
+          </IconButton>
         </>
       )}
-    </Box>
+    </>
   );
 }

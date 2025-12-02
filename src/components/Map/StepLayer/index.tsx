@@ -7,7 +7,7 @@ import { Vector3 } from 'three';
 import turf from 'turf';
 import type { FeatureCollection } from 'geojson';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Box, Button, Spinner } from '@chakra-ui/react';
+import { Box, HStack, IconButton, Spinner } from '@chakra-ui/react';
 import {
   useCurrentProjectStep,
   useCurrentProjectUUID,
@@ -25,6 +25,7 @@ import MapStepLayerEditor from './Editor.tsx';
 import { ROAD_ID } from '../SiteLayer';
 
 import layerStyle from '../layer_style.json';
+import { MdSave } from 'react-icons/md';
 
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 const GLTF_ID: string = '3d-model';
@@ -377,26 +378,38 @@ export default function StepLayer({ map }: { map: Map | null }) {
     );
   };
 
+  if (!(geojson && geojson.features.length > 0)) {
+    return null;
+  }
   return (
     <Box position="absolute" top="10px" right="10px" zIndex={1} display="flex" gap="1rem">
-      {isUpdated && !isEditing && (
-        <Box bg="white" borderRadius="md" boxShadow="md" p={2} zIndex={1}>
-          {/* @ts-expect-error: A custom variant */}
-          <Button variant="primary" size="sm" onClick={apply} flex={1}>
-            Apply {currentStepUpdate.loading && <Spinner />}
-          </Button>
-        </Box>
-      )}
-      <MapStepLayerEditor
-        map={map}
-        geojson={geojson}
-        setGeojson={(geojson) => {
-          setIsUpdated(true);
-          setGeojson(geojson);
-        }}
-        isEditing={isEditing}
-        setIsEditing={setIsEditing}
-      />
+      <HStack className="editor-stack" borderRadius="md" boxShadow="md">
+        {isUpdated && !isEditing && (
+          <IconButton
+            onClick={apply}
+            size="md"
+            // @ts-expect-error: A custom variant
+            variant="primary"
+            title={`Apply changes to API permanently.`}
+            posisition="relative"
+          >
+            <MdSave />{' '}
+            {currentStepUpdate.loading && (
+              <Spinner position="absolute" top="2px" left="2px" size="lg" />
+            )}
+          </IconButton>
+        )}
+        <MapStepLayerEditor
+          map={map}
+          geojson={geojson}
+          setGeojson={(geojson) => {
+            setIsUpdated(true);
+            setGeojson(geojson);
+          }}
+          isEditing={isEditing}
+          setIsEditing={setIsEditing}
+        />
+      </HStack>
     </Box>
   );
 }

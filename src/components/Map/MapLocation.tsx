@@ -1,9 +1,10 @@
 import { Map } from 'maplibre-gl';
 import parse from 'html-react-parser';
 import { useEffect, useRef, useState } from 'react';
-import { MdClose, MdSearch } from 'react-icons/md';
+import { MdClose, MdMyLocation, MdSearch } from 'react-icons/md';
 import { Box, HStack, Input, Spinner, VStack } from '@chakra-ui/react';
 import { type NominatimResponse, searchOSM } from '../../utils/osm.tsx';
+import { Toaster } from '../Toaster/toaster.ts';
 
 import './style.scss';
 
@@ -121,7 +122,6 @@ export default function MapLocation({ map }: MapLocationProps) {
         );
       } else {
         // Otherwise, zoom to lat/lng
-        console.log(result);
         map.flyTo({
           center: [Number(result.lon), Number(result.lat)],
           zoom: 13,
@@ -136,78 +136,126 @@ export default function MapLocation({ map }: MapLocationProps) {
     setShowDropdown(false);
   };
 
+  const handleMyLocation = () => {
+    if (!map) return;
+
+    if (!navigator.geolocation) {
+      Toaster.error('Geolocation Error', 'Your browser does not support geolocation');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        map.flyTo({ center: [longitude, latitude], zoom: 15 });
+      },
+      (error) => {
+        let message = 'Unable to get your location';
+        if (error.code === error.PERMISSION_DENIED) {
+          message = 'Location permission denied. Please enable location access.';
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          message = 'Location information unavailable.';
+        } else if (error.code === error.TIMEOUT) {
+          message = 'Location request timed out.';
+        }
+        Toaster.error('Geolocation Error', message);
+      }
+    );
+  };
+
   return (
     <Box position="absolute" top="10px" left="10px" zIndex={1} ref={dropdownRef}>
-      <HStack bg="white" borderRadius="md" boxShadow="md" px={2} gap={0}>
-        <MdSearch style={{ fontSize: '1.3rem', opacity: 0.5 }} />
-        <Input
-          placeholder="40.7128, -74.0060 or text"
-          value={value}
-          fontSize="0.9rem"
-          onChange={(e) => setValue(e.target.value)}
-          onFocus={() => {
-            if (searchResults.length > 0) {
-              setShowDropdown(true);
-            }
-          }}
-          minWidth="250px"
-          border="none"
-          outline="none"
-          _focus={{
-            border: 'none',
-            outline: 'none',
-            boxShadow: 'none',
-          }}
-          _active={{
-            border: 'none',
-            outline: 'none',
-            boxShadow: 'none',
-          }}
-        />
-        {isLoading ? (
-          <Spinner size="sm" style={{ fontSize: '1.3rem' }} />
-        ) : (
-          <MdClose
-            onClick={handleClear}
-            cursor={value ? 'pointer' : 'default'}
-            style={{ fontSize: '1.3rem', opacity: 0.5 }}
+      <Box position="relative" flex={1}>
+        <HStack bg="white" borderRadius="md" boxShadow="md" px={2} gap={0}>
+          <Box
+            display="flex"
+            alignItems="center"
+            style={{
+              borderRight: '1px solid #e4e4e7',
+              marginRight: '0.5rem',
+              paddingRight: '0.5rem',
+            }}
+          >
+            <MdMyLocation
+              style={{
+                fontSize: '1.3rem',
+                opacity: 0.5,
+                cursor: 'pointer',
+              }}
+              onClick={handleMyLocation}
+              title="Zoom to your current location"
+            />
+          </Box>
+          <MdSearch style={{ fontSize: '1.3rem', opacity: 0.5 }} />
+          <Input
+            placeholder="40.7128, -74.0060 or text"
+            value={value}
+            fontSize="0.9rem"
+            onChange={(e) => setValue(e.target.value)}
+            onFocus={() => {
+              if (searchResults.length > 0) {
+                setShowDropdown(true);
+              }
+            }}
+            minWidth="250px"
+            border="none"
+            outline="none"
+            _focus={{
+              border: 'none',
+              outline: 'none',
+              boxShadow: 'none',
+            }}
+            _active={{
+              border: 'none',
+              outline: 'none',
+              boxShadow: 'none',
+            }}
           />
-        )}
-      </HStack>
+          {isLoading ? (
+            <Spinner size="sm" style={{ fontSize: '1.3rem' }} />
+          ) : (
+            <MdClose
+              onClick={handleClear}
+              cursor={value ? 'pointer' : 'default'}
+              style={{ fontSize: '1.3rem', opacity: 0.5 }}
+            />
+          )}
+        </HStack>
 
-      {/* Dropdown */}
-      {showDropdown && searchResults.length > 0 && (
-        <VStack
-          position="absolute"
-          top="100%"
-          left={0}
-          right={0}
-          bg="white"
-          borderRadius="md"
-          boxShadow="lg"
-          mt={1}
-          maxHeight="300px"
-          overflowY="auto"
-          align="stretch"
-          gap={0}
-        >
-          {searchResults.map((result) => (
-            <Box
-              key={result.place_id}
-              px={3}
-              py={2}
-              cursor="pointer"
-              _hover={{ bg: 'gray.100' }}
-              borderBottom="1px solid"
-              borderColor="gray.200"
-              _last={{ borderBottom: 'none' }}
-              onClick={() => handleSelectResult(result)}
-            >
-              <Box fontSize="0.9rem">{parse(result.display_name)}</Box>
-            </Box>
-          ))}
-        </VStack>
-      )}
+        {/* Dropdown */}
+        {showDropdown && searchResults.length > 0 && (
+          <VStack
+            position="absolute"
+            top="100%"
+            left={0}
+            right={0}
+            bg="white"
+            borderRadius="md"
+            boxShadow="lg"
+            mt={1}
+            maxHeight="300px"
+            overflowY="auto"
+            align="stretch"
+            gap={0}
+          >
+            {searchResults.map((result) => (
+              <Box
+                key={result.place_id}
+                px={3}
+                py={2}
+                cursor="pointer"
+                _hover={{ bg: 'gray.100' }}
+                borderBottom="1px solid"
+                borderColor="gray.200"
+                _last={{ borderBottom: 'none' }}
+                onClick={() => handleSelectResult(result)}
+              >
+                <Box fontSize="0.9rem">{parse(result.display_name)}</Box>
+              </Box>
+            ))}
+          </VStack>
+        )}
+      </Box>
     </Box>
   );
 }
