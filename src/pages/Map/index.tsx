@@ -6,21 +6,32 @@ import Map from '../../components/Map';
 import MapTabNavigation from '../../components/MapTabNavigation';
 import MapInputControls from '../../components/MapInputControls';
 import MapFinanceSection from '../../components/MapFinanceSection';
-import { useCurrentDefinition } from '../../redux/selectors/definitionSelector';
-import { useCurrentStep } from '../../redux/selectors/stepSelector';
 import { useCurrentRightSideOpened } from '../../redux/selectors/globalSelector.ts';
-import { toggleRightSide } from '../../redux/reducers/global.ts';
+import { setDrawingMode, toggleRightSide } from '../../redux/reducers/global.ts';
+import ProjectControl from '../../components/ProjectControl';
+import ProjectDescription from '../../components/ProjectDescription';
+import ProjectList from '../../components/ProjectList';
+import { resetLuckySheet } from '../../redux/reducers/luckySheetSlice.ts';
+import { resetProject } from '../../redux/reducers/projectSlice.ts';
+import { Map as MapLibreMap } from 'maplibre-gl';
 
 import './style.scss';
 
+export const SideBarTabs = {
+  projectList: 'projectList',
+  projectDetail: 'projectDetail',
+} as const;
+
+export type SideBarTabs = (typeof SideBarTabs)[keyof typeof SideBarTabs];
 export default function MapPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navbarRef = useRef<HTMLDivElement>(null);
   const isOpened = useCurrentRightSideOpened();
+
+  const [map, setMap] = useState<MapLibreMap | null>(null);
   const [mapHeight, setMapHeight] = useState<string>('calc(100vh - 60px)'); // Default fallback
 
-  const currentDefinition = useCurrentDefinition();
-  const currentStep = useCurrentStep();
+  const [sideBarTab, setSiteBarTab] = useState<SideBarTabs>(SideBarTabs.projectList);
 
   useEffect(() => {
     const updateMapHeight = () => {
@@ -43,8 +54,30 @@ export default function MapPage() {
 
   return (
     <div className="map-container-parent">
+      <ProjectControl />
       <div className="map-left-sidebar">
-        <MapInputControls />
+        {sideBarTab === SideBarTabs.projectDetail && (
+          <>
+            <ProjectDescription
+              toList={() => {
+                dispatch(setDrawingMode(null));
+                dispatch(resetLuckySheet());
+                dispatch(resetProject());
+                setSiteBarTab(SideBarTabs.projectList);
+              }}
+            />
+            <MapInputControls map={map} />
+          </>
+        )}
+        {sideBarTab === SideBarTabs.projectList && (
+          <>
+            <ProjectList
+              toDetail={() => {
+                setSiteBarTab(SideBarTabs.projectDetail);
+              }}
+            />
+          </>
+        )}
       </div>
 
       <div className="map-container">
@@ -52,7 +85,7 @@ export default function MapPage() {
           <MapTabNavigation />
         </div>
         <div className="map-wrapper" style={{ height: mapHeight }}>
-          <Map currentDefinition={currentDefinition} currentStep={currentStep} />
+          <Map map={map} setMap={setMap} />
         </div>
       </div>
 

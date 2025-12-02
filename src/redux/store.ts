@@ -2,17 +2,21 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './reducers/authSlice';
 import globalReducer from './reducers/global';
 import luckySheetReducer from './reducers/luckySheetSlice';
-import siteDefinitionReducer from './reducers/definitionSlice';
 import projectReducer from './reducers/projectSlice';
+import projectsReducer from './reducers/projectsSlice';
+import projectInputReducer from './reducers/projectInputSlice';
 import stepReducer from './reducers/stepSlice';
+import stepUpdateReducer from './reducers/stepUpdateSlice';
 
 export const store = configureStore({
   reducer: {
     global: globalReducer,
     auth: authReducer,
     step: stepReducer,
-    definition: siteDefinitionReducer,
+    stepUpdate: stepUpdateReducer,
     project: projectReducer,
+    projects: projectsReducer,
+    projectInput: projectInputReducer,
     luckySheet: luckySheetReducer,
   },
 });

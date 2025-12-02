@@ -1,29 +1,21 @@
-import { useEffect, useState } from 'react';
-import maplibregl, { Map as MapLibreMap } from 'maplibre-gl';
+import { useEffect } from 'react';
+import maplibregl, { type Map } from 'maplibre-gl';
 import { Box } from '@chakra-ui/react';
-import { layers } from './data';
-import MapDrawing from './MapDrawing';
 import MapLocation from './MapLocation';
 import BaseMaps from './BaseMaps';
-import MapTaskDisplay from './MapTaskDisplay';
-import ProjectControl from '../ProjectControl';
-
-import type { DefinitionType } from '../../redux/reducers/definitionSlice';
-import type { StepType } from '../../redux/reducers/stepSlice';
+import SiteLayer from './SiteLayer';
+import StepLayer from './StepLayer';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.scss';
 
-/** MapLibre component. */
-
-interface MapLibreProps {
-  currentDefinition: DefinitionType;
-  currentStep: StepType;
+interface Props {
+  map: Map | null;
+  setMap: (map: Map | null) => void;
 }
 
-export default function MapLibre({ currentDefinition, currentStep }: MapLibreProps) {
-  const [map, setMap] = useState<MapLibreMap | null>(null);
-
+/** MapLibre component. */
+export default function MapLibre({ map, setMap }: Props) {
   // Initialize map
   useEffect(() => {
     if (map) return;
@@ -62,28 +54,6 @@ export default function MapLibre({ currentDefinition, currentStep }: MapLibrePro
       });
 
       newMap.addControl(new maplibregl.NavigationControl(), 'bottom-left');
-
-      newMap.on('load', () => {
-        console.log('Map loaded successfully');
-
-        // Manually add the drawnFeatures source
-        newMap.addSource('drawnFeatures', {
-          type: 'geojson',
-          data: {
-            type: 'FeatureCollection',
-            features: [],
-          },
-        });
-
-        // Manually add all the drawnFeatures layers
-        const drawnLayers = layers.slice(1); // Skip the OSM background layer
-        drawnLayers.forEach((layer) => {
-          newMap.addLayer(layer as maplibregl.LayerSpecification);
-        });
-      });
-      newMap.on('error', (e) => {
-        console.error('Map error:', e);
-      });
       setMap(newMap);
     }, 100);
     return () => clearTimeout(timer);
@@ -92,11 +62,10 @@ export default function MapLibre({ currentDefinition, currentStep }: MapLibrePro
   return (
     <Box position="relative" width="100%" height="100%" minHeight="400px">
       <Box id="map" width="100%" height="100%" />
-      {map && <MapDrawing map={map} currentDefinition={currentDefinition} />}
-      {map && <MapTaskDisplay map={map} currentStep={currentStep} />}
+      {map && <SiteLayer map={map} />}
+      {map && <StepLayer map={map} />}
       {map && <MapLocation map={map} />}
       {map && <BaseMaps map={map} />}
-      {map && <ProjectControl />}
     </Box>
   );
 }

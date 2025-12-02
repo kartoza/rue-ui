@@ -1,46 +1,80 @@
-import { Col, Container, Row } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
+import { Col, Row } from 'react-bootstrap';
+import { useDispatch } from 'react-redux';
 import Accordion from 'react-bootstrap/Accordion';
-import { Button, Spinner } from '@chakra-ui/react';
-import { useState } from 'react';
-import type { ProjectParameters } from '../../redux/reducers/project';
-import type { AppDispatch, RootState } from '../../redux/store';
+import { Box, Button, Spinner } from '@chakra-ui/react';
+import { useEffect, useState } from 'react';
+import type { FeatureCollection, LineString, Polygon } from 'geojson';
+import { Map } from 'maplibre-gl';
+
+import { Toaster } from '../Toaster/toaster';
+import type { ProjectParameters, ProjectPayload } from '../../redux/reducers/project';
+import type { AppDispatch } from '../../redux/store';
+import { createProject, updateProject } from '../../redux/reducers/projectSlice';
+import NeighbourhoodPublicScapeOpenSpace from './Results/NeighbourhoodPublicScapeOpenSpace.tsx';
+import NeighbourhoodPublicScapeAmenities from './Results/NeighbourhoodPublicScapeAmenities.tsx';
 import {
-  DEFINITION_LABELS,
-  type DefinitionType,
-  setSelectedDefinition,
-} from '../../redux/reducers/definitionSlice';
-import { createProject } from '../../redux/reducers/projectSlice';
+  useCurrentProjectDone,
+  useCurrentProjectState,
+} from '../../redux/selectors/projectSelector.ts';
+import { useCurrentStepUpdateLoading } from '../../redux/selectors/stepUpdateSelector.ts';
+import { DrawingMode, setDrawingMode } from '../../redux/reducers/global.ts';
+import { useCurrentProjectInput } from '../../redux/selectors/projectInputSelector.ts';
+import { updateRoads, updateSite } from '../../redux/reducers/projectInputSlice.ts';
+
+import DummySite from './SiteDefinitionInput/DummySite.tsx';
+import LoadSite from './SiteDefinitionInput/LoadSite.tsx';
+import DrawYourOwn from './SiteDefinitionInput/DrawYourOwn.tsx';
 
 import projectParametersDefault from './general_input.json';
 
 import './style.scss';
-import NeighbourhoodPublicScapeOpenSpace from './Results/NeighbourhoodPublicScapeOpenSpace.tsx';
-import NeighbourhoodPublicScapeAmenities from './Results/NeighbourhoodPublicScapeAmenities.tsx';
-import { useCurrentProjectDone } from '../../redux/selectors/projectSelector.ts';
 
-export default function MapInputControls() {
+const DefinitionType = {
+  vmc_demo: 'vmc_demo',
+  draw_your_own: 'draw_your_own',
+  load_site: 'load_site',
+  dummy_site: 'dummy_site',
+} as const;
+
+type DefinitionType = (typeof DefinitionType)[keyof typeof DefinitionType];
+
+const DEFINITION_LABELS: Record<DefinitionType, string> = {
+  vmc_demo: 'VMC Demo',
+  draw_your_own: 'Draw your own',
+  load_site: 'Load site',
+  dummy_site: 'Dummy Site',
+};
+
+export default function MapInputControls({ map }: { map: Map | null }) {
   const dispatch = useDispatch<AppDispatch>();
-  const [activeKeys, setActiveKeys] = useState<string[]>(['0', '0-0']);
   const isProjectDone = useCurrentProjectDone();
+  const currentProject = useCurrentProjectState();
+  const currentStepUpdateLoading = useCurrentStepUpdateLoading();
+  const { site, roads } = useCurrentProjectInput();
 
-  // City - Site Definition
-  const siteDefinition = useSelector((state: RootState) => state.definition.selectedDefinition);
-
-  // City - Location
-  const [latitude, setLatitude] = useState<number>(0);
-  const [longitude, setLongitude] = useState<number>(0);
-
-  // City - Geometry
-  const [rotation, setRotation] = useState<number>(0);
-  const [front, setFront] = useState<number>(0);
-  const [rear, setRear] = useState<number>(0);
-  const [rearShift, setRearShift] = useState<number>(0);
-  const [depth, setDepth] = useState<number>(0);
+  const [submitted, setSubmitted] = useState<boolean>(false);
+  const [siteDefinition, setSiteDefinition] = useState<DefinitionType>(DefinitionType.vmc_demo);
+  const [activeKeys, setActiveKeys] = useState<string[]>(['0', '0-0']);
 
   // Parameters
+  const [name, setName] = useState<string>('');
+  const [description, setDescription] = useState<string | null>('');
   const [parameters, setParameters] = useState<ProjectParameters>(projectParametersDefault);
 
+  const errors: string[] = [];
+  switch (siteDefinition) {
+    case DefinitionType.load_site:
+    case DefinitionType.draw_your_own:
+      if (!site || !roads) {
+        errors.push('Please select a site and roads in the city');
+      }
+  }
+  if (!name) {
+    errors.push('Please enter project name');
+  }
+
+  const isActive = (key: string) => activeKeys.includes(key);
+  // Handle when according changed
   const handleSelect = (eventKey: string | string[] | null | undefined) => {
     if (Array.isArray(eventKey)) {
       setActiveKeys(eventKey);
@@ -51,26 +85,108 @@ export default function MapInputControls() {
     }
   };
 
-  const isActive = (key: string) => activeKeys.includes(key);
+  /* Change definition */
+  const changeDefinition = (definition: DefinitionType) => {
+    setSite(null);
+    setRoads(null);
+    setSiteDefinition(definition);
+    if (definition === DefinitionType.draw_your_own) {
+      dispatch(setDrawingMode(DrawingMode.DRAW_SITE));
+    } else {
+      dispatch(setDrawingMode(null));
+    }
+  };
 
+  // When project done, make submitted false
+  useEffect(() => {
+    if (isProjectDone) {
+      setSubmitted(false);
+      changeDefinition(DefinitionType.vmc_demo);
+    }
+  }, [isProjectDone]);
+
+  // When project done, make submitted false
+  useEffect(() => {
+    if (currentProject?.error) {
+      setSubmitted(false);
+      Toaster.error('Failed', currentProject?.error);
+    }
+    if (!currentProject.loading) {
+      const project = currentProject.project;
+      if (project) {
+        setName(project.name);
+        setDescription(project.description);
+        if (project.parameters) {
+          setParameters(JSON.parse(JSON.stringify(project.parameters)));
+        }
+      }
+    }
+  }, [currentProject]);
+
+  // Apply the form
   const apply = () => {
-    dispatch(
-      createProject({
-        name: 'Demo project',
-        description: 'This is demo project',
-        parameters: parameters,
-      })
-    );
+    if (siteDefinition === DefinitionType.load_site) {
+      if (!site || !roads) {
+        Toaster.error('Failed', 'Please select a site and roads in the city');
+        return;
+      }
+    }
+
+    const payload: ProjectPayload = {
+      name: name,
+      description: description,
+      parameters: parameters,
+    };
+    if (site && roads) {
+      payload.site = site;
+      payload.roads = roads;
+    }
+    if (currentProject.project?.uuid) {
+      dispatch(updateProject({ uuid: currentProject.project?.uuid, payload }));
+    } else {
+      dispatch(createProject(payload));
+    }
+    setSubmitted(true);
+  };
+
+  /** Set site */
+  const setSite = (site: FeatureCollection<Polygon> | null) => {
+    dispatch(updateSite(site));
+  };
+
+  /** Set roads */
+  const setRoads = (roads: FeatureCollection<LineString> | null) => {
+    dispatch(updateRoads(roads));
   };
 
   return (
-    <Container className="map-input-parent">
-      <Accordion
-        activeKey={activeKeys}
-        onSelect={handleSelect}
-        alwaysOpen
-        style={{ marginTop: '10px' }}
-      >
+    <Box className="map-input-parent" style={{ position: 'relative' }}>
+      <Box className="project-info-inputs">
+        <Box className="input-field">
+          <label htmlFor="project-name">Project Name</label>
+          <input
+            id="project-name"
+            type="text"
+            className="form-control"
+            placeholder="Enter project name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Box>
+        <Box className="input-field">
+          <label htmlFor="project-description">Description</label>
+          <textarea
+            id="project-description"
+            className="form-control"
+            placeholder="Enter project description"
+            rows={3}
+            value={description || ''}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </Box>
+      </Box>
+
+      <Accordion activeKey={activeKeys} onSelect={handleSelect} alwaysOpen>
         <Accordion.Item eventKey="0">
           <Accordion.Header>
             <span className={`circle-number-lg${isActive('0') ? ' active' : ''}`}>1</span>City
@@ -91,201 +207,27 @@ export default function MapInputControls() {
                   <select
                     className="form-control"
                     value={siteDefinition}
-                    onChange={(e) =>
-                      dispatch(setSelectedDefinition(e.target.value as DefinitionType))
-                    }
+                    onChange={(e) => {
+                      changeDefinition(e.target.value as DefinitionType);
+                    }}
                   >
                     {Object.entries(DEFINITION_LABELS).map(([value, label]) => (
                       <option key={value} value={value}>
-                        {label}
+                        {value === DefinitionType.vmc_demo && currentProject?.project?.uuid
+                          ? 'Keep existing'
+                          : label}
                       </option>
                     ))}
                   </select>
                 </Accordion.Body>
               </Accordion.Item>
-              {siteDefinition === 'dummy_site' && (
-                <>
-                  <Accordion.Item eventKey="0-1">
-                    <Accordion.Header>
-                      <span className={`circle-number-md${isActive('0-1') ? ' active' : ''}`}>
-                        2
-                      </span>
-                      Location
-                    </Accordion.Header>
-                    <Accordion.Body>
-                      <Row>
-                        <Col>
-                          <label>
-                            <span className={`circle-number-sm${isActive('0-1') ? ' active' : ''}`}>
-                              1
-                            </span>
-                            Latitude
-                          </label>
-                        </Col>
-                        <Col>
-                          <div className="input-group">
-                            <input
-                              type="number"
-                              step="0.000001"
-                              className="form-control"
-                              value={latitude}
-                              onChange={(e) => setLatitude(Number(e.target.value))}
-                              readOnly
-                            />
-                            <span className="input-group-text">°</span>
-                          </div>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col>
-                          <label>
-                            <span className={`circle-number-sm${isActive('0-1') ? ' active' : ''}`}>
-                              2
-                            </span>
-                            Longitude
-                          </label>
-                        </Col>
-                        <Col>
-                          <div className="input-group">
-                            <input
-                              type="number"
-                              step="0.000001"
-                              className="form-control"
-                              value={longitude}
-                              onChange={(e) => setLongitude(Number(e.target.value))}
-                            />
-                            <span className="input-group-text">°</span>
-                          </div>
-                        </Col>
-                      </Row>
-                    </Accordion.Body>
-                  </Accordion.Item>
-                  <Accordion.Item eventKey="0-2">
-                    <Accordion.Header>
-                      <span className={`circle-number-md${isActive('0-2') ? ' active' : ''}`}>
-                        3
-                      </span>
-                      Geometry
-                    </Accordion.Header>
-                    <Accordion.Body>
-                      <Row>
-                        <Col>
-                          <label>
-                            <span className={`circle-number-sm${isActive('0-2') ? ' active' : ''}`}>
-                              1
-                            </span>
-                            Rotation
-                          </label>
-                        </Col>
-                        <Col>
-                          <div className="input-group">
-                            <input
-                              type="number"
-                              step="0.000001"
-                              className="form-control"
-                              value={rotation}
-                              onChange={(e) => setRotation(Number(e.target.value))}
-                              readOnly
-                            />
-                            <span className="input-group-text">°</span>
-                          </div>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col>
-                          <label>
-                            <span className={`circle-number-sm${isActive('0-2') ? ' active' : ''}`}>
-                              2
-                            </span>
-                            Front
-                          </label>
-                        </Col>
-                        <Col>
-                          <div className="input-group">
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="form-control"
-                              value={front}
-                              onChange={(e) => setFront(Number(e.target.value))}
-                            />
-                            <span className="input-group-text">m</span>
-                          </div>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col>
-                          <label>
-                            <span className={`circle-number-sm${isActive('0-2') ? ' active' : ''}`}>
-                              3
-                            </span>
-                            Rear
-                          </label>
-                        </Col>
-                        <Col>
-                          <div className="input-group">
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="form-control"
-                              value={rear}
-                              onChange={(e) => setRear(Number(e.target.value))}
-                            />
-                            <span className="input-group-text">m</span>
-                          </div>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col>
-                          <label>
-                            <span className={`circle-number-sm${isActive('0-2') ? ' active' : ''}`}>
-                              4
-                            </span>
-                            Rear shift
-                          </label>
-                        </Col>
-                        <Col>
-                          <div className="input-group">
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="form-control"
-                              value={rearShift}
-                              onChange={(e) => setRearShift(Number(e.target.value))}
-                            />
-                            <span className="input-group-text">m</span>
-                          </div>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col>
-                          <label>
-                            <span className={`circle-number-sm${isActive('0-2') ? ' active' : ''}`}>
-                              5
-                            </span>
-                            Depth
-                          </label>
-                        </Col>
-                        <Col>
-                          <div className="input-group">
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="form-control"
-                              value={depth}
-                              onChange={(e) => setDepth(Number(e.target.value))}
-                            />
-                            <span className="input-group-text">m</span>
-                          </div>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col>Site area: 34.5 ha</Col>
-                      </Row>
-                    </Accordion.Body>
-                  </Accordion.Item>
-                </>
+              {siteDefinition === DefinitionType.dummy_site && (
+                <DummySite activeKeys={activeKeys} />
               )}
+              {siteDefinition === DefinitionType.load_site && (
+                <LoadSite map={map} setSite={setSite} setRoads={setRoads} />
+              )}
+              {siteDefinition === DefinitionType.draw_your_own && <DrawYourOwn map={map} />}
             </Accordion>
           </Accordion.Body>
         </Accordion.Item>
@@ -2923,11 +2865,37 @@ export default function MapInputControls() {
             textAlign: 'center',
             width: '100%',
           }}
-          disabled={!isProjectDone}
+          disabled={!!errors.length || !isProjectDone || submitted || currentStepUpdateLoading}
         >
-          Apply {!isProjectDone && <Spinner />}
+          {currentProject.project?.uuid ? 'Update' : 'Create'} project
         </Button>
       </div>
-    </Container>
+      {!!errors.length && (
+        <div
+          className="ErrorMessage"
+          style={{
+            padding: '1rem',
+            paddingTop: 0,
+          }}
+        >
+          {errors.join(', ')}
+        </div>
+      )}
+      {(submitted || currentStepUpdateLoading || !isProjectDone) && (
+        <Box
+          position="absolute"
+          width="100%"
+          height="100% "
+          top={0}
+          left={0}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          backgroundColor="rgba(255, 255, 255, 0.8)"
+        >
+          <Spinner size="xl" />
+        </Box>
+      )}
+    </Box>
   );
 }

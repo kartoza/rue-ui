@@ -1,6 +1,5 @@
 // 00-site
 import type { Task } from './task.ts';
-import type { SerializedError } from '@reduxjs/toolkit';
 
 export interface SiteResult {
   site_area_total: number;
@@ -238,7 +237,7 @@ interface StepBuildingMax extends Step {
 export interface StepState {
   step: Step | null;
   loading: boolean;
-  error: SerializedError | null;
+  error: string | null;
 }
 
 export interface StepSiteState extends StepState {

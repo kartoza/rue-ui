@@ -1,7 +1,8 @@
 import React, { type ChangeEvent, useState } from 'react';
-import { useS3DB } from '../../../../redux/selectors/luckySheet.ts';
 import { Box } from '@chakra-ui/react';
-import { financeClass, formatCurrency } from '../../../../utils/format.ts';
+
+import { useS3DB } from '../../../../redux/selectors/luckySheet';
+import { financeClass, formatCurrency } from '../../../../utils/format';
 
 const OffGridClustersProforma: React.FC = () => {
   const s3db = useS3DB();

@@ -1,9 +1,11 @@
 import type { RootState } from '../../redux/store';
 import { Spinner, TabsList, TabsRoot, TabsTrigger } from '@chakra-ui/react';
 import { useDispatch, useSelector } from 'react-redux';
+import { MdError } from 'react-icons/md';
 import { setCurrentStep, STEP_LABELS, type StepType } from '../../redux/reducers/stepSlice.ts';
 import { useCurrentProjectStep } from '../../redux/selectors/projectSelector.ts';
 import { TaskStatus } from '../../redux/reducers/task.ts';
+import { useCurrentStepUpdateLoading } from '../../redux/selectors/stepUpdateSelector.ts';
 
 import './style.scss';
 
@@ -14,16 +16,20 @@ interface TabPanelProps {
 
 function TabPanel({ value, label }: TabPanelProps) {
   const currentStep = useCurrentProjectStep(value as StepType);
+  const currentStepUpdateLoading = useCurrentStepUpdateLoading();
 
   return (
     <TabsTrigger
       value={value}
-      disabled={currentStep?.step?.task?.status !== TaskStatus.success}
+      disabled={currentStep?.step?.task?.status !== TaskStatus.success || currentStepUpdateLoading}
       className="map-task-tab-trigger"
     >
       {label}{' '}
       {(currentStep?.step?.task?.status === TaskStatus.pending ||
         currentStep?.step?.task?.status === TaskStatus.running) && <Spinner />}
+      {currentStep?.step?.task?.status === TaskStatus.failed && (
+        <MdError style={{ color: 'red' }} title={currentStep?.step?.task?.message || ''} />
+      )}
     </TabsTrigger>
   );
 }

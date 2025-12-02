@@ -26,11 +26,23 @@ export function useCurrentProjectStep(step: StepType): StepState {
 
 export function useCurrentProjectDone(): boolean {
   return useSelector((state: RootState) => {
-    const currentProject = (state.project as ProjectState).project;
+    const projectState = state.project as ProjectState;
+    if (projectState.error) return true;
+
+    const currentProject = projectState?.project;
     if (!currentProject?.uuid) return true;
     if (!currentProject) return false;
-    return Object.values(StepType).every(
-      (step) => currentProject.steps[step]?.step?.task?.status === TaskStatus.success
-    );
+    let hasError = false;
+    return Object.values(StepType).every((step) => {
+      if (currentProject.steps[step]?.step?.task?.status === TaskStatus.failed) {
+        hasError = true;
+      }
+      if (hasError) return true;
+
+      return [TaskStatus.success, TaskStatus.failed].includes(
+        // @ts-expect-error: This is correct
+        currentProject.steps[step]?.step?.task?.status
+      );
+    });
   });
 }

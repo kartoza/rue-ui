@@ -7,6 +7,7 @@ import { getStepStatus } from '../../redux/reducers/projectSlice.ts';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../redux/store.ts';
 import type { StepState } from '../../redux/reducers/step';
+import { Toaster } from '../Toaster/toaster.ts';
 
 export default function ProjectControl() {
   const dispatch = useDispatch<AppDispatch>();
@@ -30,6 +31,10 @@ export default function ProjectControl() {
   useEffect(() => {
     if (!currentProjectState.loading && firstUndefinedStep) {
       if (step && !step?.loading) {
+        if (step.step?.task?.status === TaskStatus.failed) {
+          Toaster.error(`Step ${firstUndefinedStep} failed`, step.step?.task?.message);
+          return;
+        }
         setTimeout(() => {
           if (currentProject?.uuid) {
             dispatch(
@@ -51,7 +56,7 @@ export default function ProjectControl() {
         }
       }
     }
-  }, [currentProjectState.loading, currentProject?.uuid, step]);
+  }, [currentProjectState.loading, currentProject?.uuid, firstUndefinedStep, step]);
 
   return null;
 }

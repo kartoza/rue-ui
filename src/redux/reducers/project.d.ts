@@ -1,4 +1,3 @@
-import type { SerializedError } from '@reduxjs/toolkit';
 import type {
   StepBuildingMaxState,
   StepBuildingStartState,
@@ -9,6 +8,7 @@ import type {
   StepStreetState,
   StepSubdivisionState,
 } from './step';
+import type { FeatureCollection, LineString, Polygon } from 'geojson';
 
 // -------------------------
 // For payload
@@ -171,13 +171,16 @@ interface StarterBuildingConfig {
 // -------------------------
 interface ProjectPayload {
   name: string;
-  description: string;
+  description: string | null;
   parameters: ProjectParameters;
+  site?: FeatureCollection<Polygon> | null;
+  roads?: FeatureCollection<LineString> | null;
 }
 
 interface Project {
-  uuid: string | null;
-  name: string | null;
+  uuid: string;
+  name: string;
+  description: string;
   steps: {
     site: StepSiteState;
     streets: StepStreetState;
@@ -194,5 +197,5 @@ interface Project {
 interface ProjectState {
   project: Project | null;
   loading: boolean;
-  error: SerializedError | null;
+  error: string | null;
 }
