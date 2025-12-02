@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Map as MaplibreMap } from 'maplibre-gl';
 import { Box, HStack, IconButton } from '@chakra-ui/react';
 import { useDispatch } from 'react-redux';
-import { MdDelete, MdTimeline } from 'react-icons/md';
+import { MdTimeline } from 'react-icons/md';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
 
 import type { AppDispatch } from '../../../redux/store.ts';
@@ -201,29 +201,19 @@ export default function SiteEditor({
     }
   };
 
-  const deleteSelected = () => {
-    editorRef.current?.deleteSelected();
-  };
   if (!isDrawSite) {
+    return null;
+  }
+  if (!map) {
     return null;
   }
 
   return (
     <>
-      <MapEditor
-        ref={editorRef}
-        map={map}
-        defaultGeojson={geojson}
-        enabled={isDrawSite}
-        activeByDefault={true}
-        onFeaturesChanged={onFeaturesChanged}
-        hideRoad={true}
-      />
       <HStack className="editor-stack" borderRadius="md" boxShadow="md">
         <IconButton
           onClick={startDrawPolygon}
           size="md"
-          disabled={!map}
           padding={1}
           title={`Draw site`}
           // @ts-expect-error: A custom variant
@@ -247,7 +237,6 @@ export default function SiteEditor({
               key={key}
               onClick={() => startDrawRoad('road_art', n)}
               size="md"
-              disabled={!map}
               bg={active ? '#FF6666 !important' : 'white'}
               color={active ? 'white' : '#FF6666'}
               border="1px solid"
@@ -270,7 +259,6 @@ export default function SiteEditor({
               key={key}
               onClick={() => startDrawRoad('road_sec', n)}
               size="md"
-              disabled={!map}
               bg={active ? '#FFB24D !important' : 'white'}
               color={active ? 'white' : '#FFB24D'}
               border="1px solid"
@@ -283,18 +271,15 @@ export default function SiteEditor({
             </IconButton>
           );
         })}
-        {/* DELETE button */}
-        <IconButton
-          aria-label="Delete selected features"
-          onClick={deleteSelected}
-          size="md"
-          disabled={!map}
-          // @ts-expect-error: A custom variant
-          variant="danger.basic"
-          title={`Delete selected features`}
-        >
-          <MdDelete />
-        </IconButton>
+        <MapEditor
+          map={map}
+          defaultGeojson={geojson}
+          enabled={isDrawSite}
+          activeByDefault={true}
+          onFeaturesChanged={onFeaturesChanged}
+          hideRoad={true}
+          ref={editorRef}
+        />
       </HStack>
     </>
   );

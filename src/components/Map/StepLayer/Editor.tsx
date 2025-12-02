@@ -7,7 +7,7 @@ import { DrawingMode } from '../../../redux/reducers/global.ts';
 import MapEditor, { type MapLayerEditorRef } from '../MapEditor.tsx';
 
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
-import { MdCancel, MdCheckCircle, MdDelete, MdModeEdit } from 'react-icons/md';
+import { MdCancel, MdCheckCircle, MdModeEdit } from 'react-icons/md';
 
 interface MapStepLayerEditorProps {
   map: Map | null;
@@ -86,14 +86,6 @@ export default function StepLayerEditor({
   );
   return (
     <>
-      <MapEditor
-        map={map}
-        defaultGeojson={geojson}
-        enabled={isEditing}
-        activeByDefault={true}
-        hideRoad={false}
-        ref={editorRef}
-      />
       {!isEditing && (
         <IconButton
           onClick={enableEditing}
@@ -108,17 +100,6 @@ export default function StepLayerEditor({
       )}
       {isEditing && (
         <>
-          <IconButton
-            onClick={() => {
-              editorRef?.current?.deleteSelected();
-            }}
-            size="md"
-            // @ts-expect-error: A custom variant
-            variant="danger.basic"
-            title={`Delete selected features`}
-          >
-            <MdDelete />
-          </IconButton>
           <IconButton
             onClick={saveEdits}
             size="md"
@@ -136,6 +117,14 @@ export default function StepLayerEditor({
           >
             <MdCancel />
           </IconButton>
+          <MapEditor
+            map={map}
+            defaultGeojson={geojson}
+            enabled={isEditing}
+            activeByDefault={true}
+            hideRoad={false}
+            ref={editorRef}
+          />
         </>
       )}
     </>

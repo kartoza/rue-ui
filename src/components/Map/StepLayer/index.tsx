@@ -7,7 +7,7 @@ import { Vector3 } from 'three';
 import turf from 'turf';
 import type { FeatureCollection } from 'geojson';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Box, HStack, IconButton, Spinner } from '@chakra-ui/react';
+import { HStack, IconButton, Spinner } from '@chakra-ui/react';
 import {
   useCurrentProjectStep,
   useCurrentProjectUUID,
@@ -26,6 +26,8 @@ import { ROAD_ID } from '../SiteLayer';
 
 import layerStyle from '../layer_style.json';
 import { MdSave } from 'react-icons/md';
+import { useCurrentDrawMode } from '../../../redux/selectors/globalSelector.ts';
+import { DrawingMode } from '../../../redux/reducers/global.ts';
 
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 const GLTF_ID: string = '3d-model';
@@ -36,6 +38,7 @@ export const GEOJSON_ID_LINE: string = 'task-layer-line';
 let globalCurrentStep: string = '';
 
 export default function StepLayer({ map }: { map: Map | null }) {
+  const isDrawSite = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
   const dispatch = useDispatch<AppDispatch>();
   const currentStep = useCurrentStep();
   const currentStepState = useCurrentProjectStep(currentStep);
@@ -381,35 +384,36 @@ export default function StepLayer({ map }: { map: Map | null }) {
   if (!(geojson && geojson.features.length > 0)) {
     return null;
   }
+  if (isDrawSite) {
+    return null;
+  }
   return (
-    <Box position="absolute" top="10px" right="10px" zIndex={1} display="flex" gap="1rem">
-      <HStack className="editor-stack" borderRadius="md" boxShadow="md">
-        {isUpdated && !isEditing && (
-          <IconButton
-            onClick={apply}
-            size="md"
-            // @ts-expect-error: A custom variant
-            variant="primary"
-            title={`Apply changes to API permanently.`}
-            posisition="relative"
-          >
-            <MdSave />{' '}
-            {currentStepUpdate.loading && (
-              <Spinner position="absolute" top="2px" left="2px" size="lg" />
-            )}
-          </IconButton>
-        )}
-        <MapStepLayerEditor
-          map={map}
-          geojson={geojson}
-          setGeojson={(geojson) => {
-            setIsUpdated(true);
-            setGeojson(geojson);
-          }}
-          isEditing={isEditing}
-          setIsEditing={setIsEditing}
-        />
-      </HStack>
-    </Box>
+    <HStack className="editor-stack" borderRadius="md" boxShadow="md">
+      {isUpdated && !isEditing && (
+        <IconButton
+          onClick={apply}
+          size="md"
+          // @ts-expect-error: A custom variant
+          variant="primary"
+          title={`Apply changes to API permanently.`}
+          posisition="relative"
+        >
+          <MdSave />{' '}
+          {currentStepUpdate.loading && (
+            <Spinner position="absolute" top="2px" left="2px" size="lg" />
+          )}
+        </IconButton>
+      )}
+      <MapStepLayerEditor
+        map={map}
+        geojson={geojson}
+        setGeojson={(geojson) => {
+          setIsUpdated(true);
+          setGeojson(geojson);
+        }}
+        isEditing={isEditing}
+        setIsEditing={setIsEditing}
+      />
+    </HStack>
   );
 }

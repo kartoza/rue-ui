@@ -16,6 +16,13 @@ export const toaster = createToaster({
 });
 
 export const Toaster = {
+  warning: (title: string, description: string) => {
+    toaster.create({
+      title: title,
+      description: description,
+      type: ToasterType.warning,
+    });
+  },
   error: (title: string, description: string) => {
     toaster.create({
       title: title,
