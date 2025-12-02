@@ -117,16 +117,17 @@ export default function StepLayerEditor({
           >
             <MdCancel />
           </IconButton>
-          <MapEditor
-            map={map}
-            defaultGeojson={geojson}
-            enabled={isEditing}
-            activeByDefault={true}
-            hideRoad={false}
-            ref={editorRef}
-          />
         </>
       )}
+      <MapEditor
+        map={map}
+        defaultGeojson={geojson}
+        enabled={isEditing}
+        activeByDefault={true}
+        hideRoad={false}
+        hideDelete={!isEditing}
+        ref={editorRef}
+      />
     </>
   );
 }

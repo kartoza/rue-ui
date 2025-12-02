@@ -24,6 +24,7 @@ interface Props {
   activeByDefault: boolean;
   onFeaturesChanged?: () => void;
   hideRoad: boolean;
+  hideDelete: boolean;
 }
 
 export interface MapLayerEditorRef {
@@ -32,7 +33,10 @@ export interface MapLayerEditorRef {
 
 /** This is editor for layer editor */
 const MapEditor = forwardRef<MapLayerEditorRef, Props>(
-  ({ map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged, hideRoad }, ref) => {
+  (
+    { map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged, hideRoad, hideDelete },
+    ref
+  ) => {
     const drawRef = useRef<MaplibreDraw | null>(null);
 
     // Expose deleteSelected method to parent components
@@ -45,6 +49,7 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
       }),
       []
     );
+    console.log(enabled);
 
     /** On change is editing */
     useEffect(() => {
@@ -541,15 +546,17 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
           <FaScissors />
         </IconButton>
         {/* DELETE button */}
-        <IconButton
-          onClick={deleteSelected}
-          size="md"
-          // @ts-expect-error: A custom variant
-          variant="danger.basic"
-          title={`Delete selected features`}
-        >
-          <MdDelete />
-        </IconButton>
+        {!hideDelete && (
+          <IconButton
+            onClick={deleteSelected}
+            size="md"
+            // @ts-expect-error: A custom variant
+            variant="danger.basic"
+            title={`Delete selected features`}
+          >
+            <MdDelete />
+          </IconButton>
+        )}
       </>
     );
   }

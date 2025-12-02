@@ -278,6 +278,7 @@ export default function SiteEditor({
           activeByDefault={true}
           onFeaturesChanged={onFeaturesChanged}
           hideRoad={true}
+          hideDelete={false}
           ref={editorRef}
         />
       </HStack>
