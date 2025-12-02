@@ -67,11 +67,10 @@ export default function ProjectList({ toDetail }: Props) {
                   {project.uuid}
                 </Box>
                 <IconButton
-                  color="red"
                   aria-label="Delete project"
                   size="sm"
-                  colorScheme="red"
-                  variant="ghost"
+                  // @ts-expect-error: A custom variant
+                  variant="danger.basic"
                   position="absolute"
                   top="8px"
                   right="8px"

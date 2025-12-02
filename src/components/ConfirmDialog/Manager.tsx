@@ -62,10 +62,8 @@ export function DialogProvider({ children }: { children: ReactNode }) {
                       {dialog.cancelText || 'Cancel'}
                     </Button>
                   </ChakraDialog.ActionTrigger>
-                  <Button
-                    colorScheme={dialog.variant === 'danger' ? 'red' : 'blue'}
-                    onClick={handleConfirm}
-                  >
+                  {/* @ts-expect-error: A custom variant*/}
+                  <Button variant={dialog.variant} onClick={handleConfirm}>
                     {dialog.confirmText || 'Confirm'}
                   </Button>
                 </ChakraDialog.Footer>
