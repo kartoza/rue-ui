@@ -1,9 +1,10 @@
-import { Box, Button, Spinner } from '@chakra-ui/react';
+import { Box, Button, IconButton, Spinner } from '@chakra-ui/react';
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { MdDelete } from 'react-icons/md';
 import { useCurrentProjects } from '../../redux/selectors/projectsSelector.ts';
 import type { AppDispatch } from '../../redux/store.ts';
-import { getProjects } from '../../redux/reducers/projectsSlice.ts';
+import { deleteProject, getProjects } from '../../redux/reducers/projectsSlice.ts';
 import { getProject, resetProject } from '../../redux/reducers/projectSlice.ts';
 
 import './style.scss';
@@ -22,10 +23,17 @@ export default function ProjectList({ toDetail }: Props) {
   }, [dispatch]);
 
   return (
-    <Box className="project-list">
+    <Box className="project-list" position="relative">
       <Box flex={1} overflowY="auto" gap="1rem" display="flex" flexDirection="column">
         {projectState.loading && (
-          <Box className="centered-container">
+          <Box
+            className="centered-container"
+            position="absolute"
+            top="0"
+            left="0"
+            zIndex={1}
+            backgroundColor={projectState.projects.length ? '#DDDDDD55' : '#FFFFFF00'}
+          >
             <Spinner size="xl" />
             Loading projects...
           </Box>
@@ -35,7 +43,7 @@ export default function ProjectList({ toDetail }: Props) {
             You don't have project yet
           </Box>
         )}
-        {!projectState.loading && projectState.projects.length > 0 && (
+        {projectState.projects.length > 0 && (
           <>
             {projectState.projects.map((project) => (
               <Box
@@ -51,11 +59,33 @@ export default function ProjectList({ toDetail }: Props) {
                   );
                   toDetail();
                 }}
+                position="relative"
               >
                 <Box className="project-name">{project.name || 'Untitled Project'}</Box>
                 <Box className="project-uuid" color="#777777">
                   {project.uuid}
                 </Box>
+                <IconButton
+                  color="red"
+                  aria-label="Delete project"
+                  size="sm"
+                  colorScheme="red"
+                  variant="ghost"
+                  position="absolute"
+                  top="8px"
+                  right="8px"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (
+                      project.uuid &&
+                      window.confirm(`Delete project "${project.name || 'Untitled'}"?`)
+                    ) {
+                      dispatch(deleteProject(project.uuid));
+                    }
+                  }}
+                >
+                  <MdDelete />
+                </IconButton>
               </Box>
             ))}
           </>

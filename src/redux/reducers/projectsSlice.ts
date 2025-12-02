@@ -16,7 +16,7 @@ const initialState: ProjectsState = {
   error: null,
 };
 
-// Async thunk for project
+// Async thunk for getting projects
 export const getProjects = createAsyncThunk('projects/get', async (_, thunkAPI) => {
   // -----------------------------
   // FOR DEMO
@@ -27,6 +27,20 @@ export const getProjects = createAsyncThunk('projects/get', async (_, thunkAPI) 
   // -----------------------------
   try {
     return await api.get('projects');
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return thunkAPI.rejectWithValue(errorMessage);
+  }
+});
+
+// Async thunk for deleting a project
+export const deleteProject = createAsyncThunk('projects/delete', async (uuid: string, thunkAPI) => {
+  if (!API_URL) {
+    return uuid;
+  }
+  try {
+    await api.del('projects/' + uuid);
+    return uuid;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return thunkAPI.rejectWithValue(errorMessage);
@@ -48,6 +62,21 @@ const projectSlice = createSlice({
         state.projects = action.payload;
       })
       .addCase(getProjects.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // Delete projects
+      .addCase(deleteProject.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteProject.fulfilled, (state, action) => {
+        state.loading = false;
+        const uuid = action.payload;
+        state.projects = state.projects.filter((project) => project.uuid !== uuid);
+      })
+      .addCase(deleteProject.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
