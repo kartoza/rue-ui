@@ -6,6 +6,7 @@ import { useCurrentProjects } from '../../redux/selectors/projectsSelector.ts';
 import type { AppDispatch } from '../../redux/store.ts';
 import { deleteProject, getProjects } from '../../redux/reducers/projectsSlice.ts';
 import { getProject, resetProject } from '../../redux/reducers/projectSlice.ts';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 import './style.scss';
 
@@ -76,12 +77,15 @@ export default function ProjectList({ toDetail }: Props) {
                   right="8px"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (
-                      project.uuid &&
-                      window.confirm(`Delete project "${project.name || 'Untitled'}"?`)
-                    ) {
-                      dispatch(deleteProject(project.uuid));
-                    }
+                    if (!project.uuid) return;
+
+                    ConfirmDialog.danger(
+                      'Delete Project',
+                      `Are you sure you want to delete "${project.name || 'Untitled'}"? This action cannot be undone.`,
+                      () => {
+                        dispatch(deleteProject(project.uuid!));
+                      }
+                    );
                   }}
                 >
                   <MdDelete />

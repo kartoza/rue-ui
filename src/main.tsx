@@ -11,6 +11,7 @@ import { store } from './redux/store';
 import reportWebVitals from './reportWebVitals.tsx';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from './components/Toaster';
+import { DialogProviderWrapper } from './components/ConfirmDialog';
 
 import { kartozaTheme } from './theme/Theme';
 
@@ -30,12 +31,14 @@ if (rootElement) {
     <ErrorBoundary>
       <ChakraProvider value={kartozaTheme}>
         <Provider store={store}>
-          <React.StrictMode>
-            <Router>
-              <Toaster />
-              <AppRoutes />
-            </Router>
-          </React.StrictMode>
+          <DialogProviderWrapper>
+            <React.StrictMode>
+              <Router>
+                <Toaster />
+                <AppRoutes />
+              </Router>
+            </React.StrictMode>
+          </DialogProviderWrapper>
         </Provider>
       </ChakraProvider>
     </ErrorBoundary>
