@@ -1,5 +1,5 @@
 import { Map } from 'maplibre-gl';
-import { Button } from '@chakra-ui/react';
+import { Button, Spinner } from '@chakra-ui/react';
 import { useState } from 'react';
 import { fetchRoads } from '../../utils/osm.tsx';
 import type { FeatureCollection, LineString } from 'geojson';
@@ -39,16 +39,23 @@ export default function ExtractRoads({ map, setRoads }: Props) {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
         padding: '16px',
         marginLeft: '1rem',
+        gap: '8px',
       }}
     >
-      {/* @ts-expect-error: A custom variant*/}
-      <Button variant="primary" disabled={requesting} onClick={request}>
-        Extract roads
+      <Button
+        // @ts-expect-error: A custom variant
+        variant="primary"
+        disabled={requesting}
+        onClick={request}
+        style={{ cursor: requesting ? 'progress ' : 'pointer' }}
+      >
+        Extract roads {requesting && <Spinner size="sm" />}
       </Button>
-      <span style={{ opacity: 0.5 }}>Extract roads from OSM from current view</span>
+      <span style={{ opacity: 0.5, fontSize: '0.9rem' }}>
+        Extract roads from OSM from current view
+      </span>
     </div>
   );
 }

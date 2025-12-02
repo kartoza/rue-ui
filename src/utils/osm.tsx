@@ -17,6 +17,14 @@ interface OSMResponse {
   elements: OSMWay[];
 }
 
+export interface NominatimResponse {
+  place_id: number;
+  lat: number;
+  lon: number;
+  boundingbox: [number, number, number, number] | null;
+  display_name: string;
+}
+
 /**
  * Fetch roads from OSM
  * @param map
@@ -70,6 +78,20 @@ export const fetchRoads = async (
     };
 
     return geojson as FeatureCollection<LineString, GeoJsonProperties>;
+  } catch (error) {
+    console.error('Error fetching roads from OSM:', error);
+    throw error;
+  }
+};
+
+export const searchOSM = async (q: string): Promise<NominatimResponse[]> => {
+  const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json`;
+  try {
+    const response = await fetch(nominatimUrl);
+    if (!response.ok) {
+      throw new Error(`Nominatim API error: ${response.status}`);
+    }
+    return await response.json();
   } catch (error) {
     console.error('Error fetching roads from OSM:', error);
     throw error;
