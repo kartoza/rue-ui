@@ -1,15 +1,23 @@
 {
   "grid_type": [
     "match",
-    ["get", "grid_type"],
+    ["coalesce", ["get", "grid_type"], ["get", "type"]],
     "on_grid_art",
     "rgb(235,201,199)",
     "on_grid_intersected",
     "rgb(235,201,199)",
     "on_grid_sec",
     "rgb(250,232,219)",
+    "on_grid",
+    "rgb(235,201,199)",
     "off_grid",
     "rgb(250,242,212)",
+    "on_grid_local_streets",
+    "rgb(255,255,255)",
+    "off_grid_local_streets",
+    "rgb(255,255,255)",
+    "cold_boundaries",
+    "rgb(207, 229, 242)",
     "#7FBA7F"
   ],
   "road_color": [
