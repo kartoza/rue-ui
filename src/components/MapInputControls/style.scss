@@ -53,33 +53,6 @@
 }
 
 .map-input-parent {
-  .project-info-inputs {
-    padding: 1rem;
-    border-radius: 8px;
-
-    .input-field {
-      margin-bottom: 1rem;
-
-      &:last-child {
-        margin-bottom: 0;
-      }
-
-      label {
-        display: block;
-        font-weight: 600;
-        color: #144465;
-        margin-bottom: 0.5rem;
-        font-size: 14px;
-      }
-
-      input.form-control,
-      textarea.form-control {
-        width: 100%;
-        resize: vertical;
-      }
-    }
-  }
-
   .accordion-item {
     border: none !important;
   }

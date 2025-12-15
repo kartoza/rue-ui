@@ -199,39 +199,39 @@ export type { Site, Streets, Clusters, Public, Subdivision, Footprint, BuildingS
 export interface Step {
   file: string | null;
   task: Task | null;
-  result: null;
+  financial: null;
 }
 
 interface StepSite extends Step {
-  result: SiteResult;
+  financial: SiteResult;
 }
 
 interface StepStreet extends Step {
-  result: StreetsResult;
+  financial: StreetsResult;
 }
 
 interface StepCluster extends Step {
-  result: StreetsResult;
+  financial: StreetsResult;
 }
 
 interface StepPublic extends Step {
-  result: PublicResult;
+  financial: PublicResult;
 }
 
 interface StepSubdivision extends Step {
-  result: StreetsResult;
+  financial: StreetsResult;
 }
 
 interface StepFootprint extends Step {
-  result: FootprintResult;
+  financial: FootprintResult;
 }
 
 interface StepBuildingStart extends Step {
-  result: BuildingStartResult;
+  financial: BuildingStartResult;
 }
 
 interface StepBuildingMax extends Step {
-  result: BuildingMaxResult;
+  financial: BuildingMaxResult;
 }
 
 export interface StepState {

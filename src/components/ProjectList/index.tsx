@@ -23,6 +23,17 @@ export default function ProjectList({ toDetail }: Props) {
     dispatch(getProjects());
   }, [dispatch]);
 
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
+
   return (
     <Box className="project-list" position="relative">
       <Box flex={1} overflowY="auto" gap="1rem" display="flex" flexDirection="column">
@@ -65,6 +76,24 @@ export default function ProjectList({ toDetail }: Props) {
                 <Box className="project-name">{project.name || 'Untitled Project'}</Box>
                 <Box className="project-uuid" color="#777777">
                   {project.uuid}
+                </Box>
+                <Box
+                  color="#777777"
+                  style={{
+                    display: 'flex',
+                    fontSize: '0.8rem',
+                    justifyContent: 'space-between',
+                    marginTop: 8,
+                  }}
+                >
+                  <Box>
+                    <Box>Last update:</Box>
+                    <Box>{formatDateTime(project.updated_at)}</Box>
+                  </Box>
+                  <Box style={{ textAlign: 'right' }}>
+                    <Box>Created at:</Box>
+                    <Box>{formatDateTime(project.created_at)}</Box>
+                  </Box>
                 </Box>
                 <IconButton
                   aria-label="Delete project"

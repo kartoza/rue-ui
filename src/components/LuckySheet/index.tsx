@@ -113,17 +113,17 @@ const LuckySheet = ({ open, setOpen }: Props) => {
     if (!luckysheet) return;
     if (!isSheetReadyRef.current) return;
 
-    const C = currentProject?.steps?.site?.step?.result;
-    const N = currentProject?.steps?.subdivision?.step?.result;
-    const T = currentProject?.steps?.footprint?.step?.result;
+    const C = currentProject?.steps?.site?.step?.financial;
+    const N = currentProject?.steps?.subdivision?.step?.financial;
+    const T = currentProject?.steps?.footprint?.step?.financial;
     const parameters = currentProject?.parameters;
     if (!C || !N || !T || !parameters) return;
 
     setCells(
       luckysheet,
-      currentProject?.steps?.site?.step?.result,
-      currentProject?.steps?.subdivision?.step?.result,
-      currentProject?.steps?.footprint?.step?.result,
+      currentProject?.steps?.site?.step?.financial,
+      currentProject?.steps?.subdivision?.step?.financial,
+      currentProject?.steps?.footprint?.step?.financial,
       currentProject?.parameters
     );
 

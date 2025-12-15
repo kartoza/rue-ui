@@ -49,7 +49,6 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
       }),
       []
     );
-    console.log(enabled);
 
     /** On change is editing */
     useEffect(() => {

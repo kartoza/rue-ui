@@ -42,10 +42,7 @@ interface OnGridPartitions {
 
 interface OffGridPartitions {
   cluster_depth_m: number;
-  cluster_size_lots: number;
   cluster_width_m: number;
-  lot_depth_along_path_m: number;
-  lot_depth_around_yard_m: number;
 }
 
 interface UrbanBlockStructure {
@@ -96,7 +93,6 @@ interface Tissue {
 }
 
 interface LotConfiguration {
-  depth_m: number;
   width_m: number;
   front_setback_m: number;
   side_margins_m: number;
@@ -124,7 +120,6 @@ interface OffGridClusterType2 {
 }
 
 interface CornerBonus {
-  description: string;
   with_artery_percent: number;
   with_secondary_percent: number;
   with_local_percent: number;
@@ -181,6 +176,8 @@ interface Project {
   uuid: string;
   name: string;
   description: string;
+  created_at: string;
+  updated_at: string;
   steps: {
     site: StepSiteState;
     streets: StepStreetState;
