@@ -3,7 +3,7 @@ import './style.scss';
 
 interface Props {
   name: string;
-  description: string;
+  description: string | null;
   setName: (name: string) => void;
   setDescription: (description: string) => void;
 }
