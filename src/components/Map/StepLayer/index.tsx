@@ -58,6 +58,12 @@ export default function StepLayer({ map }: { map: Map | null }) {
           'fill-outline-color': 'rgba(0, 0, 0, 1)',
         };
       }
+      case StepType.clusters.toString(): {
+        return {
+          'fill-color': layerStyle.cluster_fill,
+          'fill-outline-color': 'rgba(0, 0, 0, 1)',
+        };
+      }
     }
 
     return {
