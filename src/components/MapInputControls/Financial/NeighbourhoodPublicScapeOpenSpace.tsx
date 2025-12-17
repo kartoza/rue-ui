@@ -1,8 +1,8 @@
 import { useCurrentProject } from '../../../redux/selectors/projectSelector.ts';
 
-export default function NeighbourhoodPublicScapeAmenities() {
+export default function NeighbourhoodPublicScapeOpenSpace() {
   const currentProject = useCurrentProject();
-  const value = currentProject?.steps?.subdivision?.step?.result.amen_total_area || 0;
+  const value = currentProject?.steps?.public?.step?.financial.open_total_area || 0;
 
   return (
     <label

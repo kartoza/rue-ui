@@ -23,7 +23,6 @@ interface Props {
   enabled: boolean;
   activeByDefault: boolean;
   onFeaturesChanged?: () => void;
-  hideRoad: boolean;
   hideDelete: boolean;
 }
 
@@ -33,10 +32,7 @@ export interface MapLayerEditorRef {
 
 /** This is editor for layer editor */
 const MapEditor = forwardRef<MapLayerEditorRef, Props>(
-  (
-    { map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged, hideRoad, hideDelete },
-    ref
-  ) => {
+  ({ map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged, hideDelete }, ref) => {
     const drawRef = useRef<MaplibreDraw | null>(null);
 
     // Expose deleteSelected method to parent components
@@ -49,14 +45,13 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
       }),
       []
     );
-    console.log(enabled);
 
     /** On change is editing */
     useEffect(() => {
       if (!map) return;
 
       // Hide road layer
-      if (hasLayer(map, ROAD_ID) && enabled && hideRoad) {
+      if (hasLayer(map, ROAD_ID) && enabled) {
         map.setLayoutProperty(ROAD_ID, 'visibility', 'none');
       }
 

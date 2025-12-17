@@ -5,15 +5,17 @@ import { useEffect, useState } from 'react';
 import {
   useCurrentProjectDone,
   useCurrentProjectState,
+  useCurrentProjectStep,
 } from '../../../redux/selectors/projectSelector';
 import { getAuthHeaders } from '../../../utils/api';
 import { hasLayer, removeSource } from '../../../utils/maplibre';
 import layerStyle from '../layer_style.json';
 import SiteEditor from './Editor.tsx';
 import { Toaster } from '../../Toaster/toaster.ts';
+import { StepType } from '../../../redux/reducers/stepSlice.ts';
+import { TaskStatus } from '../../../redux/reducers/task.ts';
 
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
-const GLTF_ID: string = '3d-model';
 
 const API_URL: string = import.meta.env.VITE_API_URL;
 export const ROAD_ID: string = 'road-layer';
@@ -23,6 +25,9 @@ export default function SiteLayer({ map }: { map: Map | null }) {
   const currentProjectState = useCurrentProjectState();
   const [roads, setRoads] = useState<FeatureCollection<LineString> | null>(null);
   const [site, setSite] = useState<FeatureCollection<Polygon> | null>(null);
+  const [roadsBuffer, setRoadBuffer] = useState<FeatureCollection<Polygon> | null>(null);
+
+  const projectStep = useCurrentProjectStep(StepType.site);
 
   const parameters: ProjectParameters | undefined = currentProjectState?.project?.parameters;
   const uuid = currentProjectState?.project?.uuid;
@@ -61,6 +66,31 @@ export default function SiteLayer({ map }: { map: Map | null }) {
       });
   }, [uuid, currentProjectState.loading, isProjectDone]);
 
+  let roadURL = '';
+  if (projectStep?.step?.task?.status === TaskStatus.success) {
+    roadURL = `${API_URL}projects/${uuid}/${StepType.site}/file/roads.geojson#${currentProjectState.project?.updated_at}`;
+  }
+  /** Fetch roads buffer geojson from API */
+  useEffect(() => {
+    if (!uuid) {
+      setRoadBuffer(null);
+      return;
+    }
+
+    if (!roadURL) return;
+    console.log(roadURL);
+    fetch(roadURL, {
+      headers: getAuthHeaders(),
+    })
+      .then((res) => res.json())
+      .then((data: FeatureCollection<Polygon>) => {
+        setRoadBuffer(data);
+      })
+      .catch((err) => {
+        Toaster.error('Failed to load roads buffer', err);
+      });
+  }, [uuid, roadURL]);
+
   /** Render roads layer */
   useEffect(() => {
     if (!map) return;
@@ -68,63 +98,27 @@ export default function SiteLayer({ map }: { map: Map | null }) {
 
     // Remove existing layer and source
     removeSource(map, ROAD_ID);
-    const arteries = parameters?.neighbourhood?.public_roads?.width_of_arteries_m;
-    const secondaries = parameters?.neighbourhood?.public_roads?.width_of_secondaries_m;
-
-    if (!arteries || !secondaries) return;
 
     let before: string | undefined = undefined;
-    if (hasLayer(map, GLTF_ID)) {
-      before = GLTF_ID;
-    }
     if (hasLayer(map, GL_DRAW_POLYGON)) {
       before = GL_DRAW_POLYGON;
     }
-    if (roads) {
+    if (roadsBuffer) {
       // Add source
       map.addSource(ROAD_ID, {
         type: 'geojson',
-        data: roads,
+        data: roadsBuffer,
       });
 
       // Add line layer
       map.addLayer(
         {
           id: ROAD_ID,
-          type: 'line',
+          type: 'fill',
           source: ROAD_ID,
           paint: {
             // @ts-expect-error: Custom style function
-            'line-color': layerStyle.road_color,
-            'line-width': [
-              'interpolate',
-              ['exponential', 2],
-              ['zoom'],
-              0,
-              [
-                'match',
-                ['get', 'road_type'],
-                'road_art',
-                arteries * 0.00001,
-                'road_sec',
-                secondaries * 0.00001,
-                0,
-              ],
-              22,
-              [
-                'match',
-                ['get', 'road_type'],
-                'road_art',
-                arteries * 50,
-                'road_sec',
-                secondaries * 50,
-                0,
-              ],
-            ],
-          },
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
+            'fill-color': layerStyle.road_color,
           },
         },
         before
@@ -136,7 +130,7 @@ export default function SiteLayer({ map }: { map: Map | null }) {
         removeSource(map, ROAD_ID);
       }
     };
-  }, [map, roads, parameters]);
+  }, [map, roadsBuffer]);
 
   // Merge site and roads into a single geojson
   const geojson: FeatureCollection | null =

@@ -2,7 +2,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { STEP_LABELS, type StepType } from './stepSlice';
 import { TaskStatus } from './task';
-import type { ProjectPayload, ProjectState } from './project';
+import type { ProjectPatchPayload, ProjectPayload, ProjectState } from './project';
 import type { Step } from './step';
 import * as api from '../../utils/api.tsx';
 
@@ -76,6 +76,33 @@ export const updateProject = createAsyncThunk(
     // -----------------------------
     try {
       const data = await api.put<{
+        uuid: string;
+        name: string;
+      }>('projects/' + uuid, payload);
+      return {
+        ...data,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return thunkAPI.rejectWithValue(errorMessage);
+    }
+  }
+);
+export const patchProject = createAsyncThunk(
+  'project/patch',
+  async (
+    {
+      uuid,
+      payload,
+    }: {
+      uuid: string;
+      payload: ProjectPatchPayload;
+    },
+    thunkAPI
+  ) => {
+    // -----------------------------
+    try {
+      const data = await api.patch<{
         uuid: string;
         name: string;
       }>('projects/' + uuid, payload);
@@ -203,6 +230,23 @@ const projectSlice = createSlice({
         state.project = { ...action.payload, steps: {} };
       })
       .addCase(updateProject.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // ----------------------------------
+      // Patch project
+      // ----------------------------------
+      .addCase(patchProject.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(patchProject.fulfilled, (state, action) => {
+        state.loading = false;
+        // @ts-expect-error: Save by step
+        state.project = { ...action.payload, steps: {} };
+      })
+      .addCase(patchProject.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })

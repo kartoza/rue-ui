@@ -12,10 +12,7 @@
     },
     "off_grid_partitions": {
       "cluster_depth_m": 45,
-      "cluster_size_lots": 15,
-      "cluster_width_m": 30,
-      "lot_depth_along_path_m": 12.5,
-      "lot_depth_around_yard_m": 10
+      "cluster_width_m": 30
     },
     "urban_block_structure": {
       "along_arteries": {
@@ -33,10 +30,10 @@
     },
     "public_spaces": {
       "open_spaces": {
-        "open_space_percentage": 0
+        "open_space_percentage": 6
       },
       "amenities": {
-        "amenities_percentage": 10
+        "amenities_percentage": 8
       },
       "street_section": {
         "sidewalk_width_m": 3
@@ -51,7 +48,6 @@
   },
   "tissue": {
     "on_grid_lots_on_arteries": {
-      "depth_m": 40,
       "width_m": 40,
       "front_setback_m": 6,
       "side_margins_m": 6,
@@ -59,7 +55,6 @@
       "number_of_floors": 5
     },
     "on_grid_lots_on_secondaries": {
-      "depth_m": 30,
       "width_m": 20,
       "front_setback_m": 3,
       "side_margins_m": 3,
@@ -67,7 +62,6 @@
       "number_of_floors": 4
     },
     "on_grid_lots_on_locals": {
-      "depth_m": 20,
       "width_m": 10,
       "front_setback_m": 0,
       "side_margins_m": 0,
@@ -92,7 +86,6 @@
       "lot_depth_behind_cul_de_sac_m": 15
     },
     "corner_bonus": {
-      "description": "Density (floor) bonus at intersection",
       "with_artery_percent": 40,
       "with_secondary_percent": 30,
       "with_local_percent": 20

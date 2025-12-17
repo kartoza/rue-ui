@@ -277,7 +277,6 @@ export default function SiteEditor({
           enabled={isDrawSite}
           activeByDefault={true}
           onFeaturesChanged={onFeaturesChanged}
-          hideRoad={true}
           hideDelete={false}
           ref={editorRef}
         />

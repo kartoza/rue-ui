@@ -58,6 +58,13 @@ export default function StepLayer({ map }: { map: Map | null }) {
           'fill-outline-color': 'rgba(0, 0, 0, 1)',
         };
       }
+      case StepType.public.toString():
+      case StepType.clusters.toString(): {
+        return {
+          'fill-color': layerStyle.cluster_fill,
+          'fill-outline-color': 'rgba(0, 0, 0, 1)',
+        };
+      }
     }
 
     return {
@@ -107,14 +114,14 @@ export default function StepLayer({ map }: { map: Map | null }) {
     removeSource(map, GEOJSON_ID);
     if (geojson) {
       let before: string | undefined = undefined;
-      if (hasLayer(map, ROAD_ID)) {
-        before = ROAD_ID;
-      }
       if (hasLayer(map, GLTF_ID)) {
         before = GLTF_ID;
       }
       if (hasLayer(map, GL_DRAW_POLYGON)) {
         before = GL_DRAW_POLYGON;
+      }
+      if (hasLayer(map, ROAD_ID)) {
+        before = ROAD_ID;
       }
 
       if (isInit) {
@@ -130,7 +137,6 @@ export default function StepLayer({ map }: { map: Map | null }) {
           }
         );
       }
-
       map.addSource(GEOJSON_ID, {
         type: 'geojson',
         data: geojson,

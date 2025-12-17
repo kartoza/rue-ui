@@ -10,8 +10,8 @@ import { Toaster } from '../Toaster/toaster';
 import type { ProjectParameters, ProjectPayload } from '../../redux/reducers/project';
 import type { AppDispatch } from '../../redux/store';
 import { createProject, updateProject } from '../../redux/reducers/projectSlice';
-import NeighbourhoodPublicScapeOpenSpace from './Results/NeighbourhoodPublicScapeOpenSpace.tsx';
-import NeighbourhoodPublicScapeAmenities from './Results/NeighbourhoodPublicScapeAmenities.tsx';
+import NeighbourhoodPublicScapeOpenSpace from './Financial/NeighbourhoodPublicScapeOpenSpace.tsx';
+import NeighbourhoodPublicScapeAmenities from './Financial/NeighbourhoodPublicScapeAmenities.tsx';
 import {
   useCurrentProjectDone,
   useCurrentProjectState,
@@ -20,6 +20,7 @@ import { useCurrentStepUpdateLoading } from '../../redux/selectors/stepUpdateSel
 import { DrawingMode, setDrawingMode } from '../../redux/reducers/global.ts';
 import { useCurrentProjectInput } from '../../redux/selectors/projectInputSelector.ts';
 import { updateRoads, updateSite } from '../../redux/reducers/projectInputSlice.ts';
+import { ProjectDetailEditor } from '../ProjectDetailEditor';
 
 import DummySite from './SiteDefinitionInput/DummySite.tsx';
 import LoadSite from './SiteDefinitionInput/LoadSite.tsx';
@@ -161,30 +162,16 @@ export default function MapInputControls({ map }: { map: Map | null }) {
 
   return (
     <Box className="map-input-parent" style={{ position: 'relative' }}>
-      <Box className="project-info-inputs">
-        <Box className="input-field">
-          <label htmlFor="project-name">Project Name</label>
-          <input
-            id="project-name"
-            type="text"
-            className="form-control"
-            placeholder="Enter project name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+      {!currentProject.project?.uuid && (
+        <div style={{ padding: '1rem' }}>
+          <ProjectDetailEditor
+            name={name}
+            setName={setName}
+            description={description}
+            setDescription={setDescription}
           />
-        </Box>
-        <Box className="input-field">
-          <label htmlFor="project-description">Description</label>
-          <textarea
-            id="project-description"
-            className="form-control"
-            placeholder="Enter project description"
-            rows={3}
-            value={description || ''}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </Box>
-      </Box>
+        </div>
+      )}
 
       <Accordion activeKey={activeKeys} onSelect={handleSelect} alwaysOpen>
         <Accordion.Item eventKey="0">
@@ -462,15 +449,15 @@ export default function MapInputControls({ map }: { map: Map | null }) {
                             type="number"
                             step="0.1"
                             className="form-control"
-                            value={parameters.neighbourhood.off_grid_partitions.cluster_size_lots}
-                            onChange={(e) => {
-                              parameters.neighbourhood.off_grid_partitions.cluster_size_lots =
-                                Number(e.target.value);
-                              setParameters({ ...parameters });
-                            }}
+                            value={(
+                              (parameters.neighbourhood.off_grid_partitions.cluster_depth_m /
+                                parameters.tissue.off_grid_cluster_type_1.lot_width_m) *
+                              2
+                            ).toFixed(0)}
+                            onChange={() => {}}
                             readOnly
                           />
-                          <span className="input-group-text">m</span>
+                          <span className="input-group-text">lots</span>
                         </div>
                       </Col>
                     </Row>
@@ -514,14 +501,12 @@ export default function MapInputControls({ map }: { map: Map | null }) {
                             type="number"
                             step="0.1"
                             className="form-control"
-                            value={
-                              parameters.neighbourhood.off_grid_partitions.lot_depth_along_path_m
-                            }
-                            onChange={(e) => {
-                              parameters.neighbourhood.off_grid_partitions.lot_depth_along_path_m =
-                                Number(e.target.value);
-                              setParameters({ ...parameters });
-                            }}
+                            value={(
+                              (parameters.neighbourhood.off_grid_partitions.cluster_width_m -
+                                parameters.tissue.off_grid_cluster_type_1.internal_path_width_m) /
+                              2
+                            ).toFixed(2)}
+                            onChange={() => {}}
                             readOnly
                           />
                           <span className="input-group-text">m</span>
@@ -538,14 +523,12 @@ export default function MapInputControls({ map }: { map: Map | null }) {
                             type="number"
                             step="0.1"
                             className="form-control"
-                            value={
-                              parameters.neighbourhood.off_grid_partitions.lot_depth_around_yard_m
-                            }
-                            onChange={(e) => {
-                              parameters.neighbourhood.off_grid_partitions.lot_depth_around_yard_m =
-                                Number(e.target.value);
-                              setParameters({ ...parameters });
-                            }}
+                            value={(
+                              (parameters.neighbourhood.off_grid_partitions.cluster_width_m -
+                                parameters.tissue.off_grid_cluster_type_1.open_space_width_m) /
+                              2
+                            ).toFixed(2)}
+                            onChange={() => {}}
                             readOnly
                           />
                           <span className="input-group-text">m</span>
@@ -1009,13 +992,8 @@ export default function MapInputControls({ map }: { map: Map | null }) {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={parameters.tissue.on_grid_lots_on_arteries.depth_m}
-                          onChange={(e) => {
-                            parameters.tissue.on_grid_lots_on_arteries.depth_m = Number(
-                              e.target.value
-                            );
-                            setParameters({ ...parameters });
-                          }}
+                          value={parameters.neighbourhood.on_grid_partitions.depth_along_arteries_m}
+                          onChange={() => {}}
                           readOnly
                         />
                         <span className="input-group-text">m</span>
@@ -1151,13 +1129,10 @@ export default function MapInputControls({ map }: { map: Map | null }) {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={parameters.tissue.on_grid_lots_on_secondaries.depth_m}
-                          onChange={(e) => {
-                            parameters.tissue.on_grid_lots_on_secondaries.depth_m = Number(
-                              e.target.value
-                            );
-                            setParameters({ ...parameters });
-                          }}
+                          value={
+                            parameters.neighbourhood.on_grid_partitions.depth_along_secondaries_m
+                          }
+                          onChange={() => {}}
                           readOnly
                         />
                         <span className="input-group-text">m</span>
@@ -1293,13 +1268,8 @@ export default function MapInputControls({ map }: { map: Map | null }) {
                           type="number"
                           step="1"
                           className="form-control"
-                          value={parameters.tissue.on_grid_lots_on_locals.depth_m}
-                          onChange={(e) => {
-                            parameters.tissue.on_grid_lots_on_locals.depth_m = Number(
-                              e.target.value
-                            );
-                            setParameters({ ...parameters });
-                          }}
+                          value={parameters.neighbourhood.on_grid_partitions.depth_along_locals_m}
+                          onChange={() => {}}
                           readOnly
                         />
                         <span className="input-group-text">m</span>
