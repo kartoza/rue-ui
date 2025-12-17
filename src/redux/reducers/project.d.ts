@@ -171,6 +171,10 @@ interface ProjectPayload {
   site?: FeatureCollection<Polygon> | null;
   roads?: FeatureCollection<LineString> | null;
 }
+interface ProjectPatchPayload {
+  name: string;
+  description: string | null;
+}
 
 interface Project {
   uuid: string;

@@ -163,12 +163,14 @@ export default function MapInputControls({ map }: { map: Map | null }) {
   return (
     <Box className="map-input-parent" style={{ position: 'relative' }}>
       {!currentProject.project?.uuid && (
-        <ProjectDetailEditor
-          name={name}
-          setName={setName}
-          description={description}
-          setDescription={setDescription}
-        />
+        <div style={{ padding: '1rem' }}>
+          <ProjectDetailEditor
+            name={name}
+            setName={setName}
+            description={description}
+            setDescription={setDescription}
+          />
+        </div>
       )}
 
       <Accordion activeKey={activeKeys} onSelect={handleSelect} alwaysOpen>

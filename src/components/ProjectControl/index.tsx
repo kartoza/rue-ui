@@ -32,6 +32,7 @@ export default function ProjectControl() {
     if (!currentProjectState.loading && firstUndefinedStep) {
       if (step && !step?.loading) {
         if (step.step?.task?.status === TaskStatus.failed) {
+          if (step.step?.task?.message === 'Work in progress') return;
           Toaster.error(`Step ${firstUndefinedStep} failed`, step.step?.task?.message);
           return;
         }
