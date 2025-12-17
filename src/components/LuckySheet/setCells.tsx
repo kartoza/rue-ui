@@ -1,34 +1,44 @@
 import type { ProjectParameters } from '../../redux/reducers/project';
-import { type LuckySheetGlobal, SheetIndex } from './types.ts';
-import type { FootprintResult, SiteResult, StreetsResult } from '../../redux/reducers/step';
+import { type LuckySheetGlobal } from './types.ts';
+import type {
+  FootprintResult,
+  PublicResult,
+  SiteResult,
+  StreetsResult,
+} from '../../redux/reducers/step';
 
 export function setCells(
   luckySheet: LuckySheetGlobal,
   siteResult: SiteResult,
-  subDivisionResult: StreetsResult,
+  streetsResult: StreetsResult,
+  publicResult: PublicResult,
   footprintResult: FootprintResult,
   parameters: ProjectParameters
 ) {
   if (!luckySheet) return;
 
   const C = siteResult;
-  const N = subDivisionResult;
+  const S = streetsResult;
+  const N = publicResult;
   const T = footprintResult;
-  if (!C || !N || !T || !parameters) return;
+  if (!C || !S || !N || !T || !parameters) return;
 
-  luckySheet.setSheetActive(SheetIndex.Q);
   luckySheet.setCellValue(52, 1, C.site_roads_area / 10000, { isRefresh: false });
   luckySheet.setCellValue(63, 1, C.site_area_total, { isRefresh: false });
 
   //* Neighbourhood to Q  */
   //C3-C5
-  luckySheet.setCellValue(2, 2, N.road_len_art_100, { isRefresh: false });
-  luckySheet.setCellValue(3, 2, N.road_len_sec_100, { isRefresh: false });
-  luckySheet.setCellValue(4, 2, N.road_len_loc_100, { isRefresh: false });
+  luckySheet.setCellValue(2, 2, S.road_len_art_100, { isRefresh: false });
+  luckySheet.setCellValue(3, 2, S.road_len_sec_100, { isRefresh: false });
+  luckySheet.setCellValue(4, 2, S.road_len_loc_100, { isRefresh: false });
   //D3-D5
-  luckySheet.setCellValue(2, 3, N.road_len_art_50, { isRefresh: false });
-  luckySheet.setCellValue(3, 3, N.road_len_sec_50, { isRefresh: false });
-  luckySheet.setCellValue(4, 3, N.road_len_loc_50, { isRefresh: false });
+  luckySheet.setCellValue(2, 3, S.road_len_art_50, { isRefresh: false });
+  luckySheet.setCellValue(3, 3, S.road_len_sec_50, { isRefresh: false });
+  luckySheet.setCellValue(4, 3, S.road_len_loc_50, { isRefresh: false });
+  //G33-G35
+  luckySheet.setCellValue(32, 6, S.road_area_art, { isRefresh: false });
+  luckySheet.setCellValue(33, 6, S.road_area_sec, { isRefresh: false });
+  luckySheet.setCellValue(34, 6, S.road_area_loc, { isRefresh: false });
   //L14-L17
   luckySheet.setCellValue(13, 11, N.open_art_art_area, { isRefresh: false });
   luckySheet.setCellValue(14, 11, N.open_art_sec_area, { isRefresh: false });
@@ -95,10 +105,6 @@ export function setCells(
   //X23-X24
   luckySheet.setCellValue(22, 23, N.lot_loc_loc_num, { isRefresh: false });
   luckySheet.setCellValue(23, 23, N.lot_loc_num, { isRefresh: false });
-  //G33-G35
-  luckySheet.setCellValue(32, 6, N.road_area_art, { isRefresh: false });
-  luckySheet.setCellValue(33, 6, N.road_area_sec, { isRefresh: false });
-  luckySheet.setCellValue(34, 6, N.road_area_loc, { isRefresh: false });
   //C45-C49
   luckySheet.setCellValue(44, 2, N.og_clus0_on_art_num, { isRefresh: false });
   luckySheet.setCellValue(45, 2, N.og_clus0_on_sec_num, { isRefresh: false });

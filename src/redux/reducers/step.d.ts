@@ -7,8 +7,6 @@ export interface SiteResult {
 }
 
 // 01-streets
-// 02-cluster
-// 04-subdivision
 export interface StreetsResult {
   road_len_art_100: number | null;
   road_len_sec_100: number | null;
@@ -16,6 +14,15 @@ export interface StreetsResult {
   road_len_art_50: number | null;
   road_len_sec_50: number | null;
   road_len_loc_50: number | null;
+  road_area_art: number | null;
+  road_area_sec: number | null;
+  road_area_loc: number | null;
+}
+
+// 02-cluster
+// 03-public
+// 04-subdivision
+export interface PublicResult {
   open_art_art_area: number | null;
   open_art_sec_area: number | null;
   open_art_loc_area: number | null;
@@ -69,9 +76,6 @@ export interface StreetsResult {
   lot_sec_num: number | null;
   lot_loc_loc_num: number | null;
   lot_loc_num: number | null;
-  road_area_art: number | null;
-  road_area_sec: number | null;
-  road_area_loc: number | null;
   og_clus0_on_art_num: number | null;
   og_clus0_on_sec_num: number | null;
   og_clus0_on_loc_num: number | null;
@@ -89,11 +93,6 @@ export interface StreetsResult {
   param_lot_art_w: number | null;
   param_lot_sec_w: number | null;
   param_lot_loc_w: number | null;
-}
-
-// 03-public
-interface PublicResult {
-  extend: boolean | null;
 }
 
 // 05-footprint
@@ -211,7 +210,7 @@ interface StepStreet extends Step {
 }
 
 interface StepCluster extends Step {
-  financial: StreetsResult;
+  financial: PublicResult;
 }
 
 interface StepPublic extends Step {
@@ -219,7 +218,7 @@ interface StepPublic extends Step {
 }
 
 interface StepSubdivision extends Step {
-  financial: StreetsResult;
+  financial: PublicResult;
 }
 
 interface StepFootprint extends Step {

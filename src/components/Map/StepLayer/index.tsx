@@ -137,7 +137,6 @@ export default function StepLayer({ map }: { map: Map | null }) {
           }
         );
       }
-      console.log(before);
       map.addSource(GEOJSON_ID, {
         type: 'geojson',
         data: geojson,
