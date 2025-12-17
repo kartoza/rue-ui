@@ -124,7 +124,6 @@ export default function StepLayerEditor({
         defaultGeojson={geojson}
         enabled={isEditing}
         activeByDefault={true}
-        hideRoad={false}
         hideDelete={!isEditing}
         ref={editorRef}
       />

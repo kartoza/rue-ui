@@ -30,10 +30,10 @@
     },
     "public_spaces": {
       "open_spaces": {
-        "open_space_percentage": 4
+        "open_space_percentage": 6
       },
       "amenities": {
-        "amenities_percentage": 10
+        "amenities_percentage": 8
       },
       "street_section": {
         "sidewalk_width_m": 3
