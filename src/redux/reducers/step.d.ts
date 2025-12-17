@@ -20,8 +20,11 @@ export interface StreetsResult {
 }
 
 // 02-cluster
+export interface ClusterResult {
+  extend: boolean | null;
+}
+
 // 03-public
-// 04-subdivision
 export interface PublicResult {
   open_art_art_area: number | null;
   open_art_sec_area: number | null;
@@ -81,113 +84,84 @@ export interface PublicResult {
   og_clus0_on_loc_num: number | null;
   og_clus1_on_loc_num: number | null;
   og_clus2_on_loc_num: number | null;
+}
+
+// 04-subdivision
+export interface SubdivisionResult {
+  // type='entry0'
+  // cluster_type=art
   og_entr0_on_art_area: number | null;
+  // cluster_type=sec
   og_entr0_on_sec_area: number | null;
+  // cluster_type=loc
   og_entr0_on_loc_area: number | null;
+  // type='entry1'
+  // cluster_type=loc
   og_entr1_on_loc_area: number | null;
-  site_total_area: number | null;
-  param_ogc_w: number | null;
-  param_lot_art_d: number | null;
-  param_lot_sec_d: number | null;
-  param_lot_loc_d: number | null;
-  param_lot_art_w: number | null;
-  param_lot_sec_w: number | null;
-  param_lot_loc_w: number | null;
 }
 
 // 05-footprint
 export interface FootprintResult {
+  // OFF GRID LOT NUMBERS
+  // type='off_grid0'
+  // cluster_type=art
   og_lot0_on_art_num: number | null;
+  // cluster_type=sec
   og_lot0_on_sec_num: number | null;
+  // cluster_type=loc
   og_lot0_on_loc_num: number | null;
+  // type='off_grid1'
+  // cluster_type=loc
   og_lot1_on_loc_num: number | null;
+  // type='off_grid2
+  // cluster_type=loc
   og_lot2_on_loc_num: number | null;
+
+  // PATH TYPES
+  // type='path0'
+  // cluster_type=art
+  og_path0_on_art_area: number | null;
+  // cluster_type=sec
+  og_path0_on_sec_area: number | null;
+  // cluster_type=loc
+  og_path0_on_loc_area: number | null;
+  // type='path1'
+  // cluster_type=loc
+  og_path1_on_loc_area: number | null;
+  // type='path2'
+  // cluster_type=loc
+  og_path2_on_loc_area: number | null;
+
+  // GREEN TYPES
+  // type='green0'
+  // cluster_type=art
+  og_green0_on_art_area: number | null;
+  // cluster_type=sec
+  og_green0_on_sec_area: number | null;
+  // cluster_type=loc
+  og_green0_on_loc_area: number | null;
+  // type='green1'
+  // cluster_type=loc
+  og_green1_on_loc_area: number | null;
+  // type='green2'
+  // cluster_type=loc
+  og_green2_on_loc_area: number | null;
+
+  // These are formula calculations
   og_clus0_on_art_con: number | null;
   og_clus0_on_sec_con: number | null;
   og_clus0_on_loc_con: number | null;
   og_clus1_on_loc_con: number | null;
   og_clus2_on_loc_con: number | null;
-  og_path0_on_art_area: number | null;
-  og_path0_on_sec_area: number | null;
-  og_path0_on_loc_area: number | null;
-  og_path1_on_loc_area: number | null;
-  og_path2_on_loc_area: number | null;
-  og_green0_on_art_area: number | null;
-  og_green0_on_sec_area: number | null;
-  og_green0_on_loc_area: number | null;
-  og_green1_on_loc_area: number | null;
-  og_green2_on_loc_area: number | null;
-  param_og_path_w: number | null;
-  param_og2_path_w: number | null;
-  param_lot_og_on_sec_w: number | null;
-  param_lot_og_on_loc_w: number | null;
-  param_lot_og2_w: number | null;
-  param_lot_art_fsb: number | null;
-  param_lot_sec_fsb: number | null;
-  param_lot_loc_fsb: number | null;
-  param_lot_og_on_sec_fsb: number | null;
-  param_lot_og_on_loc_fsb: number | null;
-  param_lot_og2_fsb: number | null;
-  param_lot_art_bsb: number | null;
-  param_lot_sec_bsb: number | null;
-  param_lot_loc_bsb: number | null;
-  param_lot_og_on_sec_bsb: number | null;
-  param_lot_og_on_loc_bsb: number | null;
-  param_lot_og2_bsb: number | null;
-  param_lot_art_ssb: number | null;
-  param_lot_sec_ssb: number | null;
-  param_lot_loc_ssb: number | null;
-  param_lot_og_on_sec_ssb: number | null;
-  param_lot_og_on_loc_ssb: number | null;
-  param_lot_og2_ssb: number | null;
-  param_lot_art_f: number | null;
-  param_lot_sec_f: number | null;
-  param_lot_loc_f: number | null;
-  param_lot_og_f: number | null;
-  param_lot_art_fm: number;
-  param_lot_sec_fm: number;
-  param_lot_loc_fm: number;
 }
 
 // 06-building_start
-interface BuildingStartResult {
-  param_pcen_art_art_w: number | null;
-  param_pcen_art_sec_w: number | null;
-  param_pcen_art_loc_w: number | null;
-  param_pcen_art_w: number | null;
-  param_pcen_sec_sec_w: number | null;
-  param_pcen_sec_loc_w: number | null;
-  param_pcen_sec_w: number | null;
-  param_pcen_loc_loc_w: number | null;
-  param_pcen_loc_w: number | null;
-  param_pcen_og_w: number | null;
-  param_pcen_og2_w: number | null;
-  param_pcen_art_art_d: number | null;
-  param_pcen_art_sec_d: number | null;
-  param_pcen_art_loc_d: number | null;
-  param_pcen_art_d: number | null;
-  param_pcen_sec_sec_d: number | null;
-  param_pcen_sec_loc_d: number | null;
-  param_pcen_sec_d: number | null;
-  param_pcen_loc_loc_d: number | null;
-  param_pcen_loc_d: number | null;
-  param_pcen_og_d: number | null;
-  param_pcen_og2_d: number | null;
-  param_pcen_art_art_f: number | null;
-  param_pcen_art_sec_f: number | null;
-  param_pcen_art_loc_f: number | null;
-  param_pcen_art_f: number | null;
-  param_pcen_sec_sec_f: number | null;
-  param_pcen_sec_loc_f: number | null;
-  param_pcen_sec_f: number | null;
-  param_pcen_loc_loc_f: number | null;
-  param_pcen_loc_f: number | null;
-  param_pcen_og_f: number | null;
-  param_pcen_og2_f: number | null;
+export interface BuildingStartResult {
+  extend: boolean | null;
 }
 
 // 07-building_max
-interface BuildingMaxResult {
+export interface BuildingMaxResult {
   extend: boolean | null;
 }
 
@@ -210,7 +184,7 @@ interface StepStreet extends Step {
 }
 
 interface StepCluster extends Step {
-  financial: PublicResult;
+  financial: ClusterResult;
 }
 
 interface StepPublic extends Step {
@@ -218,7 +192,7 @@ interface StepPublic extends Step {
 }
 
 interface StepSubdivision extends Step {
-  financial: PublicResult;
+  financial: SubdivisionResult;
 }
 
 interface StepFootprint extends Step {

@@ -9,6 +9,7 @@ import { setCells } from './setCells.tsx';
 import { updateLuckySheetReducer } from './updateLuckySheetReducer.tsx';
 
 import './style.scss';
+import type { FootprintResult, SubdivisionResult } from '../../redux/reducers/step';
 
 interface Props {
   open: boolean;
@@ -116,18 +117,20 @@ const LuckySheet = ({ open, setOpen }: Props) => {
     const C = currentProject?.steps?.site?.step?.financial;
     const S = currentProject?.steps?.streets?.step?.financial;
     const N = currentProject?.steps?.public?.step?.financial;
+    // const D = currentProject?.steps?.subdivision?.step?.financial;
+    const D: SubdivisionResult = {
+      og_entr0_on_art_area: 0,
+      og_entr0_on_sec_area: 0,
+      og_entr0_on_loc_area: 0,
+      og_entr1_on_loc_area: 0,
+    };
     // const T = currentProject?.steps?.footprint?.step?.financial;
-    const T = {
+    const T: FootprintResult = {
       og_lot0_on_art_num: 0,
       og_lot0_on_sec_num: 0,
       og_lot0_on_loc_num: 0,
       og_lot1_on_loc_num: 0,
       og_lot2_on_loc_num: 0,
-      og_clus0_on_art_con: 0,
-      og_clus0_on_sec_con: 0,
-      og_clus0_on_loc_con: 0,
-      og_clus1_on_loc_con: 0,
-      og_clus2_on_loc_con: 0,
       og_path0_on_art_area: 0,
       og_path0_on_sec_area: 0,
       og_path0_on_loc_area: 0,
@@ -138,41 +141,16 @@ const LuckySheet = ({ open, setOpen }: Props) => {
       og_green0_on_loc_area: 0,
       og_green1_on_loc_area: 0,
       og_green2_on_loc_area: 0,
-      param_og_path_w: 0,
-      param_og2_path_w: 0,
-      param_lot_og_on_sec_w: 0,
-      param_lot_og_on_loc_w: 0,
-      param_lot_og2_w: 0,
-      param_lot_art_fsb: 0,
-      param_lot_sec_fsb: 0,
-      param_lot_loc_fsb: 0,
-      param_lot_og_on_sec_fsb: 0,
-      param_lot_og_on_loc_fsb: 0,
-      param_lot_og2_fsb: 0,
-      param_lot_art_bsb: 0,
-      param_lot_sec_bsb: 0,
-      param_lot_loc_bsb: 0,
-      param_lot_og_on_sec_bsb: 0,
-      param_lot_og_on_loc_bsb: 0,
-      param_lot_og2_bsb: 0,
-      param_lot_art_ssb: 0,
-      param_lot_sec_ssb: 0,
-      param_lot_loc_ssb: 0,
-      param_lot_og_on_sec_ssb: 0,
-      param_lot_og_on_loc_ssb: 0,
-      param_lot_og2_ssb: 0,
-      param_lot_art_f: 0,
-      param_lot_sec_f: 0,
-      param_lot_loc_f: 0,
-      param_lot_og_f: 0,
-      param_lot_art_fm: 0,
-      param_lot_sec_fm: 0,
-      param_lot_loc_fm: 0,
+      og_clus0_on_art_con: 0,
+      og_clus0_on_sec_con: 0,
+      og_clus0_on_loc_con: 0,
+      og_clus1_on_loc_con: 0,
+      og_clus2_on_loc_con: 0,
     };
     const parameters = currentProject?.parameters;
-    if (!C || !S || !N || !T || !parameters) return;
+    if (!C || !S || !N || !D || !T || !parameters) return;
 
-    setCells(luckysheet, C, S, N, T, parameters);
+    setCells(luckysheet, C, S, N, D, T, parameters);
 
     // Update reducers after formulas recalculate
     setTimeout(() => {
