@@ -10,7 +10,7 @@ import { useCurrentDrawMode } from '../../../redux/selectors/globalSelector.ts';
 import { DrawingMode } from '../../../redux/reducers/global.ts';
 import MapEditor, { type MapLayerEditorRef } from '../MapEditor.tsx';
 import { updateRoads, updateSite } from '../../../redux/reducers/projectInputSlice.ts';
-import { useCurrentProjectInput } from '../../../redux/selectors/projectInputSelector.ts';
+import { useCurrentProjectInputRoads } from '../../../redux/selectors/projectInputSelector.ts';
 
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 
@@ -36,7 +36,7 @@ export default function SiteEditor({
   const dispatch = useDispatch<AppDispatch>();
   const editorRef = useRef<MapLayerEditorRef | null>(null);
   const [mode, setMode] = useState<DrawMode | null>(null);
-  const roads = useCurrentProjectInput().roads;
+  const roads = useCurrentProjectInputRoads();
 
   const isDrawSite = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
 

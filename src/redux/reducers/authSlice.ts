@@ -29,15 +29,6 @@ export const login = createAsyncThunk(
     thunkAPI
   ) => {
     // -----------------------------
-    // FOR DEMO
-    // -----------------------------
-    if (!API_URL) {
-      const token = 'Demo token';
-      localStorage.setItem('token', token);
-      return token;
-    }
-    // -----------------------------
-
     try {
       const response = await axios.post(
         API_URL + 'login/access-token',
@@ -67,19 +58,7 @@ export const login = createAsyncThunk(
 // Async thunk for test token
 export const testToken = createAsyncThunk('auth/test_token', async (_, thunkAPI) => {
   const token = localStorage.getItem('token');
-
   // -----------------------------
-  // FOR DEMO
-  // -----------------------------
-  if (!API_URL) {
-    if (token) {
-      return token;
-    } else {
-      return thunkAPI.rejectWithValue("Token doesn't exist. Please login first.");
-    }
-  }
-  // -----------------------------
-
   try {
     await axios.post(
       API_URL + 'login/test-token',

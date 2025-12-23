@@ -62,7 +62,7 @@ export default function MapPage() {
               toList={() => {
                 dispatch(setDrawingMode(null));
                 dispatch(resetLuckySheet());
-                dispatch(resetProject());
+                dispatch(resetProject(null));
                 setSiteBarTab(SideBarTabs.projectList);
               }}
             />

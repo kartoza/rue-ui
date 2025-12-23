@@ -19,12 +19,6 @@ const initialState: ProjectsState = {
 // Async thunk for getting projects
 export const getProjects = createAsyncThunk('projects/get', async (_, thunkAPI) => {
   // -----------------------------
-  // FOR DEMO
-  // -----------------------------
-  if (!API_URL) {
-    return [];
-  }
-  // -----------------------------
   try {
     return await api.get('projects');
   } catch (error) {

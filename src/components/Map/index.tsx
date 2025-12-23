@@ -3,7 +3,7 @@ import maplibregl, { type Map } from 'maplibre-gl';
 import { Box } from '@chakra-ui/react';
 import MapLocation from './MapLocation';
 import BaseMaps from './BaseMaps';
-import SiteLayer from './SiteLayer';
+import SiteDefinitionLayer from './SiteDefinitionLayer';
 import StepLayer from './StepLayer';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -62,7 +62,7 @@ export default function MapLibre({ map, setMap }: Props) {
   return (
     <Box position="relative" width="100%" height="100%" minHeight="400px">
       <Box id="map" width="100%" height="100%" />
-      {map && <SiteLayer map={map} />}
+      {map && <SiteDefinitionLayer map={map} />}
       {map && <StepLayer map={map} />}
       {map && <MapLocation map={map} />}
       {map && <BaseMaps map={map} />}

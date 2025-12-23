@@ -1,12 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import maplibregl, { Map } from 'maplibre-gl';
 import { useDispatch } from 'react-redux';
-import * as THREE from 'three';
-import { Vector3 } from 'three';
-import turf from 'turf';
 import type { FeatureCollection } from 'geojson';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { HStack, IconButton, Spinner } from '@chakra-ui/react';
 import {
   useCurrentProjectStep,
@@ -22,7 +17,7 @@ import { resetStepAfter } from '../../../redux/reducers/projectSlice.ts';
 import { Toaster } from '../../Toaster/toaster.ts';
 import { getAuthHeaders } from '../../../utils/api';
 import MapStepLayerEditor from './Editor.tsx';
-import { ROAD_ID } from '../SiteLayer';
+import { ROAD_ID } from '../SiteDefinitionLayer';
 
 import layerStyle from '../layer_style.json';
 import { MdSave } from 'react-icons/md';
@@ -45,7 +40,6 @@ export default function StepLayer({ map }: { map: Map | null }) {
   const currentUUID = useCurrentProjectUUID();
   const currentStepUpdate = useCurrentStepUpdate();
 
-  const [isInit, setIsInit] = useState<boolean>(true);
   const [geojson, setGeojson] = useState<FeatureCollection | null>(null);
   const [isUpdated, setIsUpdated] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -72,11 +66,6 @@ export default function StepLayer({ map }: { map: Map | null }) {
       'fill-outline-color': 'rgba(0, 0, 0, 1)',
     };
   };
-
-  /** Set init when current UUID changes */
-  useEffect(() => {
-    setIsInit(true);
-  }, [currentUUID]);
 
   /** Initiate the layer */
   const doInit = () => {
@@ -122,20 +111,6 @@ export default function StepLayer({ map }: { map: Map | null }) {
       }
       if (hasLayer(map, ROAD_ID)) {
         before = ROAD_ID;
-      }
-
-      if (isInit) {
-        const bbox = turf.bbox(geojson);
-        map.fitBounds(
-          [
-            [bbox[0], bbox[1]],
-            [bbox[2], bbox[3]],
-          ],
-          {
-            padding: 50,
-            duration: 1000,
-          }
-        );
       }
       map.addSource(GEOJSON_ID, {
         type: 'geojson',
@@ -238,141 +213,7 @@ export default function StepLayer({ map }: { map: Map | null }) {
     if (!geojson) return;
     removeSource(map, GLTF_ID);
     removeLayer(map, GLTF_ID);
-    if (geojson) {
-      createGltf();
-    }
   }, [map, geojson]);
-
-  async function createGltf() {
-    if ([StepType.site.toString(), StepType.streets.toString()].includes(currentStep.toString()))
-      return;
-    if (!map) return;
-    if (!geojson) return;
-    const modelUrl = currentStepState?.step?.file?.replace('geojson', 'gltf');
-    if (!modelUrl) return;
-
-    // Add GeoJSON source and layer for comparison
-    const modelOrigin = (turf.centroid(geojson).geometry.coordinates as [number, number]) || [0, 0];
-    const modelAltitude = 0;
-    const modelAsMercator = maplibregl.MercatorCoordinate.fromLngLat(modelOrigin, modelAltitude);
-
-    // Calculate GLTF centroid before adding to map
-    let gltfCentroid: any = null;
-    try {
-      const gltfResponse = await fetch(modelUrl, {
-        headers: getAuthHeaders(),
-      });
-      const gltfArrayBuffer = await gltfResponse.arrayBuffer();
-      const loader = new GLTFLoader();
-      const gltf = await new Promise<any>((resolve) => {
-        loader.parse(gltfArrayBuffer, '', (result) => resolve(result));
-      });
-      // Calculate centroid from all mesh geometry
-      const positions: any[] = [];
-      gltf.scene.traverse((object: any) => {
-        if (object.isMesh && object.geometry && object.geometry.attributes.position) {
-          const pos = object.geometry.attributes.position;
-          for (let i = 0; i < pos.count; i++) {
-            positions.push(new Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)));
-          }
-        }
-      });
-      if (positions.length > 0) {
-        const sum = new Vector3(0, 0, 0);
-        positions.forEach((v) => sum.add(v));
-        gltfCentroid = sum.divideScalar(positions.length);
-        console.log('GLTF centroid:', gltfCentroid);
-      } else {
-        console.log('No mesh positions found in GLTF.');
-      }
-    } catch (err) {
-      console.log('Error calculating GLTF centroid:', err);
-    }
-
-    const modelTransform = {
-      translateX: modelAsMercator.x,
-      translateY: modelAsMercator.y,
-      translateZ: modelAsMercator.z,
-      rotateX: 0,
-      rotateY: 0,
-      rotateZ: 0,
-      scale: modelAsMercator.meterInMercatorCoordinateUnits(),
-    };
-
-    const layer: any = {
-      id: GLTF_ID,
-      type: 'custom',
-      renderingMode: '3d',
-      onAdd(mapInstance: any, gl: any) {
-        const camera = new THREE.Camera();
-        const scene = new THREE.Scene();
-
-        const light1 = new THREE.DirectionalLight(0xffffff);
-        light1.position.set(0, -70, 100).normalize();
-        scene.add(light1);
-
-        const light2 = new THREE.DirectionalLight(0xffffff);
-        light2.position.set(0, 70, 100).normalize();
-        scene.add(light2);
-
-        const loader = new GLTFLoader();
-        loader.load(modelUrl, (gltf) => {
-          // Align GLTF centroid with geojson centroid
-          if (gltfCentroid) {
-            // Shift GLTF model so its centroid is at origin (0,0,0)
-            // The modelTransform already positions origin at the GeoJSON centroid
-            gltf.scene.position.set(-gltfCentroid.x, -gltfCentroid.y, -gltfCentroid.z);
-            console.log('Applied offset to GLTF:', {
-              x: -gltfCentroid.x,
-              y: -gltfCentroid.y,
-              z: -gltfCentroid.z,
-            });
-          }
-          scene.add(gltf.scene);
-        });
-
-        const renderer = new THREE.WebGLRenderer({
-          canvas: mapInstance.getCanvas(),
-          context: gl,
-          antialias: true,
-        });
-        renderer.autoClear = false;
-
-        (this as any).camera = camera;
-        (this as any).scene = scene;
-        (this as any).renderer = renderer;
-        (this as any).map = mapInstance;
-        (this as any).modelTransform = modelTransform;
-      },
-      render(_gl: any, args: any) {
-        const camera = (this as any).camera;
-        const scene = (this as any).scene;
-        const renderer = (this as any).renderer;
-        const mapInstance = (this as any).map;
-        const transform = (this as any).modelTransform;
-
-        const rotationX = new THREE.Matrix4().makeRotationX(transform.rotateX);
-        const rotationY = new THREE.Matrix4().makeRotationY(transform.rotateY);
-        const rotationZ = new THREE.Matrix4().makeRotationZ(transform.rotateZ);
-
-        const m = new THREE.Matrix4().fromArray(args.defaultProjectionData.mainMatrix);
-        const l = new THREE.Matrix4()
-          .makeTranslation(transform.translateX, transform.translateY, transform.translateZ)
-          .multiply(
-            new THREE.Matrix4().makeScale(transform.scale, -transform.scale, transform.scale)
-          )
-          .multiply(rotationX)
-          .multiply(rotationY)
-          .multiply(rotationZ);
-
-        camera.projectionMatrix = m.multiply(l);
-        renderer.resetState();
-        renderer.render(scene, camera);
-        mapInstance.triggerRepaint();
-      },
-    };
-    map.addLayer(layer);
-  }
 
   // Apply the form
   const apply = () => {

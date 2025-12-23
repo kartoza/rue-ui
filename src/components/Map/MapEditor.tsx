@@ -5,7 +5,7 @@ import type { FeatureCollection, LineString, Polygon } from 'geojson';
 import MaplibreDraw from 'maplibre-gl-draw';
 import { hasLayer } from '../../utils/maplibre.tsx';
 import layerStyle from './layer_style.json';
-import { ROAD_ID } from './SiteLayer';
+import { ROAD_ID } from './SiteDefinitionLayer';
 import { IconButton } from '@chakra-ui/react';
 import { FaScissors } from 'react-icons/fa6';
 import { MdDelete } from 'react-icons/md';

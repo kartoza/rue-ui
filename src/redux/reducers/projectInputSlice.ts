@@ -1,15 +1,19 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
+import type { ProjectParameters } from './project';
+import projectParametersDefault from '../../general_input.json';
 
 export interface ProjectInputState {
   site: FeatureCollection<Polygon> | null;
   roads: FeatureCollection<LineString> | null;
+  parameters: ProjectParameters;
 }
 
 const initialState: ProjectInputState = {
   site: null,
   roads: null,
+  parameters: JSON.parse(JSON.stringify(projectParametersDefault)),
 };
 
 const projectInputSlice = createSlice({
@@ -32,8 +36,12 @@ const projectInputSlice = createSlice({
       state.site = action.payload.site;
       state.roads = action.payload.roads;
     },
+    updateInputParameters: (state: ProjectInputState, action: PayloadAction<ProjectParameters>) => {
+      state.parameters = JSON.parse(JSON.stringify(action.payload));
+    },
   },
 });
 
-export const { updateSite, updateRoads, updateBatch } = projectInputSlice.actions;
+export const { updateSite, updateRoads, updateBatch, updateInputParameters } =
+  projectInputSlice.actions;
 export default projectInputSlice.reducer;
