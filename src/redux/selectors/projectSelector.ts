@@ -17,6 +17,10 @@ export function useCurrentProjectUUID() {
   return useSelector((state: RootState) => (state.project as ProjectState).project?.uuid);
 }
 
+export function useCurrentProjectUpdate() {
+  return useSelector((state: RootState) => (state.project as ProjectState).project?.updated_at);
+}
+
 export function useCurrentProjectStep(step: StepType): StepState {
   return useSelector(
     (state: RootState) =>
@@ -27,6 +31,7 @@ export function useCurrentProjectStep(step: StepType): StepState {
 export function useCurrentProjectDone(): boolean {
   return useSelector((state: RootState) => {
     const projectState = state.project as ProjectState;
+    if (projectState.loading) return false;
     if (projectState.error) return true;
 
     const currentProject = projectState?.project;

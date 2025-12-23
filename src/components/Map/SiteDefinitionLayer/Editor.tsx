@@ -6,8 +6,7 @@ import { MdTimeline } from 'react-icons/md';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
 
 import type { AppDispatch } from '../../../redux/store.ts';
-import { useCurrentDrawMode } from '../../../redux/selectors/globalSelector.ts';
-import { DrawingMode } from '../../../redux/reducers/global.ts';
+import { useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
 import MapEditor, { type MapLayerEditorRef } from '../MapEditor.tsx';
 import { updateRoads, updateSite } from '../../../redux/reducers/projectInputSlice.ts';
 import { useCurrentProjectInputRoads } from '../../../redux/selectors/projectInputSelector.ts';
@@ -28,17 +27,26 @@ export type DrawMode = (typeof DrawMode)[keyof typeof DrawMode];
 
 export default function SiteEditor({
   map,
-  geojson,
+  geojsonInput,
+  style,
 }: {
   map: MaplibreMap | null;
-  geojson: FeatureCollection | null;
+  geojsonInput: FeatureCollection | null;
+  style?: React.CSSProperties;
 }) {
   const dispatch = useDispatch<AppDispatch>();
   const editorRef = useRef<MapLayerEditorRef | null>(null);
   const [mode, setMode] = useState<DrawMode | null>(null);
+  const [geojson, setGeojson] = useState<FeatureCollection | null>(geojsonInput);
   const roads = useCurrentProjectInputRoads();
 
-  const isDrawSite = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
+  const isDrawSite = useIsDrawSiteMode();
+
+  /** Update editor when roads updated */
+  useEffect(() => {
+    if (!isDrawSite) return;
+    setGeojson(geojsonInput);
+  }, [isDrawSite]);
 
   /** Update editor when roads updated */
   useEffect(() => {
@@ -209,78 +217,86 @@ export default function SiteEditor({
   }
 
   return (
-    <>
-      <HStack className="editor-stack" borderRadius="md" boxShadow="md">
-        <IconButton
-          onClick={startDrawPolygon}
-          size="md"
-          padding={1}
-          title={`Draw site`}
-          // @ts-expect-error: A custom variant
-          variant={'base'}
-        >
-          <Box
-            width="100%"
-            height="100%"
-            bg={mode === DrawMode.polygon ? '#fbb03b' : 'rgba(153, 153, 34, 0.3)'}
-            border="1px solid"
-            borderColor={mode === DrawMode.polygon ? '#fbb03b' : 'rgb(235,201,199)'}
-          />
-        </IconButton>
-
-        {/* --- Road Artery polyline buttons --- */}
-        {[0, 50, 100].map((n) => {
-          const key = `road_art_${n}`;
-          const active = mode === DrawMode[key];
-          return (
-            <IconButton
-              key={key}
-              onClick={() => startDrawRoad('road_art', n)}
-              size="md"
-              bg={active ? '#FF6666 !important' : 'white'}
-              color={active ? 'white' : '#FF6666'}
-              border="1px solid"
-              borderColor={active ? '#FF6666' : 'gray.300'}
-              padding={2}
-              title={`Draw road artery at ${n}%`}
-            >
-              {n}
-              <MdTimeline />
-            </IconButton>
-          );
-        })}
-
-        {/* --- Road secondary polyline buttons --- */}
-        {[0, 50, 100].map((n) => {
-          const key = `road_sec_${n}`;
-          const active = mode === DrawMode[key];
-          return (
-            <IconButton
-              key={key}
-              onClick={() => startDrawRoad('road_sec', n)}
-              size="md"
-              bg={active ? '#FFB24D !important' : 'white'}
-              color={active ? 'white' : '#FFB24D'}
-              border="1px solid"
-              borderColor={active ? '#FFB24D' : 'gray.300'}
-              padding={2}
-              title={`Draw road secondary at ${n}%`}
-            >
-              {n}
-              <MdTimeline />
-            </IconButton>
-          );
-        })}
-        <MapEditor
-          map={map}
-          defaultGeojson={geojson}
-          enabled={isDrawSite}
-          activeByDefault={true}
-          onFeaturesChanged={onFeaturesChanged}
-          hideDelete={false}
-          ref={editorRef}
+    <HStack
+      className="editor-stack"
+      borderRadius="md"
+      boxShadow="md"
+      style={{
+        background: 'white',
+        padding: '8px',
+        gap: '8px',
+        ...style,
+      }}
+    >
+      <IconButton
+        onClick={startDrawPolygon}
+        size="md"
+        padding={1}
+        title={`Draw site`}
+        // @ts-expect-error: A custom variant
+        variant={'base'}
+      >
+        <Box
+          width="100%"
+          height="100%"
+          bg={mode === DrawMode.polygon ? '#fbb03b' : 'rgba(153, 153, 34, 0.3)'}
+          border="1px solid"
+          borderColor={mode === DrawMode.polygon ? '#fbb03b' : 'rgb(235,201,199)'}
         />
-      </HStack>
-    </>
+      </IconButton>
+
+      {/* --- Road Artery polyline buttons --- */}
+      {[0, 50, 100].map((n) => {
+        const key = `road_art_${n}`;
+        const active = mode === DrawMode[key];
+        return (
+          <IconButton
+            key={key}
+            onClick={() => startDrawRoad('road_art', n)}
+            size="md"
+            bg={active ? '#FF6666 !important' : 'white'}
+            color={active ? 'white' : '#FF6666'}
+            border="1px solid"
+            borderColor={active ? '#FF6666' : 'gray.300'}
+            padding={2}
+            title={`Draw road artery at ${n}%`}
+          >
+            {n}
+            <MdTimeline />
+          </IconButton>
+        );
+      })}
+
+      {/* --- Road secondary polyline buttons --- */}
+      {[0, 50, 100].map((n) => {
+        const key = `road_sec_${n}`;
+        const active = mode === DrawMode[key];
+        return (
+          <IconButton
+            key={key}
+            onClick={() => startDrawRoad('road_sec', n)}
+            size="md"
+            bg={active ? '#FFB24D !important' : 'white'}
+            color={active ? 'white' : '#FFB24D'}
+            border="1px solid"
+            borderColor={active ? '#FFB24D' : 'gray.300'}
+            padding={2}
+            title={`Draw road secondary at ${n}%`}
+          >
+            {n}
+            <MdTimeline />
+          </IconButton>
+        );
+      })}
+      <MapEditor
+        map={map}
+        defaultGeojson={geojson}
+        enabled={isDrawSite}
+        activeByDefault={true}
+        onFeaturesChanged={onFeaturesChanged}
+        hideDelete={false}
+        ref={editorRef}
+      />
+    </HStack>
   );
 }

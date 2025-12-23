@@ -171,9 +171,12 @@ interface ProjectPayload {
   site?: FeatureCollection<Polygon> | null;
   roads?: FeatureCollection<LineString> | null;
 }
+
 interface ProjectPatchPayload {
-  name: string;
-  description: string | null;
+  name?: string;
+  description?: string;
+  site?: FeatureCollection<Polygon> | null;
+  roads?: FeatureCollection<LineString> | null;
 }
 
 interface Project {

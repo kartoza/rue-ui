@@ -1,4 +1,4 @@
-import type { RootState } from '../../redux/store';
+import { useEffect } from 'react';
 import { Spinner, TabsList, TabsRoot, TabsTrigger } from '@chakra-ui/react';
 import { useDispatch, useSelector } from 'react-redux';
 import { MdError } from 'react-icons/md';
@@ -8,6 +8,7 @@ import {
   STEP_LABELS,
   StepType,
 } from '../../redux/reducers/stepSlice.ts';
+import type { RootState } from '../../redux/store';
 import {
   useCurrentProjectStep,
   useCurrentProjectUUID,
@@ -16,7 +17,7 @@ import { useCurrentStepUpdateLoading } from '../../redux/selectors/stepUpdateSel
 import { TaskStatus } from '../../redux/reducers/task.ts';
 
 import './style.scss';
-import { useEffect } from 'react';
+import { setDrawingMode } from '../../redux/reducers/global.ts';
 
 interface TabPanelProps {
   value: string;
@@ -58,6 +59,7 @@ export default function MapTabNavigation() {
 
   const handleValueChange = (details: { value: string }) => {
     dispatch(setCurrentStep(details.value as StepType));
+    dispatch(setDrawingMode(null));
   };
 
   // When project changed, change to site definition step

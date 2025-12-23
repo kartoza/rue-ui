@@ -1,6 +1,8 @@
 import { Map } from 'maplibre-gl';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Box, HStack, IconButton, Spinner } from '@chakra-ui/react';
+import { MdArrowBack, MdModeEdit, MdSave } from 'react-icons/md';
 import { getAuthHeaders } from '../../../utils/api';
 import { hasLayer, removeSource } from '../../../utils/maplibre';
 import layerStyle from '../layer_style.json';
@@ -14,9 +16,16 @@ import { updateRoads, updateSite } from '../../../redux/reducers/projectInputSli
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../../redux/store.ts';
 import turf from 'turf';
-import { useCurrentProjectUUID } from '../../../redux/selectors/projectSelector.ts';
+import {
+  useCurrentProjectDone,
+  useCurrentProjectUUID,
+} from '../../../redux/selectors/projectSelector.ts';
 import { siteDefinition } from '../../../redux/reducers/stepSlice.ts';
 import { useCurrentStep } from '../../../redux/selectors/stepSelector.ts';
+import { patchProject } from '../../../redux/reducers/projectSlice.ts';
+import { useCurrentDrawMode, useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
+import { DrawingMode, setDrawingMode } from '../../../redux/reducers/global.ts';
+import SiteEditor from './Editor.tsx';
 
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 
@@ -31,6 +40,12 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
   const roads = useCurrentProjectInputRoads();
   const site = useCurrentProjectInputSite();
   const currentStep = useCurrentStep();
+  const isUpdateSite = useCurrentDrawMode() == DrawingMode.UPDATE_SITE;
+  const isDrawSite = useIsDrawSiteMode();
+  const isProjectDone = useCurrentProjectDone();
+
+  const [defaultRoads, setDefaultRoads] = useState<FeatureCollection<LineString> | null>(null);
+  const [defaultSite, setDefaultSite] = useState<FeatureCollection<Polygon> | null>(null);
 
   /** Fetch roads geojson from API */
   useEffect(() => {
@@ -96,7 +111,10 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
   useEffect(() => {
     if (!map) return;
     if (!parameters) return;
-
+    if (isDrawSite) {
+      map.setLayoutProperty(ROAD_ID, 'visibility', 'none');
+      return;
+    }
     // Remove existing layer and source
     const arteries = parameters?.neighbourhood?.public_roads?.width_of_arteries_m;
     const secondaries = parameters?.neighbourhood?.public_roads?.width_of_secondaries_m;
@@ -156,6 +174,9 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
         },
         before
       );
+      if (uuid) {
+        map.setLayoutProperty(ROAD_ID, 'visibility', 'visible');
+      }
     }
 
     return () => {
@@ -163,13 +184,17 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
         removeSource(map, ROAD_ID);
       }
     };
-  }, [map, roads, parameters]);
+  }, [map, roads, parameters, currentStep, isDrawSite]);
 
   /** Render site layer */
   useEffect(() => {
     if (!map) return;
     if (!site) return;
     if (currentStep !== siteDefinition) return;
+    if (isDrawSite) {
+      map.setLayoutProperty(ROAD_ID, 'visibility', 'none');
+      return;
+    }
 
     let before: string | undefined = undefined;
     if (hasLayer(map, ROAD_ID)) {
@@ -189,22 +214,8 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
         type: 'fill',
         source: SITE_ID,
         paint: {
-          'fill-color': '#088',
-          'fill-opacity': 0.3,
-        },
-      },
-      before
-    );
-
-    // Add outline layer
-    map.addLayer(
-      {
-        id: `${SITE_ID}-outline`,
-        type: 'line',
-        source: SITE_ID,
-        paint: {
-          'line-color': '#088',
-          'line-width': 2,
+          'fill-color': '#7FBA7F',
+          'fill-outline-color': 'rgba(0, 0, 0, 1)',
         },
       },
       before
@@ -215,17 +226,95 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
         removeSource(map, SITE_ID);
       }
     };
-  }, [map, site, currentStep]);
+  }, [map, site, currentStep, isDrawSite]);
 
-  return null;
-  // // Merge site and roads into a single geojson
-  // const geojson: FeatureCollection | null =
-  //   site || roads
-  //     ? {
-  //         type: 'FeatureCollection',
-  //         features: [...(roads?.features || []), ...(site?.features || [])],
-  //       }
-  //     : null;
-  //
-  // return <SiteEditor map={map} geojson={geojson} />;
+  // Merge site and roads into a single geojson
+  const geojson: FeatureCollection | null =
+    site || roads
+      ? {
+          type: 'FeatureCollection',
+          features: [...(roads?.features || []), ...(site?.features || [])],
+        }
+      : null;
+
+  // Apply the form
+  const apply = () => {
+    if (!uuid) return;
+    if (!geojson) return;
+    dispatch(setDrawingMode(null));
+    dispatch(
+      patchProject({
+        uuid: uuid,
+        payload: {
+          roads: roads,
+          site: site,
+        },
+      })
+    );
+  };
+
+  return (
+    <>
+      {uuid && (
+        <HStack className="editor-stack" borderRadius="md" boxShadow="md">
+          {!isProjectDone && (
+            <Box>
+              <Spinner size="lg" />
+            </Box>
+          )}
+
+          {isProjectDone && !isUpdateSite && (
+            <IconButton
+              onClick={() => {
+                dispatch(setDrawingMode(DrawingMode.UPDATE_SITE));
+                setDefaultRoads(roads);
+                setDefaultSite(site);
+              }}
+              size="md"
+              disabled={!map}
+              title={`Edit layer`}
+              // @ts-expect-error: A custom variant
+              variant={'base'}
+            >
+              <MdModeEdit />
+            </IconButton>
+          )}
+          {isProjectDone && isUpdateSite && (
+            <>
+              <IconButton
+                onClick={apply}
+                size="md"
+                // @ts-expect-error: A custom variant
+                variant="primary.outline"
+                title={`Apply changes to API permanently.`}
+                posisition="relative"
+              >
+                <MdSave />
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  dispatch(setDrawingMode(null));
+                  dispatch(updateSite(defaultSite));
+                  dispatch(updateRoads(defaultRoads));
+                }}
+                // @ts-expect-error: A custom variant
+                variant="base"
+                size="md"
+                title={`Cancel.`}
+                posisition="relative"
+              >
+                <MdArrowBack />
+              </IconButton>
+            </>
+          )}
+        </HStack>
+      )}
+      <SiteEditor
+        key="editor"
+        map={map}
+        geojsonInput={geojson}
+        style={isUpdateSite ? { right: 120 } : undefined}
+      />
+    </>
+  );
 }

@@ -5,6 +5,7 @@ import type { FeatureCollection } from 'geojson';
 import { HStack, IconButton, Spinner } from '@chakra-ui/react';
 import {
   useCurrentProjectStep,
+  useCurrentProjectUpdate,
   useCurrentProjectUUID,
 } from '../../../redux/selectors/projectSelector';
 import { useCurrentStep } from '../../../redux/selectors/stepSelector.ts';
@@ -21,8 +22,7 @@ import { ROAD_ID } from '../SiteDefinitionLayer';
 
 import layerStyle from '../layer_style.json';
 import { MdSave } from 'react-icons/md';
-import { useCurrentDrawMode } from '../../../redux/selectors/globalSelector.ts';
-import { DrawingMode } from '../../../redux/reducers/global.ts';
+import { useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
 
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 const GLTF_ID: string = '3d-model';
@@ -33,12 +33,13 @@ export const GEOJSON_ID_LINE: string = 'task-layer-line';
 let globalCurrentStep: string = '';
 
 export default function StepLayer({ map }: { map: Map | null }) {
-  const isDrawSite = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
+  const isDrawSite = useIsDrawSiteMode();
   const dispatch = useDispatch<AppDispatch>();
   const currentStep = useCurrentStep();
   const currentStepState = useCurrentProjectStep(currentStep);
   const currentUUID = useCurrentProjectUUID();
   const currentStepUpdate = useCurrentStepUpdate();
+  const currentProjectUpdate = useCurrentProjectUpdate();
 
   const [geojson, setGeojson] = useState<FeatureCollection | null>(null);
   const [isUpdated, setIsUpdated] = useState<boolean>(false);
@@ -75,9 +76,9 @@ export default function StepLayer({ map }: { map: Map | null }) {
     setIsUpdated(false);
 
     // Load files
-    const geojsonUrl = currentStepState?.step?.file?.replace('gltf', 'geojson');
-    const gltfUrl = currentStepState?.step?.file?.replace('geojson', 'gltf');
-    if (geojsonUrl && gltfUrl) {
+    let geojsonUrl = currentStepState?.step?.file?.replace('gltf', 'geojson');
+    if (geojsonUrl) {
+      geojsonUrl += '?' + currentProjectUpdate;
       const step = currentStep;
       globalCurrentStep = step;
       fetch(geojsonUrl, {
@@ -95,6 +96,11 @@ export default function StepLayer({ map }: { map: Map | null }) {
   useEffect(() => {
     doInit();
   }, [map, currentStepState]);
+
+  /** When map or current step changes, load GeoJSON */
+  useEffect(() => {
+    setIsEditing(false);
+  }, [currentStep]);
 
   /** Render geojson */
   useEffect(() => {
@@ -148,8 +154,10 @@ export default function StepLayer({ map }: { map: Map | null }) {
     if (currentStepUpdate.lastRequest) {
       dispatch(resetStepAfter(currentStep));
       doInit();
+    } else if (currentProjectUpdate) {
+      doInit();
     }
-  }, [currentStepUpdate.lastRequest]);
+  }, [currentStepUpdate.lastRequest, currentProjectUpdate]);
 
   /** When current step update fails, show error toast */
   useEffect(() => {
@@ -157,6 +165,13 @@ export default function StepLayer({ map }: { map: Map | null }) {
       Toaster.error('Failed', currentStepUpdate.error);
     }
   }, [currentStepUpdate.error]);
+
+  /** When draw site, set editing */
+  useEffect(() => {
+    if (isDrawSite) {
+      setIsEditing(false);
+    }
+  }, [isDrawSite]);
 
   /** Add click handler to show feature properties */
   useEffect(() => {

@@ -3,6 +3,7 @@ import type { ProjectParameters } from './project';
 
 export const DrawingMode = {
   DRAW_SITE: 'DRAW_SITE',
+  UPDATE_SITE: 'UPDATE_SITE',
   STEP_UPDATE: 'STEP_UPDATE',
 } as const;
 

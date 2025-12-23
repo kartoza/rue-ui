@@ -161,6 +161,7 @@ export default function MapInputControls({ map }: { map: Map | null }) {
       payload.site = site;
       payload.roads = roads;
     }
+
     if (currentProject.project?.uuid) {
       dispatch(updateProject({ uuid: currentProject.project?.uuid, payload }));
     } else {

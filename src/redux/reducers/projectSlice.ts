@@ -1,7 +1,6 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { STEP_LABELS, type StepType } from './stepSlice';
-import { TaskStatus } from './task';
 import type { ProjectPatchPayload, ProjectPayload, ProjectState } from './project';
 import type { Step } from './step';
 import * as api from '../../utils/api.tsx';
@@ -18,19 +17,6 @@ const initialState: ProjectState = {
 export const createProject = createAsyncThunk(
   'project/create',
   async (payload: ProjectPayload, thunkAPI) => {
-    // -----------------------------
-    // FOR DEMO
-    // -----------------------------
-    if (!API_URL) {
-      const token = 'Demo token';
-      localStorage.setItem('token', token);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return {
-        uuid: '00000000-0000-0000-0000-000000000000',
-        name: payload.name,
-        parameters: payload.parameters,
-      };
-    }
     // -----------------------------
     try {
       const data = await api.post<{
@@ -60,19 +46,6 @@ export const updateProject = createAsyncThunk(
     },
     thunkAPI
   ) => {
-    // -----------------------------
-    // FOR DEMO
-    // -----------------------------
-    if (!API_URL) {
-      const token = 'Demo token';
-      localStorage.setItem('token', token);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return {
-        uuid: '00000000-0000-0000-0000-000000000000',
-        name: payload.name,
-        parameters: payload.parameters,
-      };
-    }
     // -----------------------------
     try {
       const data = await api.put<{
@@ -146,26 +119,6 @@ export const getStepStatus = createAsyncThunk(
     thunkAPI
   ) => {
     // -----------------------------
-    // FOR DEMO
-    // -----------------------------
-    if (!API_URL) {
-      const index = Object.keys(STEP_LABELS).indexOf(step);
-      const result = await fetch(
-        `/src/assets/dummy-data/${String(index).padStart(2, '0')}-${step}/outputs/result.json`
-      );
-      return {
-        file:
-          location.origin +
-          `/src/assets/dummy-data/${String(index).padStart(2, '0')}-${step}/outputs/${step}.gltf`,
-        task: {
-          task_id: '00000000-0000-0000-0000-000000000000',
-          status: TaskStatus.success,
-          message: '',
-        },
-        result: await result.json(),
-      };
-    }
-    // -----------------------------
     try {
       const data = await api.get<Step>(`projects/${uuid}/${step}`);
       if (data.file && API_URL.includes('https')) {
@@ -237,14 +190,18 @@ const projectSlice = createSlice({
       // ----------------------------------
       // Patch project
       // ----------------------------------
-      .addCase(patchProject.pending, (state) => {
+      .addCase(patchProject.pending, (state, action) => {
+        if (action.meta.arg.payload.site) {
+          // @ts-expect-error: This is correct
+          state.project.steps = {};
+        }
         state.loading = true;
         state.error = null;
       })
       .addCase(patchProject.fulfilled, (state, action) => {
         state.loading = false;
         // @ts-expect-error: Save by step
-        state.project = { ...action.payload, steps: {} };
+        state.project = { ...action.payload, steps: state.project!.steps };
       })
       .addCase(patchProject.rejected, (state, action) => {
         state.loading = false;
