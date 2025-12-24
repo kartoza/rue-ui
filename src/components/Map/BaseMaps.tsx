@@ -1,53 +1,134 @@
-import { useState, useEffect, useMemo } from 'react';
 import type { FC } from 'react';
-
-// Import VITE_MAPBOX_TOKEN from environment
-const MAPBOX_TOKEN: string = import.meta.env.VITE_MAPBOX_TOKEN;
+import { useEffect, useMemo, useState } from 'react';
+import { Map, type StyleSpecification } from 'maplibre-gl';
+import { removeSource } from '../../utils/maplibre.tsx';
 
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 import './style.scss';
 
+// Import VITE_MAPBOX_TOKEN from environment
+const MAPBOX_TOKEN: string = import.meta.env.VITE_MAPBOX_TOKEN;
+
 interface BaseMapsProps {
-  map?: {
-    setStyle?: (style: string) => void;
-    // ...other maplibre-gl properties if needed
-  };
+  map?: Map | null;
+}
+
+interface BasemapOption {
+  label: string;
+  value: StyleSpecification;
 }
 
 const BaseMaps: FC<BaseMapsProps> = ({ map }) => {
-  const basemaps = useMemo(
+  const basemaps: BasemapOption[] = useMemo(
     () => [
       {
         label: 'Light',
-        value: `https://api.maptiler.com/maps/bright/style.json?key=${MAPBOX_TOKEN}`,
+        value: {
+          version: 8,
+          sources: {
+            basemap: {
+              type: 'raster',
+              tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+              tileSize: 256,
+              attribution: '© OpenStreetMap contributors',
+            },
+          },
+          layers: [
+            {
+              id: 'basemap',
+              type: 'raster',
+              source: 'basemap',
+              minzoom: 0,
+              maxzoom: 19,
+            },
+          ],
+        } as StyleSpecification,
       },
       {
         label: 'Satellite',
-        value: `https://api.maptiler.com/maps/hybrid/style.json?key=${MAPBOX_TOKEN}`,
+        value: {
+          version: 8,
+          sources: {
+            basemap: {
+              type: 'raster',
+              tiles: [
+                `https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.jpg?access_token=${MAPBOX_TOKEN}`,
+              ],
+              tileSize: 256,
+              attribution: '© Mapbox',
+            },
+          },
+          layers: [
+            {
+              id: 'basemap',
+              type: 'raster',
+              source: 'basemap',
+              minzoom: 0,
+              maxzoom: 19,
+            },
+          ],
+        } as StyleSpecification,
       },
       {
         label: 'Dark',
-        value: `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${MAPBOX_TOKEN}`,
+        value: {
+          version: 8,
+          sources: {
+            basemap: {
+              type: 'raster',
+              tiles: [
+                'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+                'https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+                'https://c.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+                'https://d.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+              ],
+              tileSize: 256,
+              attribution: '© OpenStreetMap contributors',
+            },
+          },
+          layers: [
+            {
+              id: 'basemap',
+              type: 'raster',
+              source: 'basemap',
+              minzoom: 0,
+              maxzoom: 19,
+            },
+          ],
+        } as StyleSpecification,
       },
     ],
-    [MAPBOX_TOKEN]
+    []
   );
 
-  const [selectedBasemap, setSelectedBasemap] = useState<string>(basemaps[0].value);
+  const [selectedBasemap, setSelectedBasemap] = useState<number>(0);
 
   // Set default basemap on initial mount
   useEffect(() => {
-    if (map && map.setStyle) {
-      map.setStyle(basemaps[0].value);
+    if (map) {
+      const style = basemaps[selectedBasemap].value;
+
+      // Add basemap sources
+      if (style.sources) {
+        Object.entries(style.sources).forEach(([id, source]) => {
+          removeSource(map, id);
+          map.addSource(id, source);
+        });
+      }
+
+      // Add basemap layers at the bottom
+      const firstLayerId = map.getStyle().layers?.[0]?.id;
+      if (style.layers) {
+        style.layers.forEach((layer) => {
+          map.addLayer(layer, firstLayerId);
+        });
+      }
     }
-  }, [map, basemaps]);
+  }, [map, selectedBasemap]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const styleUrl = e.target.value;
-    setSelectedBasemap(styleUrl);
-    if (map && map.setStyle) {
-      map.setStyle(styleUrl);
-    }
+    const index = parseInt(e.target.value, 10);
+    setSelectedBasemap(index);
   };
 
   return (
@@ -69,8 +150,8 @@ const BaseMaps: FC<BaseMapsProps> = ({ map }) => {
         onChange={handleChange}
         style={{ width: '100%', padding: '4px' }}
       >
-        {basemaps.map((bm: { label: string; value: string }) => (
-          <option key={bm.value} value={bm.value}>
+        {basemaps.map((bm, index) => (
+          <option key={index} value={index}>
             {bm.label}
           </option>
         ))}

@@ -36,15 +36,7 @@ export default function MapLibre({ map, setMap }: Props) {
               tileSize: 256,
             },
           },
-          layers: [
-            {
-              id: 'osm-background',
-              type: 'raster',
-              source: 'osm',
-              minzoom: 0,
-              maxzoom: 19,
-            }, // osm-background layer
-          ],
+          layers: [],
           glyphs: '/static/fonts/{fontstack}/{range}.pbf',
           sprite: '',
         },
