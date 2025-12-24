@@ -42,6 +42,7 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
   const site = useCurrentProjectInputSite();
   const currentStep = useCurrentStep();
   const isUpdateSite = useCurrentDrawMode() == DrawingMode.UPDATE_SITE;
+  const isDrawSetMode = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
   const isDrawSite = useIsDrawSiteMode();
   const isProjectDone = useCurrentProjectDone();
 
@@ -272,7 +273,7 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
   return (
     <HStack className="editor-stack" borderRadius="md" boxShadow="md">
       <SiteEditor key="editor" map={map} geojsonInput={geojson} />
-      {currentStep == siteDefinition && uuid && (
+      {currentStep == siteDefinition && uuid && !isDrawSetMode && (
         <HStack className="editor-section">
           {!isProjectDone && (
             <Box>

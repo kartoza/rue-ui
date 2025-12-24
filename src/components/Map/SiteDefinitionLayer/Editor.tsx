@@ -158,7 +158,56 @@ export default function SiteEditor({
     }
   };
 
-  const startDrawRoad = (road_type: string, road_pcent: number) => {
+  /** Assign road properties to selected roads */
+  const assignRoadProperties = (road_type: string, road_pcent: number): boolean => {
+    const drawRef = editorRef.current?.getDrawRef();
+    if (!drawRef?.current) return false;
+
+    const drawControl = drawRef.current;
+
+    // Check if there are selected features
+    const selectedFeatures = drawControl.getSelected();
+    if (!selectedFeatures || selectedFeatures.features.length === 0) {
+      return false;
+    }
+
+    // Filter only LineString features (roads)
+    const selectedRoads = selectedFeatures.features.filter((f) => f.geometry.type === 'LineString');
+
+    if (selectedRoads.length === 0) {
+      return false;
+    }
+
+    // Update properties for all selected roads
+    selectedRoads.forEach((feature) => {
+      const featureId = feature.id as string;
+
+      // Delete the feature and add it back with updated properties
+      drawControl.delete(featureId);
+
+      // Add properties to the feature
+      const updatedFeature = {
+        ...feature,
+        properties: {
+          ...feature.properties,
+          road_type: road_type,
+          road_pcent: road_pcent,
+        },
+      };
+
+      drawControl.add(updatedFeature);
+    });
+
+    // Rerender and update state
+    requestAnimationFrame(() => {
+      onFeaturesChanged();
+    });
+
+    return true;
+  };
+
+  /** Start drawing a new road */
+  const startDrawingNewRoad = (road_type: string, road_pcent: number) => {
     const drawRef = editorRef.current?.getDrawRef();
     if (!drawRef?.current || !map) return;
 
@@ -208,6 +257,17 @@ export default function SiteEditor({
     }
   };
 
+  /** Handle road button click - assign properties or start drawing */
+  const startDrawRoad = (road_type: string, road_pcent: number) => {
+    // Try to assign properties to selected roads first
+    const assigned = assignRoadProperties(road_type, road_pcent);
+
+    // If no roads were assigned, start drawing a new road
+    if (!assigned) {
+      startDrawingNewRoad(road_type, road_pcent);
+    }
+  };
+
   if (!isDrawSite) {
     return null;
   }
@@ -249,7 +309,7 @@ export default function SiteEditor({
               border="1px solid"
               borderColor={active ? '#FF6666' : 'gray.300'}
               padding={2}
-              title={`Draw or assign road artery at ${n}%`}
+              title={`Draw or assign selected roads as road artery at ${n}%`}
             >
               {n}
               <MdTimeline />
@@ -271,7 +331,7 @@ export default function SiteEditor({
               border="1px solid"
               borderColor={active ? '#FFB24D' : 'gray.300'}
               padding={2}
-              title={`Draw or assign road secondary at ${n}%`}
+              title={`Draw or assign selected roads as road secondary at ${n}%`}
             >
               {n}
               <MdTimeline />
