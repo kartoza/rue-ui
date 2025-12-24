@@ -2,7 +2,7 @@ import { useCurrentProject, useCurrentProjectDone } from '../../redux/selectors/
 import type { Project } from '../../redux/reducers/project';
 import { Box, Button, Dialog, IconButton, Portal, Spinner } from '@chakra-ui/react';
 import { MdChevronLeft, MdModeEdit } from 'react-icons/md';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { ProjectDetailEditor } from '../ProjectDetailEditor';
 
@@ -43,6 +43,11 @@ function ProjectNameEditor({
   const handleCancel = () => {
     onOpenChange({ open: false });
   };
+
+  useEffect(() => {
+    setProjectName(project?.name || '');
+    setDescription(project?.description || '');
+  }, [project?.name, project?.description]);
 
   if (!project?.uuid) {
     return null;
