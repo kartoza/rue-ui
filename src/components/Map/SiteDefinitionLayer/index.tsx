@@ -1,6 +1,6 @@
 import { Map } from 'maplibre-gl';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Box, HStack, IconButton, Spinner } from '@chakra-ui/react';
 import { MdArrowBack, MdModeEdit, MdSave } from 'react-icons/md';
 import { getAuthHeaders } from '../../../utils/api';
@@ -26,6 +26,7 @@ import { patchProject } from '../../../redux/reducers/projectSlice.ts';
 import { useCurrentDrawMode, useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
 import { DrawingMode, setDrawingMode } from '../../../redux/reducers/global.ts';
 import SiteEditor from './Editor.tsx';
+import { ConfirmDialog } from '../../ConfirmDialog';
 
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 
@@ -241,17 +242,32 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
   const apply = () => {
     if (!uuid) return;
     if (!geojson) return;
-    dispatch(setDrawingMode(null));
-    dispatch(
-      patchProject({
-        uuid: uuid,
-        payload: {
-          roads: roads,
-          site: site,
-        },
-      })
+    ConfirmDialog.danger(
+      'Update site definition',
+      `This will change site definition and rerun all steps. Are you sure you want to save to the backend? This action cannot be undone.`,
+      () => {
+        dispatch(setDrawingMode(null));
+        dispatch(
+          patchProject({
+            uuid: uuid,
+            payload: {
+              roads: roads,
+              site: site,
+            },
+          })
+        );
+      }
     );
   };
+
+  /** Cancel edited features */
+  const cancelEditing = useCallback(() => {
+    ConfirmDialog.danger('Cancel editing', `Are you sure want to discard your changes?`, () => {
+      dispatch(setDrawingMode(null));
+      dispatch(updateSite(defaultSite));
+      dispatch(updateRoads(defaultRoads));
+    });
+  }, [defaultRoads, defaultSite, dispatch]);
 
   return (
     <HStack className="editor-stack" borderRadius="md" boxShadow="md">
@@ -294,9 +310,7 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
               </IconButton>
               <IconButton
                 onClick={() => {
-                  dispatch(setDrawingMode(null));
-                  dispatch(updateSite(defaultSite));
-                  dispatch(updateRoads(defaultRoads));
+                  cancelEditing();
                 }}
                 // @ts-expect-error: A custom variant
                 variant="base"

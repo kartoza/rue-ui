@@ -20,6 +20,7 @@ import polygonToLine from '@turf/polygon-to-line';
 import lineSplit from '@turf/line-split';
 import { polygon as turfPolygon } from '@turf/helpers';
 import { Toaster } from '../Toaster/toaster.ts';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 export const GEOJSON_ID_FILL: string = 'task-layer-fill';
 export const GEOJSON_ID_LINE: string = 'task-layer-line';
@@ -403,21 +404,27 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
     /** Delete all features **/
     const deleteAll = useCallback(() => {
       if (!drawRef.current) return;
+      ConfirmDialog.danger(
+        'Delete all features',
+        `Are you sure you want to delete all features? This action cannot be undone.`,
+        () => {
+          if (!drawRef.current) return;
+          const allFeatures = drawRef.current.getAll();
+          if (allFeatures.features.length === 0) {
+            return;
+          }
 
-      const allFeatures = drawRef.current.getAll();
-      if (allFeatures.features.length === 0) {
-        return;
-      }
-
-      // Delete all features
-      allFeatures.features.forEach((feature) => {
-        if (feature.id) {
-          drawRef.current!.delete(feature.id.toString());
+          // Delete all features
+          allFeatures.features.forEach((feature) => {
+            if (feature.id) {
+              drawRef.current!.delete(feature.id.toString());
+            }
+          });
+          if (onFeaturesChanged) {
+            onFeaturesChanged();
+          }
         }
-      });
-      if (onFeaturesChanged) {
-        onFeaturesChanged();
-      }
+      );
     }, [onFeaturesChanged]);
 
     /** Handle keyboard events for delete */

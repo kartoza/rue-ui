@@ -7,6 +7,7 @@ import { useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
 import MapEditor, { type MapLayerEditorRef } from '../MapEditor.tsx';
 
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
+import { ConfirmDialog } from '../../ConfirmDialog';
 
 interface MapStepLayerEditorProps {
   map: Map | null;
@@ -32,34 +33,41 @@ export default function StepLayerEditor({
   const isDrawSite = useIsDrawSiteMode();
   const editorRef = useRef<MapLayerEditorRef | null>(null);
 
-  /** Cancel editing */
+  /** Cancel edited features */
   const cancelEditing = useCallback(() => {
-    // Just set isEditing to false - the useEffect will clean up the draw control
-    setIsEditing(false);
+    ConfirmDialog.danger('Cancel editing', `Are you sure want to discard your changes?`, () => {
+      setIsEditing(false);
+    });
   }, [setIsEditing]);
 
   /** Save edited features */
   const saveEdits = useCallback(() => {
-    const drawRef = editorRef.current?.getDrawRef();
-    if (!drawRef?.current) return;
+    ConfirmDialog.danger(
+      'Update step',
+      `This will change the output of the current step and rerun all subsequent steps. Are you sure you want to save to the backend? This action cannot be undone.`,
+      () => {
+        const drawRef = editorRef.current?.getDrawRef();
+        if (!drawRef?.current) return;
 
-    const allDrawFeatures = drawRef.current.getAll();
+        const allDrawFeatures = drawRef.current.getAll();
 
-    if (allDrawFeatures.features.length === 0) {
-      console.warn('No edited features found');
-      cancelEditing();
-      return;
-    }
+        if (allDrawFeatures.features.length === 0) {
+          console.warn('No edited features found');
+          cancelEditing();
+          return;
+        }
 
-    // Clear draw control
-    // @ts-expect-error: Delete all features
-    drawRef.current.deleteAll();
-    setIsEditing(false);
+        // Clear draw control
+        // @ts-expect-error: Delete all features
+        drawRef.current.deleteAll();
+        setIsEditing(false);
 
-    apply({
-      type: 'FeatureCollection',
-      features: allDrawFeatures.features,
-    });
+        apply({
+          type: 'FeatureCollection',
+          features: allDrawFeatures.features,
+        });
+      }
+    );
   }, [cancelEditing]);
 
   /** Cancel editing */
