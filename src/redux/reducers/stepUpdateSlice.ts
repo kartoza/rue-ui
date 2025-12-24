@@ -3,8 +3,6 @@ import type { FeatureCollection } from 'geojson';
 import type { StepType } from './stepSlice.ts';
 import * as api from '../../utils/api.tsx';
 
-const API_URL: string = import.meta.env.VITE_API_URL;
-
 export interface StepUpdateState {
   lastRequest: number | null;
   loading: boolean;
@@ -33,13 +31,6 @@ export const updateStep = createAsyncThunk(
     thunkAPI
   ) => {
     // -----------------------------
-    // FOR DEMO
-    // -----------------------------
-    if (!API_URL) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return null;
-    }
-    // -----------------------------
     try {
       return await api.put(`projects/${uuid}/${step}`, { geojson });
     } catch (error) {
@@ -67,6 +58,7 @@ const stepUpdateSlice = createSlice({
       .addCase(updateStep.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        state.lastRequest = new Date().getTime();
       });
   },
 });

@@ -1,13 +1,23 @@
-import type { RootState } from '../../redux/store';
+import { useEffect } from 'react';
 import { Spinner, TabsList, TabsRoot, TabsTrigger } from '@chakra-ui/react';
 import { useDispatch, useSelector } from 'react-redux';
 import { MdError } from 'react-icons/md';
-import { setCurrentStep, STEP_LABELS, type StepType } from '../../redux/reducers/stepSlice.ts';
-import { useCurrentProjectStep } from '../../redux/selectors/projectSelector.ts';
-import { TaskStatus } from '../../redux/reducers/task.ts';
+import {
+  setCurrentStep,
+  siteDefinition,
+  STEP_LABELS,
+  StepType,
+} from '../../redux/reducers/stepSlice.ts';
+import type { RootState } from '../../redux/store';
+import {
+  useCurrentProjectStep,
+  useCurrentProjectUUID,
+} from '../../redux/selectors/projectSelector.ts';
 import { useCurrentStepUpdateLoading } from '../../redux/selectors/stepUpdateSelector.ts';
+import { TaskStatus } from '../../redux/reducers/task.ts';
 
 import './style.scss';
+import { setDrawingMode } from '../../redux/reducers/global.ts';
 
 interface TabPanelProps {
   value: string;
@@ -34,20 +44,44 @@ function TabPanel({ value, label }: TabPanelProps) {
   );
 }
 
+function TabSiteDefinitionPanel({ value, label }: TabPanelProps) {
+  return (
+    <TabsTrigger value={value} className="map-task-tab-trigger">
+      {label}
+    </TabsTrigger>
+  );
+}
+
 export default function MapTabNavigation() {
   const dispatch = useDispatch();
   const currentStep = useSelector((state: RootState) => state.step.currentStep);
+  const currentUUID = useCurrentProjectUUID();
 
   const handleValueChange = (details: { value: string }) => {
     dispatch(setCurrentStep(details.value as StepType));
+    dispatch(setDrawingMode(null));
   };
+
+  // When project changed, change to site definition step
+  useEffect(() => {
+    dispatch(setCurrentStep(siteDefinition as StepType));
+  }, [currentUUID, dispatch]);
 
   return (
     <TabsRoot value={currentStep} onValueChange={handleValueChange} variant="plain">
       <TabsList className="map-task-tabs-list">
-        {Object.entries(STEP_LABELS).map(([value, label]) => (
-          <TabPanel key={value} value={value} label={label} />
-        ))}
+        <TabSiteDefinitionPanel value={siteDefinition} label={siteDefinition} />
+        {Object.entries(STEP_LABELS)
+          .filter(([value]) => {
+            return ![
+              StepType.footprint as string,
+              StepType.building_start as string,
+              StepType.building_max as string,
+            ].includes(value);
+          })
+          .map(([value, label]) => (
+            <TabPanel key={value} value={value} label={label} />
+          ))}
       </TabsList>
     </TabsRoot>
   );

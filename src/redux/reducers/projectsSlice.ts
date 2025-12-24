@@ -17,13 +17,13 @@ const initialState: ProjectsState = {
 };
 
 // Async thunk for getting projects
-export const getProjects = createAsyncThunk('projects/get', async (_, thunkAPI) => {
-  // -----------------------------
-  // FOR DEMO
-  // -----------------------------
-  if (!API_URL) {
-    return [];
+export const getProjects = createAsyncThunk<
+  Project[],
+  void,
+  {
+    rejectValue: string;
   }
+>('projects/get', async (_, thunkAPI) => {
   // -----------------------------
   try {
     return await api.get('projects');
@@ -34,7 +34,13 @@ export const getProjects = createAsyncThunk('projects/get', async (_, thunkAPI) 
 });
 
 // Async thunk for deleting a project
-export const deleteProject = createAsyncThunk('projects/delete', async (uuid: string, thunkAPI) => {
+export const deleteProject = createAsyncThunk<
+  string,
+  string,
+  {
+    rejectValue: string;
+  }
+>('projects/delete', async (uuid: string, thunkAPI) => {
   if (!API_URL) {
     return uuid;
   }
@@ -65,7 +71,6 @@ const projectSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-
       // Delete projects
       .addCase(deleteProject.pending, (state) => {
         state.loading = true;

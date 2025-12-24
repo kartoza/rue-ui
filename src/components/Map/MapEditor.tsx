@@ -1,18 +1,26 @@
-import { forwardRef, type RefObject, useEffect, useImperativeHandle, useRef } from 'react';
+import {
+  forwardRef,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from 'react';
 import type { Map } from 'maplibre-gl';
 import maplibregl from 'maplibre-gl';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
 import MaplibreDraw from 'maplibre-gl-draw';
 import { hasLayer } from '../../utils/maplibre.tsx';
 import layerStyle from './layer_style.json';
-import { ROAD_ID } from './SiteLayer';
-import { IconButton } from '@chakra-ui/react';
+import { ROAD_ID } from './SiteDefinitionLayer';
+import { HStack, IconButton } from '@chakra-ui/react';
 import { FaScissors } from 'react-icons/fa6';
-import { MdDelete } from 'react-icons/md';
+import { MdDelete, MdDeleteSweep } from 'react-icons/md';
 import polygonToLine from '@turf/polygon-to-line';
 import lineSplit from '@turf/line-split';
 import { polygon as turfPolygon } from '@turf/helpers';
 import { Toaster } from '../Toaster/toaster.ts';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 export const GEOJSON_ID_FILL: string = 'task-layer-fill';
 export const GEOJSON_ID_LINE: string = 'task-layer-line';
@@ -23,7 +31,6 @@ interface Props {
   enabled: boolean;
   activeByDefault: boolean;
   onFeaturesChanged?: () => void;
-  hideDelete: boolean;
 }
 
 export interface MapLayerEditorRef {
@@ -32,7 +39,7 @@ export interface MapLayerEditorRef {
 
 /** This is editor for layer editor */
 const MapEditor = forwardRef<MapLayerEditorRef, Props>(
-  ({ map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged, hideDelete }, ref) => {
+  ({ map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged }, ref) => {
     const drawRef = useRef<MaplibreDraw | null>(null);
 
     // Expose deleteSelected method to parent components
@@ -375,7 +382,7 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
     }, [map, defaultGeojson, enabled]);
 
     /** Delete selected features **/
-    const deleteSelected = () => {
+    const deleteSelected = useCallback(() => {
       if (!drawRef.current) return;
 
       const selectedFeatures = drawRef.current.getSelected();
@@ -389,7 +396,58 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
           drawRef.current!.delete(feature.id.toString());
         }
       });
-    };
+      if (onFeaturesChanged) {
+        onFeaturesChanged();
+      }
+    }, [onFeaturesChanged]);
+
+    /** Delete all features **/
+    const deleteAll = useCallback(() => {
+      if (!drawRef.current) return;
+      ConfirmDialog.danger(
+        'Delete all features',
+        `Are you sure you want to delete all features? This action cannot be undone.`,
+        () => {
+          if (!drawRef.current) return;
+          const allFeatures = drawRef.current.getAll();
+          if (allFeatures.features.length === 0) {
+            return;
+          }
+
+          // Delete all features
+          allFeatures.features.forEach((feature) => {
+            if (feature.id) {
+              drawRef.current!.delete(feature.id.toString());
+            }
+          });
+          if (onFeaturesChanged) {
+            onFeaturesChanged();
+          }
+        }
+      );
+    }, [onFeaturesChanged]);
+
+    /** Handle keyboard events for delete */
+    useEffect(() => {
+      if (!enabled || !map) return;
+
+      const handleKeyDown = (event: KeyboardEvent) => {
+        // Check if Delete or Backspace key is pressed
+        if (event.key === 'Delete' || event.key === 'Backspace') {
+          // Prevent default browser behavior for Backspace
+          event.preventDefault();
+          deleteSelected();
+        }
+      };
+
+      // Add event listener
+      document.addEventListener('keydown', handleKeyDown);
+
+      // Cleanup
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }, [enabled, map, deleteSelected]);
 
     /** cut polygon with line **/
     const cutPolygonWithLine = () => {
@@ -526,8 +584,9 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
       });
     };
 
+    if (!enabled) return null;
     return (
-      <>
+      <HStack className="editor-section">
         {/* Cut polygon with roads */}
         {/*TODO: Need to fix this */}
         <IconButton
@@ -540,19 +599,27 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
         >
           <FaScissors />
         </IconButton>
-        {/* DELETE button */}
-        {!hideDelete && (
-          <IconButton
-            onClick={deleteSelected}
-            size="md"
-            // @ts-expect-error: A custom variant
-            variant="danger.basic"
-            title={`Delete selected features`}
-          >
-            <MdDelete />
-          </IconButton>
-        )}
-      </>
+        {/* DELETE selected button */}
+        <IconButton
+          onClick={deleteSelected}
+          size="md"
+          // @ts-expect-error: A custom variant
+          variant="danger.basic"
+          title={`Delete selected features`}
+        >
+          <MdDelete />
+        </IconButton>
+        {/* DELETE all button */}
+        <IconButton
+          onClick={deleteAll}
+          size="md"
+          // @ts-expect-error: A custom variant
+          variant="danger.basic"
+          title={`Delete all features`}
+        >
+          <MdDeleteSweep />
+        </IconButton>
+      </HStack>
     );
   }
 );

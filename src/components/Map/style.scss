@@ -2,16 +2,52 @@
   flex-grow: 1;
   height: 100%;
   width: 100%;
+
+  canvas {
+    &:focus-visible {
+      outline: none;
+    }
+  }
 }
 
 .editor-stack {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: white;
-  padding: 8px;
   z-index: 1;
-  color: black;
+  gap: 1rem;
+  box-shadow: unset !important;
+  border: unset !important;
+
+  & > div,
+  .editor-section {
+    background: white;
+    padding: 8px;
+    color: black;
+    box-shadow: var(--chakra-shadows-md);
+
+    .editor-section {
+      padding: unset !important;
+      box-shadow: unset !important;
+    }
+  }
+
+  .editor-help {
+    position: absolute;
+    top: 66px;
+    right: 0;
+
+    button {
+      border: unset;
+      padding: 0 !important;
+      height: 1rem;
+      margin: 0 !important;
+      cursor: text;
+      min-width: unset !important;
+      width: fit-content !important;
+      background: unset !important;
+    }
+  }
 
   button {
     border: 1px solid #d4d4d8;

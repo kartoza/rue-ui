@@ -18,16 +18,6 @@ export default function ExtractRoads({ map, setRoads }: Props) {
     setRequesting(true);
     try {
       const roads = await fetchRoads(map);
-      roads.features.forEach((feature) => {
-        if (!feature.properties) return;
-
-        if (['primary', 'tertiary', 'trunk', 'motorway'].includes(feature.properties.highway)) {
-          feature.properties.road_type = 'road_art';
-        } else {
-          feature.properties.road_type = 'road_sec';
-        }
-        feature.properties.road_pcent = 0;
-      });
       setRoads(roads);
     } catch (e) {
       Toaster.error('Failed', `${e}`);
@@ -39,8 +29,6 @@ export default function ExtractRoads({ map, setRoads }: Props) {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        marginLeft: '2rem',
-        marginRight: '1rem',
         gap: '8px',
       }}
     >

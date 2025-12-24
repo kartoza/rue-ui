@@ -1,20 +1,21 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { Map } from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
-import { IconButton } from '@chakra-ui/react';
-import { useCurrentDrawMode } from '../../../redux/selectors/globalSelector.ts';
-import { DrawingMode } from '../../../redux/reducers/global.ts';
+import { HStack, IconButton } from '@chakra-ui/react';
+import { MdArrowBack, MdModeEdit, MdSave } from 'react-icons/md';
+import { useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
 import MapEditor, { type MapLayerEditorRef } from '../MapEditor.tsx';
+import { ConfirmDialog } from '../../ConfirmDialog';
 
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
-import { MdCancel, MdCheckCircle, MdModeEdit } from 'react-icons/md';
 
 interface MapStepLayerEditorProps {
   map: Map | null;
   geojson: FeatureCollection | null;
-  setGeojson: (updatedGeojson: FeatureCollection) => void;
   isEditing: boolean;
   setIsEditing: (isEditing: boolean) => void;
+  editText: string;
+  apply: (geojson: FeatureCollection | null) => void;
 }
 
 /**
@@ -24,49 +25,50 @@ interface MapStepLayerEditorProps {
 export default function StepLayerEditor({
   map,
   geojson,
-  setGeojson,
   isEditing,
   setIsEditing,
+  editText,
+  apply,
 }: MapStepLayerEditorProps) {
-  const isDrawSite = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
+  const isDrawSite = useIsDrawSiteMode();
   const editorRef = useRef<MapLayerEditorRef | null>(null);
 
-  /** Enable editing for the whole layer (all features) */
-  const enableEditing = () => {
-    // Just set isEditing to true - the useEffect will create the draw control and load features
-    setIsEditing(true);
-  };
-
-  /** Cancel editing */
+  /** Cancel edited features */
   const cancelEditing = useCallback(() => {
-    // Just set isEditing to false - the useEffect will clean up the draw control
-    setIsEditing(false);
+    ConfirmDialog.confirm('Cancel editing', `Are you sure want to discard your changes?`, () => {
+      setIsEditing(false);
+    });
   }, [setIsEditing]);
 
   /** Save edited features */
   const saveEdits = useCallback(() => {
-    const drawRef = editorRef.current?.getDrawRef();
-    if (!drawRef?.current) return;
+    ConfirmDialog.confirm(
+      'Update step',
+      `This will change the output of the current step and rerun all subsequent steps. Are you sure you want to save to the backend? This action cannot be undone.`,
+      () => {
+        const drawRef = editorRef.current?.getDrawRef();
+        if (!drawRef?.current) return;
 
-    const allDrawFeatures = drawRef.current.getAll();
+        const allDrawFeatures = drawRef.current.getAll();
 
-    if (allDrawFeatures.features.length === 0) {
-      console.warn('No edited features found');
-      cancelEditing();
-      return;
-    }
+        if (allDrawFeatures.features.length === 0) {
+          console.warn('No edited features found');
+          cancelEditing();
+          return;
+        }
 
-    // Clear draw control
-    // @ts-expect-error: Delete all features
-    drawRef.current.deleteAll();
-    setIsEditing(false);
+        // Clear draw control
+        // @ts-expect-error: Delete all features
+        drawRef.current.deleteAll();
+        setIsEditing(false);
 
-    // Call update callback with draw geojson
-    setGeojson({
-      type: 'FeatureCollection',
-      features: allDrawFeatures.features,
-    });
-  }, [setGeojson, cancelEditing]);
+        apply({
+          type: 'FeatureCollection',
+          features: allDrawFeatures.features,
+        });
+      }
+    );
+  }, [cancelEditing]);
 
   /** Cancel editing */
   useEffect(() => {
@@ -81,52 +83,53 @@ export default function StepLayerEditor({
   if (isDrawSite) {
     return null;
   }
-  geojson.features = geojson.features.filter((f) =>
-    ['Polygon', 'MultiPolygon'].includes(f.geometry?.type)
-  );
   return (
-    <>
-      {!isEditing && (
-        <IconButton
-          onClick={enableEditing}
-          size="md"
-          disabled={!map}
-          title={`Edit current layer`}
-          // @ts-expect-error: A custom variant
-          variant={'base'}
-        >
-          <MdModeEdit />
-        </IconButton>
-      )}
-      {isEditing && (
-        <>
-          <IconButton
-            onClick={saveEdits}
-            size="md"
-            // @ts-expect-error: A custom variant
-            variant="success.basic"
-            title={`Apply changes to the map`}
-          >
-            <MdCheckCircle />
-          </IconButton>
-          <IconButton
-            onClick={cancelEditing}
-            size="md"
-            // @ts-expect-error: A custom variant
-            variant="base"
-          >
-            <MdCancel />
-          </IconButton>
-        </>
-      )}
+    <HStack className="editor-stack" borderRadius="md" boxShadow="md">
       <MapEditor
         map={map}
         defaultGeojson={geojson}
         enabled={isEditing}
         activeByDefault={true}
-        hideDelete={!isEditing}
         ref={editorRef}
       />
-    </>
+      <HStack className="editor-section">
+        {!isEditing && (
+          <IconButton
+            onClick={() => {
+              setIsEditing(true);
+            }}
+            size="md"
+            disabled={!map}
+            title={editText}
+            // @ts-expect-error: A custom variant
+            variant={'base'}
+          >
+            <MdModeEdit />
+            {editText}
+          </IconButton>
+        )}
+        {isEditing && (
+          <>
+            <IconButton
+              onClick={saveEdits}
+              size="md"
+              // @ts-expect-error: A custom variant
+              variant="primary.outline"
+              title={`Apply changes to API permanently.`}
+            >
+              <MdSave />
+            </IconButton>
+            <IconButton
+              onClick={cancelEditing}
+              size="md"
+              // @ts-expect-error: A custom variant
+              variant="base"
+            >
+              <MdArrowBack />
+            </IconButton>
+          </>
+        )}
+      </HStack>
+    </HStack>
   );
 }

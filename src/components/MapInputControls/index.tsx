@@ -18,32 +18,46 @@ import {
 } from '../../redux/selectors/projectSelector.ts';
 import { useCurrentStepUpdateLoading } from '../../redux/selectors/stepUpdateSelector.ts';
 import { DrawingMode, setDrawingMode } from '../../redux/reducers/global.ts';
-import { useCurrentProjectInput } from '../../redux/selectors/projectInputSelector.ts';
-import { updateRoads, updateSite } from '../../redux/reducers/projectInputSlice.ts';
+import {
+  updateInputParameters,
+  updateRoads,
+  updateSite,
+} from '../../redux/reducers/projectInputSlice.ts';
 import { ProjectDetailEditor } from '../ProjectDetailEditor';
-
-import DummySite from './SiteDefinitionInput/DummySite.tsx';
 import LoadSite from './SiteDefinitionInput/LoadSite.tsx';
 import DrawYourOwn from './SiteDefinitionInput/DrawYourOwn.tsx';
 
-import projectParametersDefault from './general_input.json';
+import {
+  useCurrentProjectInputRoads,
+  useCurrentProjectInputSite,
+} from '../../redux/selectors/projectInputSelector.ts';
+
+import projectParametersDefault from '../../general_input.json';
 
 import './style.scss';
 
 const DefinitionType = {
+  keep_existing: 'keep_existing',
   vmc_demo: 'vmc_demo',
   draw_your_own: 'draw_your_own',
   load_site: 'load_site',
-  dummy_site: 'dummy_site',
+  // dummy_site: 'dummy_site',
 } as const;
 
 type DefinitionType = (typeof DefinitionType)[keyof typeof DefinitionType];
 
 const DEFINITION_LABELS: Record<DefinitionType, string> = {
+  keep_existing: 'Keep existing',
   vmc_demo: 'VMC Demo',
   draw_your_own: 'Draw your own',
   load_site: 'Load site',
-  dummy_site: 'Dummy Site',
+  // dummy_site: 'Dummy Site',
+};
+
+const DEFINITION_LABELS_CREATE: Record<string, string> = {
+  vmc_demo: 'VMC Demo',
+  draw_your_own: 'Draw your own',
+  load_site: 'Load site',
 };
 
 export default function MapInputControls({ map }: { map: Map | null }) {
@@ -51,7 +65,8 @@ export default function MapInputControls({ map }: { map: Map | null }) {
   const isProjectDone = useCurrentProjectDone();
   const currentProject = useCurrentProjectState();
   const currentStepUpdateLoading = useCurrentStepUpdateLoading();
-  const { site, roads } = useCurrentProjectInput();
+  const site = useCurrentProjectInputSite();
+  const roads = useCurrentProjectInputRoads();
 
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [siteDefinition, setSiteDefinition] = useState<DefinitionType>(DefinitionType.vmc_demo);
@@ -75,6 +90,7 @@ export default function MapInputControls({ map }: { map: Map | null }) {
   }
 
   const isActive = (key: string) => activeKeys.includes(key);
+
   // Handle when according changed
   const handleSelect = (eventKey: string | string[] | null | undefined) => {
     if (Array.isArray(eventKey)) {
@@ -88,8 +104,6 @@ export default function MapInputControls({ map }: { map: Map | null }) {
 
   /* Change definition */
   const changeDefinition = (definition: DefinitionType) => {
-    setSite(null);
-    setRoads(null);
     setSiteDefinition(definition);
     if (definition === DefinitionType.draw_your_own) {
       dispatch(setDrawingMode(DrawingMode.DRAW_SITE));
@@ -98,11 +112,16 @@ export default function MapInputControls({ map }: { map: Map | null }) {
     }
   };
 
+  // Update parameters for input
+  useEffect(() => {
+    dispatch(updateInputParameters(parameters));
+  }, [dispatch, parameters]);
+
   // When project done, make submitted false
   useEffect(() => {
     if (isProjectDone) {
       setSubmitted(false);
-      changeDefinition(DefinitionType.vmc_demo);
+      changeDefinition(DefinitionType.keep_existing);
     }
   }, [isProjectDone]);
 
@@ -138,15 +157,17 @@ export default function MapInputControls({ map }: { map: Map | null }) {
       description: description,
       parameters: parameters,
     };
-    if (site && roads) {
+    if (siteDefinition !== DefinitionType.keep_existing && site && roads) {
       payload.site = site;
       payload.roads = roads;
     }
+
     if (currentProject.project?.uuid) {
       dispatch(updateProject({ uuid: currentProject.project?.uuid, payload }));
     } else {
       dispatch(createProject(payload));
     }
+    dispatch(setDrawingMode(null));
     setSubmitted(true);
   };
 
@@ -159,6 +180,9 @@ export default function MapInputControls({ map }: { map: Map | null }) {
   const setRoads = (roads: FeatureCollection<LineString> | null) => {
     dispatch(updateRoads(roads));
   };
+
+  // Create definitions label
+  const DEFINITIONS = !currentProject?.project?.uuid ? DEFINITION_LABELS_CREATE : DEFINITION_LABELS;
 
   return (
     <Box className="map-input-parent" style={{ position: 'relative' }}>
@@ -191,30 +215,71 @@ export default function MapInputControls({ map }: { map: Map | null }) {
                   Site Definition
                 </Accordion.Header>
                 <Accordion.Body style={{ marginRight: '1rem' }}>
-                  <select
-                    className="form-control"
-                    value={siteDefinition}
-                    onChange={(e) => {
-                      changeDefinition(e.target.value as DefinitionType);
-                    }}
-                  >
-                    {Object.entries(DEFINITION_LABELS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {value === DefinitionType.vmc_demo && currentProject?.project?.uuid
-                          ? 'Keep existing'
-                          : label}
-                      </option>
-                    ))}
-                  </select>
+                  <Row>
+                    <Col style={{ flexGrow: 0, paddingRight: 0 }}>
+                      <label>
+                        <span className={`circle-number-sm${isActive('0-0') ? ' active' : ''}`}>
+                          1
+                        </span>
+                      </label>
+                    </Col>
+                    <Col style={{ paddingRight: 0, paddingLeft: 0 }}>
+                      <Box>
+                        <select
+                          className="form-control"
+                          value={siteDefinition}
+                          onChange={(e) => {
+                            changeDefinition(e.target.value as DefinitionType);
+                          }}
+                        >
+                          {Object.entries(DEFINITIONS).map(([value, label]) => (
+                            <option key={value} value={value}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      </Box>
+                      <Box>
+                        {/* Site definition functions */}
+                        {siteDefinition === DefinitionType.load_site && (
+                          <LoadSite map={map} setSite={setSite} setRoads={setRoads} />
+                        )}
+                        {siteDefinition === DefinitionType.draw_your_own && (
+                          <DrawYourOwn map={map} />
+                        )}
+                      </Box>
+                    </Col>
+                  </Row>
+
+                  <Row>
+                    <Col>
+                      <label>
+                        <span className={`circle-number-sm${isActive('0-0') ? ' active' : ''}`}>
+                          2
+                        </span>
+                        Dead end buffer distance
+                      </label>
+                    </Col>
+                    <Col style={{ paddingRight: 0 }}>
+                      <div className="input-group">
+                        <input
+                          type="number"
+                          step="0.1"
+                          className="form-control"
+                          value={parameters.site_definition.dead_end_buffer_distance_m}
+                          onChange={(e) => {
+                            parameters.site_definition.dead_end_buffer_distance_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
+                        />
+                        <span className="input-group-text">m</span>
+                      </div>
+                    </Col>
+                  </Row>
                 </Accordion.Body>
               </Accordion.Item>
-              {siteDefinition === DefinitionType.dummy_site && (
-                <DummySite activeKeys={activeKeys} />
-              )}
-              {siteDefinition === DefinitionType.load_site && (
-                <LoadSite map={map} setSite={setSite} setRoads={setRoads} />
-              )}
-              {siteDefinition === DefinitionType.draw_your_own && <DrawYourOwn map={map} />}
             </Accordion>
           </Accordion.Body>
         </Accordion.Item>
@@ -704,7 +769,7 @@ export default function MapInputControls({ map }: { map: Map | null }) {
                         >
                           <option value="0">0</option>
                           <option value="1">1</option>
-                          <option value="1">2</option>
+                          <option value="2">2</option>
                         </select>
                       </Col>
                     </Row>

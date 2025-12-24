@@ -15,9 +15,14 @@ import type { FeatureCollection, LineString, Polygon } from 'geojson';
 // -------------------------
 
 interface ProjectParameters {
+  site_definition: SiteDefinition;
   neighbourhood: Neighbourhood;
   tissue: Tissue;
   starter_buildings: StarterBuildings;
+}
+
+interface SiteDefinition {
+  dead_end_buffer_distance_m: number;
 }
 
 interface Neighbourhood {
@@ -171,9 +176,12 @@ interface ProjectPayload {
   site?: FeatureCollection<Polygon> | null;
   roads?: FeatureCollection<LineString> | null;
 }
+
 interface ProjectPatchPayload {
-  name: string;
-  description: string | null;
+  name?: string;
+  description?: string;
+  site?: FeatureCollection<Polygon> | null;
+  roads?: FeatureCollection<LineString> | null;
 }
 
 interface Project {

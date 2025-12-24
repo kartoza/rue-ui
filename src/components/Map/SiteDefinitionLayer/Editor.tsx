@@ -2,15 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import type { Map as MaplibreMap } from 'maplibre-gl';
 import { Box, HStack, IconButton } from '@chakra-ui/react';
 import { useDispatch } from 'react-redux';
-import { MdTimeline } from 'react-icons/md';
+import { MdDelete, MdDeleteSweep, MdHelp, MdTimeline } from 'react-icons/md';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
 
 import type { AppDispatch } from '../../../redux/store.ts';
-import { useCurrentDrawMode } from '../../../redux/selectors/globalSelector.ts';
-import { DrawingMode } from '../../../redux/reducers/global.ts';
+import { useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
 import MapEditor, { type MapLayerEditorRef } from '../MapEditor.tsx';
 import { updateRoads, updateSite } from '../../../redux/reducers/projectInputSlice.ts';
-import { useCurrentProjectInput } from '../../../redux/selectors/projectInputSelector.ts';
+import { useCurrentProjectInputRoads } from '../../../redux/selectors/projectInputSelector.ts';
 
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
 
@@ -28,17 +27,25 @@ export type DrawMode = (typeof DrawMode)[keyof typeof DrawMode];
 
 export default function SiteEditor({
   map,
-  geojson,
+  geojsonInput,
 }: {
   map: MaplibreMap | null;
-  geojson: FeatureCollection | null;
+  geojsonInput: FeatureCollection | null;
 }) {
   const dispatch = useDispatch<AppDispatch>();
   const editorRef = useRef<MapLayerEditorRef | null>(null);
   const [mode, setMode] = useState<DrawMode | null>(null);
-  const roads = useCurrentProjectInput().roads;
+  const [geojson, setGeojson] = useState<FeatureCollection | null>(geojsonInput);
+  const [showHelp, setShowHelp] = useState(true);
+  const roads = useCurrentProjectInputRoads();
 
-  const isDrawSite = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
+  const isDrawSite = useIsDrawSiteMode();
+
+  /** Update editor when roads updated */
+  useEffect(() => {
+    if (!isDrawSite) return;
+    setGeojson(geojsonInput);
+  }, [isDrawSite]);
 
   /** Update editor when roads updated */
   useEffect(() => {
@@ -151,7 +158,56 @@ export default function SiteEditor({
     }
   };
 
-  const startDrawRoad = (road_type: string, road_pcent: number) => {
+  /** Assign road properties to selected roads */
+  const assignRoadProperties = (road_type: string, road_pcent: number): boolean => {
+    const drawRef = editorRef.current?.getDrawRef();
+    if (!drawRef?.current) return false;
+
+    const drawControl = drawRef.current;
+
+    // Check if there are selected features
+    const selectedFeatures = drawControl.getSelected();
+    if (!selectedFeatures || selectedFeatures.features.length === 0) {
+      return false;
+    }
+
+    // Filter only LineString features (roads)
+    const selectedRoads = selectedFeatures.features.filter((f) => f.geometry.type === 'LineString');
+
+    if (selectedRoads.length === 0) {
+      return false;
+    }
+
+    // Update properties for all selected roads
+    selectedRoads.forEach((feature) => {
+      const featureId = feature.id as string;
+
+      // Delete the feature and add it back with updated properties
+      drawControl.delete(featureId);
+
+      // Add properties to the feature
+      const updatedFeature = {
+        ...feature,
+        properties: {
+          ...feature.properties,
+          road_type: road_type,
+          road_pcent: road_pcent,
+        },
+      };
+
+      drawControl.add(updatedFeature);
+    });
+
+    // Rerender and update state
+    requestAnimationFrame(() => {
+      onFeaturesChanged();
+    });
+
+    return true;
+  };
+
+  /** Start drawing a new road */
+  const startDrawingNewRoad = (road_type: string, road_pcent: number) => {
     const drawRef = editorRef.current?.getDrawRef();
     if (!drawRef?.current || !map) return;
 
@@ -201,6 +257,17 @@ export default function SiteEditor({
     }
   };
 
+  /** Handle road button click - assign properties or start drawing */
+  const startDrawRoad = (road_type: string, road_pcent: number) => {
+    // Try to assign properties to selected roads first
+    const assigned = assignRoadProperties(road_type, road_pcent);
+
+    // If no roads were assigned, start drawing a new road
+    if (!assigned) {
+      startDrawingNewRoad(road_type, road_pcent);
+    }
+  };
+
   if (!isDrawSite) {
     return null;
   }
@@ -210,7 +277,7 @@ export default function SiteEditor({
 
   return (
     <>
-      <HStack className="editor-stack" borderRadius="md" boxShadow="md">
+      <HStack className="editor-section">
         <IconButton
           onClick={startDrawPolygon}
           size="md"
@@ -242,7 +309,7 @@ export default function SiteEditor({
               border="1px solid"
               borderColor={active ? '#FF6666' : 'gray.300'}
               padding={2}
-              title={`Draw road artery at ${n}%`}
+              title={`Draw or assign selected roads as road artery at ${n}%`}
             >
               {n}
               <MdTimeline />
@@ -264,7 +331,7 @@ export default function SiteEditor({
               border="1px solid"
               borderColor={active ? '#FFB24D' : 'gray.300'}
               padding={2}
-              title={`Draw road secondary at ${n}%`}
+              title={`Draw or assign selected roads as road secondary at ${n}%`}
             >
               {n}
               <MdTimeline />
@@ -277,10 +344,89 @@ export default function SiteEditor({
           enabled={isDrawSite}
           activeByDefault={true}
           onFeaturesChanged={onFeaturesChanged}
-          hideDelete={false}
           ref={editorRef}
         />
+        <IconButton
+          onClick={() => setShowHelp(!showHelp)}
+          // @ts-expect-error: A custom variant
+          variant={showHelp ? 'base' : 'primary.outline'}
+          size="md"
+          title={showHelp ? 'Hide help' : 'Show help'}
+        >
+          <MdHelp />
+        </IconButton>
       </HStack>
+      {showHelp && (
+        <Box
+          className="editor-section editor-help"
+          bg="blue.50"
+          borderLeft="4px solid"
+          borderColor="blue.400"
+          p={3}
+          borderRadius="md"
+          fontSize="sm"
+          maxWidth={60}
+          onClick={() => setShowHelp(false)}
+          cursor="pointer"
+          _hover={{ bg: 'blue.100' }}
+        >
+          <Box fontWeight="semibold" mb={2} color="blue.700">
+            <MdHelp style={{ display: 'inline', marginRight: '8px' }} />
+            Quick Help
+          </Box>
+          <Box as="ul" pl={4} spaceY={1}>
+            <Box as="li" mb={1}>
+              Select a feature by clicking on it.
+            </Box>
+            <Box as="li" mb={1}>
+              Make multiple selections by holding down Shift and clicking additional features, or
+              use the box selection tool by clicking and dragging on the map.
+            </Box>
+            <Box as="li" mb={1}>
+              When you select a road, click a road type button like{' '}
+              <IconButton
+                size="md"
+                bg={'white'}
+                color={'#FF6666'}
+                border="1px solid"
+                borderColor={'gray.300'}
+                display="inline-flex"
+                verticalAlign="middle"
+              >
+                0
+                <MdTimeline />
+              </IconButton>{' '}
+              to assign it to the selection.
+            </Box>
+            <Box as="li">
+              <IconButton
+                size="md"
+                // @ts-expect-error: A custom variant
+                variant="danger.basic"
+                display="inline-flex"
+                verticalAlign="middle"
+                mr={-2}
+              >
+                <MdDelete />
+              </IconButton>{' '}
+              Deletes selected features.
+            </Box>
+            <Box as="li">You can also press the Delete key to delete selected features.</Box>
+            <Box as="li">
+              <IconButton
+                size="md"
+                // @ts-expect-error: A custom variant
+                variant="danger.basic"
+                display="inline-flex"
+                verticalAlign="middle"
+              >
+                <MdDeleteSweep />
+              </IconButton>{' '}
+              Deletes all features.
+            </Box>
+          </Box>
+        </Box>
+      )}
     </>
   );
 }

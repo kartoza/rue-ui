@@ -1,6 +1,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 
+export const siteDefinition: string = 'Site';
 export const StepType = {
   site: 'site',
   streets: 'streets',
@@ -15,7 +16,7 @@ export const StepType = {
 export type StepType = (typeof StepType)[keyof typeof StepType];
 
 export const STEP_LABELS: Record<StepType, string> = {
-  site: 'Site',
+  site: 'Neighborhoods',
   streets: 'Streets',
   clusters: 'Clusters',
   public: 'Public',

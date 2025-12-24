@@ -128,8 +128,9 @@ export default function LoadSite({ map, setRoads, setSite }: Props) {
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
-          padding: '16px',
-          marginLeft: '1rem',
+          width: '100%',
+          marginTop: 8,
+          marginBottom: 8,
         }}
       >
         <div>
@@ -148,7 +149,10 @@ export default function LoadSite({ map, setRoads, setSite }: Props) {
             type="file"
             accept=".geojson"
             onChange={handleSiteFileChange}
-            style={{ display: 'block' }}
+            style={{
+              display: 'block',
+              width: '100%',
+            }}
           />
           {siteError && (
             <div
@@ -177,7 +181,10 @@ export default function LoadSite({ map, setRoads, setSite }: Props) {
             type="file"
             accept=".geojson"
             onChange={handleRoadsFileChange}
-            style={{ display: 'block' }}
+            style={{
+              display: 'block',
+              width: '100%',
+            }}
           />
           {roadsError && (
             <div
