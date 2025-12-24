@@ -28,11 +28,9 @@ export type DrawMode = (typeof DrawMode)[keyof typeof DrawMode];
 export default function SiteEditor({
   map,
   geojsonInput,
-  style,
 }: {
   map: MaplibreMap | null;
   geojsonInput: FeatureCollection | null;
-  style?: React.CSSProperties;
 }) {
   const dispatch = useDispatch<AppDispatch>();
   const editorRef = useRef<MapLayerEditorRef | null>(null);
@@ -217,17 +215,7 @@ export default function SiteEditor({
   }
 
   return (
-    <HStack
-      className="editor-stack"
-      borderRadius="md"
-      boxShadow="md"
-      style={{
-        background: 'white',
-        padding: '8px',
-        gap: '8px',
-        ...style,
-      }}
-    >
+    <HStack className="editor-section">
       <IconButton
         onClick={startDrawPolygon}
         size="md"

@@ -254,9 +254,10 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
   };
 
   return (
-    <>
-      {uuid && (
-        <HStack className="editor-stack" borderRadius="md" boxShadow="md">
+    <HStack className="editor-stack" borderRadius="md" boxShadow="md">
+      <SiteEditor key="editor" map={map} geojsonInput={geojson} />
+      {currentStep == siteDefinition && uuid && (
+        <HStack className="editor-section">
           {!isProjectDone && (
             <Box>
               <Spinner size="lg" />
@@ -272,11 +273,11 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
               }}
               size="md"
               disabled={!map}
-              title={`Edit layer`}
+              title={`Edit site definition`}
               // @ts-expect-error: A custom variant
               variant={'base'}
             >
-              <MdModeEdit />
+              <MdModeEdit /> Edit site definition
             </IconButton>
           )}
           {isProjectDone && isUpdateSite && (
@@ -309,12 +310,6 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
           )}
         </HStack>
       )}
-      <SiteEditor
-        key="editor"
-        map={map}
-        geojsonInput={geojson}
-        style={isUpdateSite ? { right: 120 } : undefined}
-      />
-    </>
+    </HStack>
   );
 }

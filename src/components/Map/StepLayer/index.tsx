@@ -2,15 +2,16 @@ import { useEffect, useState } from 'react';
 import maplibregl, { Map } from 'maplibre-gl';
 import { useDispatch } from 'react-redux';
 import type { FeatureCollection } from 'geojson';
-import { HStack, IconButton, Spinner } from '@chakra-ui/react';
+import { Box, HStack, Spinner } from '@chakra-ui/react';
 import {
+  useCurrentProjectDone,
   useCurrentProjectStep,
   useCurrentProjectUpdate,
   useCurrentProjectUUID,
 } from '../../../redux/selectors/projectSelector';
 import { useCurrentStep } from '../../../redux/selectors/stepSelector.ts';
 import { hasLayer, removeLayer, removeSource } from '../../../utils/maplibre.tsx';
-import { StepType } from '../../../redux/reducers/stepSlice.ts';
+import { siteDefinition, STEP_LABELS, StepType } from '../../../redux/reducers/stepSlice.ts';
 import { useCurrentStepUpdate } from '../../../redux/selectors/stepUpdateSelector.ts';
 import { updateStep } from '../../../redux/reducers/stepUpdateSlice.ts';
 import type { AppDispatch } from '../../../redux/store.ts';
@@ -21,8 +22,8 @@ import MapStepLayerEditor from './Editor.tsx';
 import { ROAD_ID } from '../SiteDefinitionLayer';
 
 import layerStyle from '../layer_style.json';
-import { MdSave } from 'react-icons/md';
 import { useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
+import { TaskStatus } from '../../../redux/reducers/task.ts';
 
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 const GLTF_ID: string = '3d-model';
@@ -40,9 +41,15 @@ export default function StepLayer({ map }: { map: Map | null }) {
   const currentUUID = useCurrentProjectUUID();
   const currentStepUpdate = useCurrentStepUpdate();
   const currentProjectUpdate = useCurrentProjectUpdate();
+  const isProjectDone = useCurrentProjectDone();
+
+  const isRunning: boolean =
+    [TaskStatus.running, TaskStatus.pending, undefined].includes(
+      // @ts-expect-error: Current step is a string
+      currentStepState?.step?.task?.status
+    ) || !isProjectDone;
 
   const [geojson, setGeojson] = useState<FeatureCollection | null>(null);
-  const [isUpdated, setIsUpdated] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
   const style = () => {
@@ -73,7 +80,7 @@ export default function StepLayer({ map }: { map: Map | null }) {
     if (!map) return;
 
     setGeojson(null);
-    setIsUpdated(false);
+    if (isRunning) return;
 
     // Load files
     let geojsonUrl = currentStepState?.step?.file?.replace('gltf', 'geojson');
@@ -231,9 +238,11 @@ export default function StepLayer({ map }: { map: Map | null }) {
   }, [map, geojson]);
 
   // Apply the form
-  const apply = () => {
+  const apply = (geojson: FeatureCollection | null) => {
     if (!currentUUID) return;
     if (!geojson) return;
+    setIsEditing(false);
+    setGeojson(geojson);
     dispatch(
       updateStep({
         uuid: currentUUID,
@@ -243,38 +252,27 @@ export default function StepLayer({ map }: { map: Map | null }) {
     );
   };
 
-  if (!(geojson && geojson.features.length > 0)) {
-    return null;
+  if (currentStep === siteDefinition) return;
+  if (geojson === null || isRunning) {
+    return (
+      <HStack className="editor-stack" borderRadius="md" boxShadow="md">
+        <Box>
+          <Spinner size="lg" />
+        </Box>
+      </HStack>
+    );
   }
-  if (isDrawSite) {
-    return null;
-  }
+  if (!(geojson && geojson.features.length > 0)) return null;
+  if (isDrawSite) return null;
   return (
     <HStack className="editor-stack" borderRadius="md" boxShadow="md">
-      {isUpdated && !isEditing && (
-        <IconButton
-          onClick={apply}
-          size="md"
-          // @ts-expect-error: A custom variant
-          variant="primary"
-          title={`Apply changes to API permanently.`}
-          posisition="relative"
-        >
-          <MdSave />{' '}
-          {currentStepUpdate.loading && (
-            <Spinner position="absolute" top="2px" left="2px" size="lg" />
-          )}
-        </IconButton>
-      )}
       <MapStepLayerEditor
         map={map}
         geojson={geojson}
-        setGeojson={(geojson) => {
-          setIsUpdated(true);
-          setGeojson(geojson);
-        }}
         isEditing={isEditing}
         setIsEditing={setIsEditing}
+        editText={'Edit ' + STEP_LABELS[currentStep].toLowerCase() + ' output'}
+        apply={apply}
       />
     </HStack>
   );
