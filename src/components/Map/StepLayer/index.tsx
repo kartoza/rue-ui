@@ -43,11 +43,10 @@ export default function StepLayer({ map }: { map: Map | null }) {
   const currentProjectUpdate = useCurrentProjectUpdate();
   const isProjectDone = useCurrentProjectDone();
 
-  const isRunning: boolean =
-    [TaskStatus.running, TaskStatus.pending, undefined].includes(
-      // @ts-expect-error: Current step is a string
-      currentStepState?.step?.task?.status
-    ) || !isProjectDone;
+  const isRunning: boolean = [TaskStatus.running, TaskStatus.pending, undefined].includes(
+    // @ts-expect-error: Current step is a string
+    currentStepState?.step?.task?.status
+  );
 
   const [geojson, setGeojson] = useState<FeatureCollection | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -102,7 +101,7 @@ export default function StepLayer({ map }: { map: Map | null }) {
   /** When map or current step changes, load GeoJSON */
   useEffect(() => {
     doInit();
-  }, [map, currentStepState]);
+  }, [map, currentStepState, isRunning]);
 
   /** When map or current step changes, load GeoJSON */
   useEffect(() => {
@@ -253,7 +252,7 @@ export default function StepLayer({ map }: { map: Map | null }) {
   };
 
   if (currentStep === siteDefinition) return;
-  if (geojson === null || isRunning) {
+  if (geojson === null || isRunning || !isProjectDone) {
     return (
       <HStack className="editor-stack" borderRadius="md" boxShadow="md">
         <Box>
