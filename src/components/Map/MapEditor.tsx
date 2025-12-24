@@ -1,4 +1,11 @@
-import { forwardRef, type RefObject, useEffect, useImperativeHandle, useRef } from 'react';
+import {
+  forwardRef,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from 'react';
 import type { Map } from 'maplibre-gl';
 import maplibregl from 'maplibre-gl';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
@@ -375,7 +382,7 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
     }, [map, defaultGeojson, enabled]);
 
     /** Delete selected features **/
-    const deleteSelected = () => {
+    const deleteSelected = useCallback(() => {
       if (!drawRef.current) return;
 
       const selectedFeatures = drawRef.current.getSelected();
@@ -389,7 +396,32 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
           drawRef.current!.delete(feature.id.toString());
         }
       });
-    };
+      if (onFeaturesChanged) {
+        onFeaturesChanged();
+      }
+    }, [onFeaturesChanged]);
+
+    /** Handle keyboard events for delete */
+    useEffect(() => {
+      if (!enabled || !map) return;
+
+      const handleKeyDown = (event: KeyboardEvent) => {
+        // Check if Delete or Backspace key is pressed
+        if (event.key === 'Delete' || event.key === 'Backspace') {
+          // Prevent default browser behavior for Backspace
+          event.preventDefault();
+          deleteSelected();
+        }
+      };
+
+      // Add event listener
+      document.addEventListener('keydown', handleKeyDown);
+
+      // Cleanup
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }, [enabled, map, deleteSelected]);
 
     /** cut polygon with line **/
     const cutPolygonWithLine = () => {
