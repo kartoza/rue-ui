@@ -167,6 +167,7 @@ export default function MapInputControls({ map }: { map: Map | null }) {
     } else {
       dispatch(createProject(payload));
     }
+    dispatch(setDrawingMode(null));
     setSubmitted(true);
   };
 
