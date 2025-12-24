@@ -15,7 +15,7 @@ import layerStyle from './layer_style.json';
 import { ROAD_ID } from './SiteDefinitionLayer';
 import { IconButton } from '@chakra-ui/react';
 import { FaScissors } from 'react-icons/fa6';
-import { MdDelete } from 'react-icons/md';
+import { MdDelete, MdDeleteSweep } from 'react-icons/md';
 import polygonToLine from '@turf/polygon-to-line';
 import lineSplit from '@turf/line-split';
 import { polygon as turfPolygon } from '@turf/helpers';
@@ -30,7 +30,6 @@ interface Props {
   enabled: boolean;
   activeByDefault: boolean;
   onFeaturesChanged?: () => void;
-  hideDelete: boolean;
 }
 
 export interface MapLayerEditorRef {
@@ -39,7 +38,7 @@ export interface MapLayerEditorRef {
 
 /** This is editor for layer editor */
 const MapEditor = forwardRef<MapLayerEditorRef, Props>(
-  ({ map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged, hideDelete }, ref) => {
+  ({ map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged }, ref) => {
     const drawRef = useRef<MaplibreDraw | null>(null);
 
     // Expose deleteSelected method to parent components
@@ -401,6 +400,26 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
       }
     }, [onFeaturesChanged]);
 
+    /** Delete all features **/
+    const deleteAll = useCallback(() => {
+      if (!drawRef.current) return;
+
+      const allFeatures = drawRef.current.getAll();
+      if (allFeatures.features.length === 0) {
+        return;
+      }
+
+      // Delete all features
+      allFeatures.features.forEach((feature) => {
+        if (feature.id) {
+          drawRef.current!.delete(feature.id.toString());
+        }
+      });
+      if (onFeaturesChanged) {
+        onFeaturesChanged();
+      }
+    }, [onFeaturesChanged]);
+
     /** Handle keyboard events for delete */
     useEffect(() => {
       if (!enabled || !map) return;
@@ -558,6 +577,7 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
       });
     };
 
+    if (!enabled) return null;
     return (
       <>
         {/* Cut polygon with roads */}
@@ -572,18 +592,26 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
         >
           <FaScissors />
         </IconButton>
-        {/* DELETE button */}
-        {!hideDelete && (
-          <IconButton
-            onClick={deleteSelected}
-            size="md"
-            // @ts-expect-error: A custom variant
-            variant="danger.basic"
-            title={`Delete selected features`}
-          >
-            <MdDelete />
-          </IconButton>
-        )}
+        {/* DELETE selected button */}
+        <IconButton
+          onClick={deleteSelected}
+          size="md"
+          // @ts-expect-error: A custom variant
+          variant="danger.basic"
+          title={`Delete selected features`}
+        >
+          <MdDelete />
+        </IconButton>
+        {/* DELETE all button */}
+        <IconButton
+          onClick={deleteAll}
+          size="md"
+          // @ts-expect-error: A custom variant
+          variant="danger.basic"
+          title={`Delete all features`}
+        >
+          <MdDeleteSweep />
+        </IconButton>
       </>
     );
   }

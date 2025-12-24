@@ -87,7 +87,6 @@ export default function StepLayerEditor({
             defaultGeojson={geojson}
             enabled={isEditing}
             activeByDefault={true}
-            hideDelete={!isEditing}
             ref={editorRef}
           />
         </HStack>
