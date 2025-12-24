@@ -217,7 +217,7 @@ export default function MapInputControls({ map }: { map: Map | null }) {
                   <Row>
                     <Col style={{ flexGrow: 0, paddingRight: 0 }}>
                       <label>
-                        <span className={`circle-number-sm${isActive('1-0') ? ' active' : ''}`}>
+                        <span className={`circle-number-sm${isActive('0-0') ? ' active' : ''}`}>
                           1
                         </span>
                       </label>
@@ -253,7 +253,7 @@ export default function MapInputControls({ map }: { map: Map | null }) {
                   <Row>
                     <Col>
                       <label>
-                        <span className={`circle-number-sm${isActive('1-0') ? ' active' : ''}`}>
+                        <span className={`circle-number-sm${isActive('0-0') ? ' active' : ''}`}>
                           2
                         </span>
                         Dead end buffer distance
