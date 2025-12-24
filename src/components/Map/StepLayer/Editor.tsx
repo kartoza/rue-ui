@@ -83,9 +83,6 @@ export default function StepLayerEditor({
   if (isDrawSite) {
     return null;
   }
-  geojson.features = geojson.features.filter((f) =>
-    ['Polygon', 'MultiPolygon'].includes(f.geometry?.type)
-  );
   return (
     <HStack className="editor-stack" borderRadius="md" boxShadow="md">
       <MapEditor
