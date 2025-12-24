@@ -41,6 +41,7 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
   const roads = useCurrentProjectInputRoads();
   const site = useCurrentProjectInputSite();
   const currentStep = useCurrentStep();
+  const isSiteDefinition = currentStep === siteDefinition;
   const isUpdateSite = useCurrentDrawMode() == DrawingMode.UPDATE_SITE;
   const isDrawSetMode = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
   const isDrawSite = useIsDrawSiteMode();
@@ -186,13 +187,14 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
         removeSource(map, ROAD_ID);
       }
     };
-  }, [map, roads, parameters, currentStep, isDrawSite]);
+  }, [map, roads, parameters, isDrawSite]);
 
   /** Render site layer */
   useEffect(() => {
     if (!map) return;
     if (!site) return;
-    if (currentStep !== siteDefinition) return;
+    if (!isSiteDefinition) return;
+
     if (isDrawSite) {
       map.setLayoutProperty(ROAD_ID, 'visibility', 'none');
       return;
@@ -228,7 +230,7 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
         removeSource(map, SITE_ID);
       }
     };
-  }, [map, site, currentStep, isDrawSite]);
+  }, [map, site, isSiteDefinition, isDrawSite]);
 
   // Merge site and roads into a single geojson
   const geojson: FeatureCollection | null =
@@ -243,7 +245,7 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
   const apply = () => {
     if (!uuid) return;
     if (!geojson) return;
-    ConfirmDialog.danger(
+    ConfirmDialog.confirm(
       'Update site definition',
       `This will change site definition and rerun all steps. Are you sure you want to save to the backend? This action cannot be undone.`,
       () => {
@@ -263,7 +265,7 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
 
   /** Cancel edited features */
   const cancelEditing = useCallback(() => {
-    ConfirmDialog.danger('Cancel editing', `Are you sure want to discard your changes?`, () => {
+    ConfirmDialog.confirm('Cancel editing', `Are you sure want to discard your changes?`, () => {
       dispatch(setDrawingMode(null));
       dispatch(updateSite(defaultSite));
       dispatch(updateRoads(defaultRoads));

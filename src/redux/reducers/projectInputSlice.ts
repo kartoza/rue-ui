@@ -37,7 +37,11 @@ const projectInputSlice = createSlice({
       state.roads = action.payload.roads;
     },
     updateInputParameters: (state: ProjectInputState, action: PayloadAction<ProjectParameters>) => {
-      state.parameters = JSON.parse(JSON.stringify(action.payload));
+      // Only assign if payload is different from current parameters
+      const newParametersString = JSON.stringify(action.payload);
+      if (JSON.stringify(state.parameters) !== newParametersString) {
+        state.parameters = JSON.parse(newParametersString);
+      }
     },
   },
 });

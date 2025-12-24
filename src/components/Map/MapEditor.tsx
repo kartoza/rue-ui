@@ -13,7 +13,7 @@ import MaplibreDraw from 'maplibre-gl-draw';
 import { hasLayer } from '../../utils/maplibre.tsx';
 import layerStyle from './layer_style.json';
 import { ROAD_ID } from './SiteDefinitionLayer';
-import { IconButton } from '@chakra-ui/react';
+import { HStack, IconButton } from '@chakra-ui/react';
 import { FaScissors } from 'react-icons/fa6';
 import { MdDelete, MdDeleteSweep } from 'react-icons/md';
 import polygonToLine from '@turf/polygon-to-line';
@@ -586,7 +586,7 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
 
     if (!enabled) return null;
     return (
-      <>
+      <HStack className="editor-section">
         {/* Cut polygon with roads */}
         {/*TODO: Need to fix this */}
         <IconButton
@@ -619,7 +619,7 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
         >
           <MdDeleteSweep />
         </IconButton>
-      </>
+      </HStack>
     );
   }
 );

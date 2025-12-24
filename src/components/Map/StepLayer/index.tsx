@@ -263,17 +263,14 @@ export default function StepLayer({ map }: { map: Map | null }) {
     );
   }
   if (!(geojson && geojson.features.length > 0)) return null;
-  if (isDrawSite) return null;
   return (
-    <HStack className="editor-stack" borderRadius="md" boxShadow="md">
-      <MapStepLayerEditor
-        map={map}
-        geojson={geojson}
-        isEditing={isEditing}
-        setIsEditing={setIsEditing}
-        editText={'Edit ' + STEP_LABELS[currentStep].toLowerCase() + ' output'}
-        apply={apply}
-      />
-    </HStack>
+    <MapStepLayerEditor
+      map={map}
+      geojson={geojson}
+      isEditing={isEditing}
+      setIsEditing={setIsEditing}
+      editText={'Edit ' + STEP_LABELS[currentStep].toLowerCase() + ' output'}
+      apply={apply}
+    />
   );
 }

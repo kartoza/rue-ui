@@ -16,12 +16,20 @@
   right: 10px;
   z-index: 1;
   gap: 1rem;
+  box-shadow: unset !important;
+  border: unset !important;
 
   & > div,
   .editor-section {
     background: white;
     padding: 8px;
     color: black;
+    box-shadow: var(--chakra-shadows-md);
+
+    .editor-section {
+      padding: unset !important;
+      box-shadow: unset !important;
+    }
   }
 
   .editor-help {

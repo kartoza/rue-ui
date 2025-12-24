@@ -5,9 +5,9 @@ import { HStack, IconButton } from '@chakra-ui/react';
 import { MdArrowBack, MdModeEdit, MdSave } from 'react-icons/md';
 import { useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
 import MapEditor, { type MapLayerEditorRef } from '../MapEditor.tsx';
+import { ConfirmDialog } from '../../ConfirmDialog';
 
 import 'maplibre-gl-draw/dist/mapbox-gl-draw.css';
-import { ConfirmDialog } from '../../ConfirmDialog';
 
 interface MapStepLayerEditorProps {
   map: Map | null;
@@ -35,14 +35,14 @@ export default function StepLayerEditor({
 
   /** Cancel edited features */
   const cancelEditing = useCallback(() => {
-    ConfirmDialog.danger('Cancel editing', `Are you sure want to discard your changes?`, () => {
+    ConfirmDialog.confirm('Cancel editing', `Are you sure want to discard your changes?`, () => {
       setIsEditing(false);
     });
   }, [setIsEditing]);
 
   /** Save edited features */
   const saveEdits = useCallback(() => {
-    ConfirmDialog.danger(
+    ConfirmDialog.confirm(
       'Update step',
       `This will change the output of the current step and rerun all subsequent steps. Are you sure you want to save to the backend? This action cannot be undone.`,
       () => {
@@ -87,18 +87,14 @@ export default function StepLayerEditor({
     ['Polygon', 'MultiPolygon'].includes(f.geometry?.type)
   );
   return (
-    <>
-      {isEditing && (
-        <HStack className="editor-section">
-          <MapEditor
-            map={map}
-            defaultGeojson={geojson}
-            enabled={isEditing}
-            activeByDefault={true}
-            ref={editorRef}
-          />
-        </HStack>
-      )}
+    <HStack className="editor-stack" borderRadius="md" boxShadow="md">
+      <MapEditor
+        map={map}
+        defaultGeojson={geojson}
+        enabled={isEditing}
+        activeByDefault={true}
+        ref={editorRef}
+      />
       <HStack className="editor-section">
         {!isEditing && (
           <IconButton
@@ -137,6 +133,6 @@ export default function StepLayerEditor({
           </>
         )}
       </HStack>
-    </>
+    </HStack>
   );
 }
