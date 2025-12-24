@@ -72,19 +72,6 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
       .then((res) => res.json())
       .then((data: FeatureCollection<LineString>) => {
         dispatch(updateRoads(data));
-
-        // Zoom to the roads
-        const bbox = turf.bbox(data);
-        map.fitBounds(
-          [
-            [bbox[0], bbox[1]],
-            [bbox[2], bbox[3]],
-          ],
-          {
-            padding: 50,
-            duration: 1000,
-          }
-        );
       })
       .catch((err) => {
         if (err.name !== 'AbortError') {
@@ -98,6 +85,19 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
       .then((res) => res.json())
       .then((data: FeatureCollection<Polygon>) => {
         dispatch(updateSite(data));
+
+        // Zoom to the roads
+        const bbox = turf.bbox(data);
+        map.fitBounds(
+          [
+            [bbox[0], bbox[1]],
+            [bbox[2], bbox[3]],
+          ],
+          {
+            padding: 50,
+            duration: 1000,
+          }
+        );
       })
       .catch((err) => {
         if (err.name !== 'AbortError') {

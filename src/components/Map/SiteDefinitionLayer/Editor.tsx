@@ -338,6 +338,28 @@ export default function SiteEditor({
             </IconButton>
           );
         })}
+
+        {/* --- Road local polyline buttons --- */}
+        {[0].map((n) => {
+          const key = `road_loc_${n}`;
+          const active = mode === DrawMode[key];
+          return (
+            <IconButton
+              key={key}
+              onClick={() => startDrawRoad('road_loc', n)}
+              size="md"
+              bg={active ? '#FFB24D !important' : 'white'}
+              color={active ? 'white' : '#00000080'}
+              border="1px solid"
+              borderColor={active ? '#000000' : 'gray.300'}
+              padding={2}
+              title={`Draw or assign selected roads as road local`}
+            >
+              {n}
+              <MdTimeline />
+            </IconButton>
+          );
+        })}
         <MapEditor
           map={map}
           defaultGeojson={geojson}
