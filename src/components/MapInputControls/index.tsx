@@ -214,25 +214,71 @@ export default function MapInputControls({ map }: { map: Map | null }) {
                   Site Definition
                 </Accordion.Header>
                 <Accordion.Body style={{ marginRight: '1rem' }}>
-                  <select
-                    className="form-control"
-                    value={siteDefinition}
-                    onChange={(e) => {
-                      changeDefinition(e.target.value as DefinitionType);
-                    }}
-                  >
-                    {Object.entries(DEFINITIONS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
+                  <Row>
+                    <Col style={{ flexGrow: 0, paddingRight: 0 }}>
+                      <label>
+                        <span className={`circle-number-sm${isActive('1-0') ? ' active' : ''}`}>
+                          1
+                        </span>
+                      </label>
+                    </Col>
+                    <Col style={{ paddingRight: 0, paddingLeft: 0 }}>
+                      <Box>
+                        <select
+                          className="form-control"
+                          value={siteDefinition}
+                          onChange={(e) => {
+                            changeDefinition(e.target.value as DefinitionType);
+                          }}
+                        >
+                          {Object.entries(DEFINITIONS).map(([value, label]) => (
+                            <option key={value} value={value}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      </Box>
+                      <Box>
+                        {/* Site definition functions */}
+                        {siteDefinition === DefinitionType.load_site && (
+                          <LoadSite map={map} setSite={setSite} setRoads={setRoads} />
+                        )}
+                        {siteDefinition === DefinitionType.draw_your_own && (
+                          <DrawYourOwn map={map} />
+                        )}
+                      </Box>
+                    </Col>
+                  </Row>
+
+                  <Row>
+                    <Col>
+                      <label>
+                        <span className={`circle-number-sm${isActive('1-0') ? ' active' : ''}`}>
+                          2
+                        </span>
+                        Dead end buffer distance
+                      </label>
+                    </Col>
+                    <Col style={{ paddingRight: 0 }}>
+                      <div className="input-group">
+                        <input
+                          type="number"
+                          step="0.1"
+                          className="form-control"
+                          value={parameters.site_definition.dead_end_buffer_distance_m}
+                          onChange={(e) => {
+                            parameters.site_definition.dead_end_buffer_distance_m = Number(
+                              e.target.value
+                            );
+                            setParameters({ ...parameters });
+                          }}
+                        />
+                        <span className="input-group-text">m</span>
+                      </div>
+                    </Col>
+                  </Row>
                 </Accordion.Body>
               </Accordion.Item>
-              {siteDefinition === DefinitionType.load_site && (
-                <LoadSite map={map} setSite={setSite} setRoads={setRoads} />
-              )}
-              {siteDefinition === DefinitionType.draw_your_own && <DrawYourOwn map={map} />}
             </Accordion>
           </Accordion.Body>
         </Accordion.Item>

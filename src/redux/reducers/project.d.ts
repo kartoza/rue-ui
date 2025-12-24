@@ -15,9 +15,14 @@ import type { FeatureCollection, LineString, Polygon } from 'geojson';
 // -------------------------
 
 interface ProjectParameters {
+  site_definition: SiteDefinition;
   neighbourhood: Neighbourhood;
   tissue: Tissue;
   starter_buildings: StarterBuildings;
+}
+
+interface SiteDefinition {
+  dead_end_buffer_distance_m: number;
 }
 
 interface Neighbourhood {

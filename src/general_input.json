@@ -1,4 +1,7 @@
 {
+  "site_definition": {
+    "dead_end_buffer_distance_m": 15
+  },
   "neighbourhood": {
     "public_roads": {
       "width_of_arteries_m": 20,
