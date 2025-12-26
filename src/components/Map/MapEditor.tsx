@@ -21,6 +21,12 @@ import lineSplit from '@turf/line-split';
 import { polygon as turfPolygon } from '@turf/helpers';
 import { Toaster } from '../Toaster/toaster.ts';
 import { ConfirmDialog } from '../ConfirmDialog';
+import {
+  type DraggedVertex,
+  findMatchedVertices,
+  getCoordinatesFromPath,
+  updateCoordinatesAtPath,
+} from './MapEditorUtilis';
 
 export const GEOJSON_ID_FILL: string = 'task-layer-fill';
 export const GEOJSON_ID_LINE: string = 'task-layer-line';
@@ -79,6 +85,81 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
     /** Create/remove MaplibreDraw control based on isEditing state */
     useEffect(() => {
       if (!map) return;
+
+      // Track which vertex is being dragged
+      let draggedVertex: DraggedVertex | null = null;
+
+      // Handle mousedown on vertex to track which one is being dragged
+      const handleVertexMouseDown = (e: maplibregl.MapMouseEvent) => {
+        const features = map.queryRenderedFeatures(e.point, {
+          layers: [
+            'gl-draw-polygon-and-line-vertex-active.hot',
+            'gl-draw-polygon-and-line-vertex-active.cold',
+          ],
+        });
+        if (features && features.length > 0) {
+          const vertex = features[0];
+          if (vertex.geometry.type === 'Point') {
+            const coordPath = vertex.properties?.coord_path || '';
+            const featureId = vertex.properties?.parent || '';
+            const vertexCoords = vertex.geometry.coordinates as number[];
+
+            // Find all features that have a vertex at the same coordinates
+            const matchedVertices = findMatchedVertices(drawRef.current, vertexCoords, featureId);
+
+            draggedVertex = {
+              coordinates: vertexCoords,
+              coordPath: coordPath,
+              featureId: featureId,
+              matchedVertices: matchedVertices,
+            };
+            console.log('Vertex drag started:', draggedVertex);
+          }
+        }
+      };
+
+      // Handle mouseup to clear dragged vertex
+      const handleVertexMouseUp = () => {
+        if (draggedVertex) {
+          console.log('Vertex drag ended:', draggedVertex);
+          draggedVertex = null;
+        }
+      };
+
+      // Handle vertex dragging in real-time
+      const handleVertexDrag = () => {
+        if (!draggedVertex) return;
+        // This fires continuously while dragging
+        if (drawRef.current) {
+          // Get all features and find the current feature being dragged
+          const allFeatures = drawRef.current.getAll();
+          const currentFeature = allFeatures.features.find(
+            // @ts-expect-error : featureId is a string
+            (f) => f.id?.toString() === draggedVertex.featureId.toString()
+          );
+          if (!currentFeature) return;
+
+          // Get the new coordinates from the dragged vertex
+          const newCoords = getCoordinatesFromPath(currentFeature, draggedVertex.coordPath);
+          if (!newCoords) return;
+
+          // If we found the new coordinates, update all matched vertices
+          if (draggedVertex.matchedVertices.length > 0) {
+            draggedVertex.matchedVertices.forEach((matchedVertex) => {
+              const feature = allFeatures.features.find(
+                (f) => f.id?.toString() === matchedVertex.featureId
+              );
+              if (!feature) return;
+
+              // Update coordinates at the matched vertex path
+              updateCoordinatesAtPath(feature, matchedVertex.coordPath, newCoords);
+
+              // Update the feature in the draw control
+              drawRef.current!.add(feature);
+            });
+          }
+        }
+      };
 
       // Only create draw control when editing is active and not in draw site mode
       if (!enabled) {
@@ -316,6 +397,13 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
           map.on('draw.update', onFeaturesChanged);
           map.on('draw.delete', onFeaturesChanged);
         }
+
+        // Track vertex drag start and end
+        map.on('mousedown', handleVertexMouseDown);
+        map.on('mouseup', handleVertexMouseUp);
+
+        // Handle vertex dragging in real-time
+        map.on('draw.render', handleVertexDrag);
       }
 
       return () => {
@@ -324,6 +412,9 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
           map.off('draw.update', onFeaturesChanged);
           map.off('draw.delete', onFeaturesChanged);
         }
+        map.off('mousedown', handleVertexMouseDown);
+        map.off('mouseup', handleVertexMouseUp);
+        map.off('draw.render', handleVertexDrag);
 
         // Clean up draw control
         if (drawRef.current) {
