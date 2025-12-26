@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { Map } from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
 import { HStack, IconButton } from '@chakra-ui/react';
-import { MdArrowBack, MdModeEdit, MdSave } from 'react-icons/md';
+import { MdArrowBack, MdSave } from 'react-icons/md';
 import { useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
 import MapEditor, { type MapLayerEditorRef } from '../MapEditor.tsx';
 import { ConfirmDialog } from '../../ConfirmDialog';
@@ -14,7 +14,6 @@ interface MapStepLayerEditorProps {
   geojson: FeatureCollection | null;
   isEditing: boolean;
   setIsEditing: (isEditing: boolean) => void;
-  editText: string;
   apply: (geojson: FeatureCollection | null) => void;
 }
 
@@ -27,7 +26,6 @@ export default function StepLayerEditor({
   geojson,
   isEditing,
   setIsEditing,
-  editText,
   apply,
 }: MapStepLayerEditorProps) {
   const isDrawSite = useIsDrawSiteMode();
@@ -84,7 +82,7 @@ export default function StepLayerEditor({
     return null;
   }
   return (
-    <HStack className="editor-stack" borderRadius="md" boxShadow="md">
+    <>
       <MapEditor
         map={map}
         defaultGeojson={geojson}
@@ -92,44 +90,27 @@ export default function StepLayerEditor({
         activeByDefault={true}
         ref={editorRef}
       />
-      <HStack className="editor-section">
-        {!isEditing && (
+      {isEditing && (
+        <HStack className="editor-section">
           <IconButton
-            onClick={() => {
-              setIsEditing(true);
-            }}
+            onClick={saveEdits}
             size="md"
-            disabled={!map}
-            title={editText}
             // @ts-expect-error: A custom variant
-            variant={'base'}
+            variant="primary.outline"
+            title={`Apply changes to API permanently.`}
           >
-            <MdModeEdit />
-            {editText}
+            <MdSave />
           </IconButton>
-        )}
-        {isEditing && (
-          <>
-            <IconButton
-              onClick={saveEdits}
-              size="md"
-              // @ts-expect-error: A custom variant
-              variant="primary.outline"
-              title={`Apply changes to API permanently.`}
-            >
-              <MdSave />
-            </IconButton>
-            <IconButton
-              onClick={cancelEditing}
-              size="md"
-              // @ts-expect-error: A custom variant
-              variant="base"
-            >
-              <MdArrowBack />
-            </IconButton>
-          </>
-        )}
-      </HStack>
-    </HStack>
+          <IconButton
+            onClick={cancelEditing}
+            size="md"
+            // @ts-expect-error: A custom variant
+            variant="base"
+          >
+            <MdArrowBack />
+          </IconButton>
+        </HStack>
+      )}
+    </>
   );
 }

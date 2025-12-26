@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import maplibregl, { Map } from 'maplibre-gl';
 import { useDispatch } from 'react-redux';
 import type { FeatureCollection } from 'geojson';
-import { Box, HStack, Spinner } from '@chakra-ui/react';
+import { Box, HStack, IconButton, Spinner } from '@chakra-ui/react';
 import {
   useCurrentProjectDone,
   useCurrentProjectStep,
@@ -24,6 +24,7 @@ import { ROAD_ID } from '../SiteDefinitionLayer';
 import layerStyle from '../layer_style.json';
 import { useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
 import { TaskStatus } from '../../../redux/reducers/task.ts';
+import { MdModeEdit } from 'react-icons/md';
 
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 const GLTF_ID: string = '3d-model';
@@ -263,13 +264,31 @@ export default function StepLayer({ map }: { map: Map | null }) {
   }
   if (!(geojson && geojson.features.length > 0)) return null;
   return (
-    <MapStepLayerEditor
-      map={map}
-      geojson={geojson}
-      isEditing={isEditing}
-      setIsEditing={setIsEditing}
-      editText={'Edit ' + STEP_LABELS[currentStep].toLowerCase() + ' output'}
-      apply={apply}
-    />
+    <HStack className="editor-stack" borderRadius="md" boxShadow="md">
+      <MapStepLayerEditor
+        map={map}
+        geojson={geojson}
+        isEditing={isEditing}
+        setIsEditing={setIsEditing}
+        apply={apply}
+      />
+      {!isEditing && (
+        <HStack className="editor-section">
+          <IconButton
+            onClick={() => {
+              setIsEditing(true);
+            }}
+            size="md"
+            disabled={!map}
+            title={'Edit ' + STEP_LABELS[currentStep].toLowerCase() + ' output'}
+            // @ts-expect-error: A custom variant
+            variant={'base'}
+          >
+            <MdModeEdit />
+            {'Edit ' + STEP_LABELS[currentStep].toLowerCase() + ' output'}
+          </IconButton>
+        </HStack>
+      )}
+    </HStack>
   );
 }
