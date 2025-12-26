@@ -14,7 +14,12 @@ interface MapStepLayerEditorProps {
   geojson: FeatureCollection | null;
   isEditing: boolean;
   cancelEditing: () => void;
+  enableVertexDragging?: boolean;
   apply: (geojson: FeatureCollection | null) => void;
+  confirmDialogTitle: string;
+  confirmDialogMessage: string;
+  // Hide layers when editing
+  hideRoadLayer: boolean;
 }
 
 /**
@@ -26,40 +31,40 @@ export default function StepLayerEditor({
   geojson,
   isEditing,
   cancelEditing,
+  enableVertexDragging,
   apply,
+  confirmDialogTitle,
+  confirmDialogMessage,
+  hideRoadLayer,
 }: MapStepLayerEditorProps) {
   const isDrawSite = useIsDrawSiteMode();
   const editorRef = useRef<MapLayerEditorRef | null>(null);
 
   /** Save edited features */
   const saveEdits = useCallback(() => {
-    ConfirmDialog.confirm(
-      'Update step',
-      `This will change the output of the current step and rerun all subsequent steps. Are you sure you want to save to the backend? This action cannot be undone.`,
-      () => {
-        const drawRef = editorRef.current?.getDrawRef();
-        if (!drawRef?.current) return;
+    ConfirmDialog.confirm(confirmDialogTitle, confirmDialogMessage, () => {
+      const drawRef = editorRef.current?.getDrawRef();
+      if (!drawRef?.current) return;
 
-        const allDrawFeatures = drawRef.current.getAll();
+      const allDrawFeatures = drawRef.current.getAll();
 
-        if (allDrawFeatures.features.length === 0) {
-          console.warn('No edited features found');
-          cancelEditing();
-          return;
-        }
-
-        // Clear draw control
-        // @ts-expect-error: Delete all features
-        drawRef.current.deleteAll();
+      if (allDrawFeatures.features.length === 0) {
+        console.warn('No edited features found');
         cancelEditing();
-
-        apply({
-          type: 'FeatureCollection',
-          features: allDrawFeatures.features,
-        });
+        return;
       }
-    );
-  }, [cancelEditing]);
+
+      // Clear draw control
+      // @ts-expect-error: Delete all features
+      drawRef.current.deleteAll();
+      cancelEditing();
+
+      apply({
+        type: 'FeatureCollection',
+        features: allDrawFeatures.features,
+      });
+    });
+  }, [apply, cancelEditing, confirmDialogMessage, confirmDialogTitle]);
 
   /** Cancel editing */
   useEffect(() => {
@@ -81,7 +86,9 @@ export default function StepLayerEditor({
         defaultGeojson={geojson}
         enabled={isEditing}
         activeByDefault={true}
+        enableVertexDragging={enableVertexDragging}
         ref={editorRef}
+        hideRoadLayer={hideRoadLayer}
       />
       {isEditing && (
         <HStack className="editor-section">

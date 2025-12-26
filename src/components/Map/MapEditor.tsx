@@ -38,6 +38,8 @@ interface Props {
   activeByDefault: boolean;
   enableVertexDragging?: boolean;
   onFeaturesChanged?: () => void;
+  // Hide layers when editing
+  hideRoadLayer?: boolean;
 }
 
 export interface MapLayerEditorRef {
@@ -54,6 +56,7 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
       activeByDefault,
       enableVertexDragging = false,
       onFeaturesChanged,
+      hideRoadLayer = true,
     },
     ref
   ) => {
@@ -75,7 +78,7 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
       if (!map) return;
 
       // Hide road layer
-      if (hasLayer(map, ROAD_ID) && enabled) {
+      if (hideRoadLayer && hasLayer(map, ROAD_ID) && enabled) {
         map.setLayoutProperty(ROAD_ID, 'visibility', 'none');
       }
 
@@ -91,7 +94,7 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
         map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'visible');
         map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'visible');
       }
-    }, [map, enabled]);
+    }, [map, enabled, hideRoadLayer]);
 
     /** Create/remove MaplibreDraw control based on isEditing state */
     useEffect(() => {

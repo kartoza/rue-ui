@@ -280,31 +280,69 @@ export default function StepLayer({ map }: { map: Map | null }) {
     );
   }
   if (!(geojson && geojson.features.length > 0)) return null;
+  let geojsonUsed = geojson;
+  let confirmDialogTitle = 'Update step';
+  let confirmDialogMessage = `This will change the output of the current step and rerun all subsequent steps. Are you sure you want to save to the backend? This action cannot be undone.`;
+  if (isEditingMode === EditingMode.localStreets) {
+    geojsonUsed = JSON.parse(JSON.stringify(geojson)) as FeatureCollection;
+    geojsonUsed = {
+      type: 'FeatureCollection',
+      features: geojsonUsed.features.filter((feature) => feature.properties?.type === 'road_local'),
+    };
+    confirmDialogTitle = 'Update local street';
+    confirmDialogMessage = `This will change the current local streets and rerun streets and all subsequent steps. Are you sure you want to save to the backend? This action cannot be undone.`;
+  }
   return (
     <HStack className="editor-stack" borderRadius="md" boxShadow="md">
       <MapStepLayerEditor
         map={map}
-        geojson={geojson}
+        geojson={geojsonUsed}
         isEditing={isEditing}
         cancelEditing={cancelEditing}
+        enableVertexDragging={isEditingMode === EditingMode.localStreets}
         apply={apply}
+        /* Confirm dialog */
+        confirmDialogTitle={confirmDialogTitle}
+        confirmDialogMessage={confirmDialogMessage}
+        /* Hide others */
+        hideRoadLayer={isEditingMode !== EditingMode.localStreets}
       />
       {!isEditing && (
-        <HStack className="editor-section">
-          <IconButton
-            onClick={() => {
-              setIsEditingMode(EditingMode.output);
-            }}
-            size="md"
-            disabled={!map}
-            title={'Edit ' + STEP_LABELS[currentStep].toLowerCase() + ' output'}
-            // @ts-expect-error: A custom variant
-            variant={'base'}
-          >
-            <MdModeEdit />
-            {'Edit ' + STEP_LABELS[currentStep].toLowerCase() + ' output'}
-          </IconButton>
-        </HStack>
+        <>
+          {currentStep === StepType.streets.toString() && (
+            <HStack className="editor-section">
+              <IconButton
+                onClick={() => {
+                  setIsEditingMode(EditingMode.localStreets);
+                }}
+                size="md"
+                disabled={!map}
+                title={'Edit local streets'}
+                // @ts-expect-error: A custom variant
+                variant={'base'}
+              >
+                <MdModeEdit />
+                {'Edit local streets'}
+              </IconButton>
+            </HStack>
+          )}
+
+          <HStack className="editor-section">
+            <IconButton
+              onClick={() => {
+                setIsEditingMode(EditingMode.output);
+              }}
+              size="md"
+              disabled={!map}
+              title={'Edit ' + STEP_LABELS[currentStep].toLowerCase() + ' output'}
+              // @ts-expect-error: A custom variant
+              variant={'base'}
+            >
+              <MdModeEdit />
+              {'Edit ' + STEP_LABELS[currentStep].toLowerCase() + ' output'}
+            </IconButton>
+          </HStack>
+        </>
       )}
     </HStack>
   );
