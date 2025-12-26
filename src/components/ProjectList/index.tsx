@@ -1,21 +1,19 @@
 import { Box, Button, IconButton, Spinner } from '@chakra-ui/react';
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { MdDelete } from 'react-icons/md';
 import { useCurrentProjects } from '../../redux/selectors/projectsSelector.ts';
 import type { AppDispatch } from '../../redux/store.ts';
 import { deleteProject, getProjects } from '../../redux/reducers/projectsSlice.ts';
-import { getProject, resetProject } from '../../redux/reducers/projectSlice.ts';
+import { resetProject } from '../../redux/reducers/projectSlice.ts';
 import { ConfirmDialog } from '../ConfirmDialog';
 
 import './style.scss';
 
-interface Props {
-  toDetail: () => void;
-}
-
-export default function ProjectList({ toDetail }: Props) {
+export default function ProjectList() {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const projectState = useCurrentProjects();
 
   // Fetch projects on mount
@@ -62,14 +60,9 @@ export default function ProjectList({ toDetail }: Props) {
                 key={project.uuid}
                 className="project-card"
                 onClick={() => {
-                  if (!project.uuid || !project.name) return;
-                  dispatch(
-                    getProject({
-                      uuid: project.uuid,
-                      name: project.name,
-                    })
-                  );
-                  toDetail();
+                  if (!project.uuid) return;
+                  // Navigate to the map page with the project UUID
+                  navigate(`/map/${project.uuid}`);
                 }}
                 position="relative"
               >
@@ -133,7 +126,7 @@ export default function ProjectList({ toDetail }: Props) {
         }}
         onClick={() => {
           dispatch(resetProject());
-          toDetail();
+          navigate('/map');
         }}
       >
         Create new project

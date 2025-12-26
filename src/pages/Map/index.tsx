@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { MdChevronLeft } from 'react-icons/md';
 import { useDispatch } from 'react-redux';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Map as MapLibreMap } from 'maplibre-gl';
 import type { AppDispatch } from '../../redux/store.ts';
 import Map from '../../components/Map';
 import MapTabNavigation from '../../components/MapTabNavigation';
@@ -12,11 +14,10 @@ import ProjectControl from '../../components/ProjectControl';
 import ProjectDescription from '../../components/ProjectDescription';
 import ProjectList from '../../components/ProjectList';
 import { resetLuckySheet } from '../../redux/reducers/luckySheetSlice.ts';
-import { resetProject } from '../../redux/reducers/projectSlice.ts';
-import { Map as MapLibreMap } from 'maplibre-gl';
+import { getProject, resetProject } from '../../redux/reducers/projectSlice.ts';
+import ProjectVersionControl from '../../components/ProjectVersionControl';
 
 import './style.scss';
-import ProjectVersionControl from '../../components/ProjectVersionControl';
 
 export const SideBarTabs = {
   projectList: 'projectList',
@@ -25,9 +26,11 @@ export const SideBarTabs = {
 
 export type SideBarTabs = (typeof SideBarTabs)[keyof typeof SideBarTabs];
 export default function MapPage() {
+  const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const navbarRef = useRef<HTMLDivElement>(null);
   const isOpened = useCurrentRightSideOpened();
+  const { uuid } = useParams<{ uuid: string }>();
 
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [mapHeight, setMapHeight] = useState<string>('calc(100vh - 60px)'); // Default fallback
@@ -53,6 +56,21 @@ export default function MapPage() {
     };
   }, []);
 
+  // Load project when UUID is provided in the URL
+  useEffect(() => {
+    if (uuid) {
+      dispatch(
+        getProject({
+          uuid: uuid,
+        })
+      );
+      // Switch to project detail view
+      setSiteBarTab(SideBarTabs.projectDetail);
+    } else {
+      setSiteBarTab(SideBarTabs.projectList);
+    }
+  }, [uuid, dispatch]);
+
   return (
     <div className="map-container-parent">
       <ProjectControl />
@@ -65,7 +83,7 @@ export default function MapPage() {
                 dispatch(setDrawingMode(null));
                 dispatch(resetLuckySheet());
                 dispatch(resetProject());
-                setSiteBarTab(SideBarTabs.projectList);
+                navigate('/map');
               }}
             />
             <MapInputControls map={map} />
@@ -73,11 +91,7 @@ export default function MapPage() {
         )}
         {sideBarTab === SideBarTabs.projectList && (
           <>
-            <ProjectList
-              toDetail={() => {
-                setSiteBarTab(SideBarTabs.projectDetail);
-              }}
-            />
+            <ProjectList />
           </>
         )}
       </div>

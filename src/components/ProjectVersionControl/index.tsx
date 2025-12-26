@@ -74,7 +74,6 @@ export default function ProjectVersionControl() {
       dispatch(
         getProject({
           uuid: uuid,
-          name: null,
         })
       );
     };
