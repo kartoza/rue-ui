@@ -54,6 +54,7 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
 
   /** Fetch roads geojson from API */
   useEffect(() => {
+    if (!currentProjectUpdate) return;
     if (!isProjectDone) return;
     if (!map) return;
     if (!uuid) {

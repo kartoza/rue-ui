@@ -21,7 +21,7 @@ export default function ProjectVersionControl() {
 
   useEffect(() => {
     // Don't poll if there's no UUID
-    if (!uuid || !isProjectDone) {
+    if (!uuid || !isProjectDone || !currentProjectUpdate) {
       lastUpdateRef.current = null;
       return;
     }

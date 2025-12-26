@@ -150,14 +150,47 @@ const LuckySheet = ({ open, setOpen }: Props) => {
     const parameters = currentProject?.parameters;
     if (!C || !S || !N || !D || !T || !parameters) return;
 
-    setCells(luckysheet, C, S, N, D, T, parameters);
+    // Function to set cells with retry logic
+    const setCellsWithRetry = (retryCount = 0) => {
+      const MAX_RETRIES = 10;
 
-    // Update reducers after formulas recalculate
-    setTimeout(() => {
-      updateLuckySheetReducer(dispatch, luckysheet);
-      // Update default opened sheet
-      luckysheet.setSheetActive(SheetIndex.S1DB);
-    }, 1000);
+      try {
+        setCells(luckysheet, C, S, N, D, T, parameters);
+
+        // Update reducers after formulas recalculate
+        setTimeout(() => {
+          updateLuckySheetReducer(dispatch, luckysheet);
+          // Update default opened sheet
+          luckysheet.setSheetActive(SheetIndex.S1DB);
+        }, 1000);
+      } catch (error) {
+        // Check if it's the specific error we're looking for
+        if (
+          error instanceof Error &&
+          error.message.includes("Cannot read properties of undefined (reading '1')")
+        ) {
+          if (retryCount < MAX_RETRIES) {
+            console.warn(
+              `setCells failed, retrying in 1 second... (attempt ${retryCount + 1}/${MAX_RETRIES})`,
+              error
+            );
+            // Retry after 1 second
+            setTimeout(() => {
+              setCellsWithRetry(retryCount + 1);
+            }, 1000);
+          } else {
+            console.error(`setCells failed after ${MAX_RETRIES} retries`, error);
+          }
+        } else {
+          // Re-throw other errors
+          console.error('setCells failed with unexpected error:', error);
+          throw error;
+        }
+      }
+    };
+
+    // Call the function with retry logic
+    setCellsWithRetry();
   }, [currentProject, dispatch]);
 
   return (
