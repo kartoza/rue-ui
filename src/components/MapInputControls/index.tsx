@@ -156,6 +156,7 @@ export default function MapInputControls({ map }: { map: Map | null }) {
       name: name,
       description: description,
       parameters: parameters,
+      is_using_vmc_demo: siteDefinition === DefinitionType.vmc_demo,
     };
     if (siteDefinition !== DefinitionType.keep_existing && site && roads) {
       payload.site = site;

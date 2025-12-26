@@ -173,6 +173,7 @@ interface ProjectPayload {
   name: string;
   description: string | null;
   parameters: ProjectParameters;
+  is_using_vmc_demo: boolean;
   site?: FeatureCollection<Polygon> | null;
   roads?: FeatureCollection<LineString> | null;
 }

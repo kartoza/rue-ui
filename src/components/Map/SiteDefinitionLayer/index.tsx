@@ -18,6 +18,7 @@ import type { AppDispatch } from '../../../redux/store.ts';
 import turf from 'turf';
 import {
   useCurrentProjectDone,
+  useCurrentProjectUpdate,
   useCurrentProjectUUID,
 } from '../../../redux/selectors/projectSelector.ts';
 import { siteDefinition } from '../../../redux/reducers/stepSlice.ts';
@@ -46,12 +47,14 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
   const isDrawSetMode = useCurrentDrawMode() == DrawingMode.DRAW_SITE;
   const isDrawSite = useIsDrawSiteMode();
   const isProjectDone = useCurrentProjectDone();
+  const currentProjectUpdate = useCurrentProjectUpdate();
 
   const [defaultRoads, setDefaultRoads] = useState<FeatureCollection<LineString> | null>(null);
   const [defaultSite, setDefaultSite] = useState<FeatureCollection<Polygon> | null>(null);
 
   /** Fetch roads geojson from API */
   useEffect(() => {
+    if (!isProjectDone) return;
     if (!map) return;
     if (!uuid) {
       dispatch(updateSite(null));
@@ -65,7 +68,7 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
     const abortController = new AbortController();
 
     // Fetch the roads input
-    fetch(`${API_URL}projects/${uuid}/roads_input.geojson`, {
+    fetch(`${API_URL}projects/${uuid}/roads_input.geojson?` + currentProjectUpdate, {
       headers: getAuthHeaders(),
       signal: abortController.signal,
     })
@@ -78,7 +81,7 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
           Toaster.error('Failed to load roads', err);
         }
       });
-    fetch(`${API_URL}projects/${uuid}/site_input.geojson`, {
+    fetch(`${API_URL}projects/${uuid}/site_input.geojson?` + currentProjectUpdate, {
       headers: getAuthHeaders(),
       signal: abortController.signal,
     })
@@ -108,7 +111,7 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
     return () => {
       abortController.abort();
     };
-  }, [map, uuid]);
+  }, [map, uuid, isProjectDone, currentProjectUpdate]);
 
   /** Render roads layer */
   useEffect(() => {
