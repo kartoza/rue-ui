@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import maplibregl, { Map } from 'maplibre-gl';
 import { useDispatch } from 'react-redux';
 import type { FeatureCollection } from 'geojson';
@@ -25,6 +25,7 @@ import layerStyle from '../layer_style.json';
 import { useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
 import { TaskStatus } from '../../../redux/reducers/task.ts';
 import { MdModeEdit } from 'react-icons/md';
+import { ConfirmDialog } from '../../ConfirmDialog';
 
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 const GLTF_ID: string = '3d-model';
@@ -33,6 +34,12 @@ export const GEOJSON_ID_FILL: string = 'task-layer-fill';
 export const GEOJSON_ID_LINE: string = 'task-layer-line';
 
 let globalCurrentStep: string = '';
+
+export const EditingMode = {
+  output: 'output',
+  localStreets: 'local_streets',
+} as const;
+export type EditingMode = (typeof EditingMode)[keyof typeof EditingMode];
 
 export default function StepLayer({ map }: { map: Map | null }) {
   const isDrawSite = useIsDrawSiteMode();
@@ -50,7 +57,10 @@ export default function StepLayer({ map }: { map: Map | null }) {
   );
 
   const [geojson, setGeojson] = useState<FeatureCollection | null>(null);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [isEditingMode, setIsEditingMode] = useState<EditingMode | null>(null);
+  const isEditing =
+    isEditingMode !== null &&
+    [EditingMode.output, EditingMode.localStreets].includes(isEditingMode);
 
   const style = () => {
     switch (currentStep) {
@@ -106,7 +116,7 @@ export default function StepLayer({ map }: { map: Map | null }) {
 
   /** When map or current step changes, load GeoJSON */
   useEffect(() => {
-    setIsEditing(false);
+    setIsEditingMode(null);
   }, [currentStep]);
 
   /** Render geojson */
@@ -176,7 +186,7 @@ export default function StepLayer({ map }: { map: Map | null }) {
   /** When draw site, set editing */
   useEffect(() => {
     if (isDrawSite) {
-      setIsEditing(false);
+      setIsEditingMode(null);
     }
   }, [isDrawSite]);
 
@@ -241,7 +251,7 @@ export default function StepLayer({ map }: { map: Map | null }) {
   const apply = (geojson: FeatureCollection | null) => {
     if (!currentUUID) return;
     if (!geojson) return;
-    setIsEditing(false);
+    setIsEditingMode(null);
     setGeojson(geojson);
     dispatch(
       updateStep({
@@ -251,6 +261,13 @@ export default function StepLayer({ map }: { map: Map | null }) {
       })
     );
   };
+
+  /** Cancel edited features */
+  const cancelEditing = useCallback(() => {
+    ConfirmDialog.confirm('Cancel editing', `Are you sure want to discard your changes?`, () => {
+      setIsEditingMode(null);
+    });
+  }, [setIsEditingMode]);
 
   if (currentStep === siteDefinition) return;
   if (geojson === null || isRunning || !isProjectDone) {
@@ -269,14 +286,14 @@ export default function StepLayer({ map }: { map: Map | null }) {
         map={map}
         geojson={geojson}
         isEditing={isEditing}
-        setIsEditing={setIsEditing}
+        cancelEditing={cancelEditing}
         apply={apply}
       />
       {!isEditing && (
         <HStack className="editor-section">
           <IconButton
             onClick={() => {
-              setIsEditing(true);
+              setIsEditingMode(EditingMode.output);
             }}
             size="md"
             disabled={!map}

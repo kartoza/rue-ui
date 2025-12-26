@@ -13,7 +13,7 @@ interface MapStepLayerEditorProps {
   map: Map | null;
   geojson: FeatureCollection | null;
   isEditing: boolean;
-  setIsEditing: (isEditing: boolean) => void;
+  cancelEditing: () => void;
   apply: (geojson: FeatureCollection | null) => void;
 }
 
@@ -25,18 +25,11 @@ export default function StepLayerEditor({
   map,
   geojson,
   isEditing,
-  setIsEditing,
+  cancelEditing,
   apply,
 }: MapStepLayerEditorProps) {
   const isDrawSite = useIsDrawSiteMode();
   const editorRef = useRef<MapLayerEditorRef | null>(null);
-
-  /** Cancel edited features */
-  const cancelEditing = useCallback(() => {
-    ConfirmDialog.confirm('Cancel editing', `Are you sure want to discard your changes?`, () => {
-      setIsEditing(false);
-    });
-  }, [setIsEditing]);
 
   /** Save edited features */
   const saveEdits = useCallback(() => {
@@ -58,7 +51,7 @@ export default function StepLayerEditor({
         // Clear draw control
         // @ts-expect-error: Delete all features
         drawRef.current.deleteAll();
-        setIsEditing(false);
+        cancelEditing();
 
         apply({
           type: 'FeatureCollection',

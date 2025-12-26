@@ -36,6 +36,7 @@ interface Props {
   defaultGeojson: FeatureCollection | null;
   enabled: boolean;
   activeByDefault: boolean;
+  enableVertexDragging?: boolean;
   onFeaturesChanged?: () => void;
 }
 
@@ -45,7 +46,17 @@ export interface MapLayerEditorRef {
 
 /** This is editor for layer editor */
 const MapEditor = forwardRef<MapLayerEditorRef, Props>(
-  ({ map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged }, ref) => {
+  (
+    {
+      map,
+      defaultGeojson,
+      enabled,
+      activeByDefault,
+      enableVertexDragging = false,
+      onFeaturesChanged,
+    },
+    ref
+  ) => {
     const drawRef = useRef<MaplibreDraw | null>(null);
 
     // Expose deleteSelected method to parent components
@@ -398,12 +409,14 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
           map.on('draw.delete', onFeaturesChanged);
         }
 
-        // Track vertex drag start and end
-        map.on('mousedown', handleVertexMouseDown);
-        map.on('mouseup', handleVertexMouseUp);
+        // Track vertex drag start and end only if vertex dragging is enabled
+        if (enableVertexDragging) {
+          map.on('mousedown', handleVertexMouseDown);
+          map.on('mouseup', handleVertexMouseUp);
 
-        // Handle vertex dragging in real-time
-        map.on('draw.render', handleVertexDrag);
+          // Handle vertex dragging in real-time
+          map.on('draw.render', handleVertexDrag);
+        }
       }
 
       return () => {
@@ -412,9 +425,13 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
           map.off('draw.update', onFeaturesChanged);
           map.off('draw.delete', onFeaturesChanged);
         }
-        map.off('mousedown', handleVertexMouseDown);
-        map.off('mouseup', handleVertexMouseUp);
-        map.off('draw.render', handleVertexDrag);
+
+        // Clean up vertex dragging event listeners if they were enabled
+        if (enableVertexDragging) {
+          map.off('mousedown', handleVertexMouseDown);
+          map.off('mouseup', handleVertexMouseUp);
+          map.off('draw.render', handleVertexDrag);
+        }
 
         // Clean up draw control
         if (drawRef.current) {
@@ -470,7 +487,7 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
           drawRef.current = null;
         }
       };
-    }, [map, defaultGeojson, enabled]);
+    }, [map, defaultGeojson, enabled, enableVertexDragging]);
 
     /** Delete selected features **/
     const deleteSelected = useCallback(() => {
