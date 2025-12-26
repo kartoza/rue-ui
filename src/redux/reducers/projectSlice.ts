@@ -94,7 +94,7 @@ export const getProject = createAsyncThunk(
   'project/get',
   // @ts-expect-error: Name is for args
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async ({ uuid, name }: { uuid: string; name: string }, thunkAPI) => {
+  async ({ uuid, name }: { uuid: string; name: string | null }, thunkAPI) => {
     // -----------------------------
     try {
       return await api.get('projects/' + uuid);

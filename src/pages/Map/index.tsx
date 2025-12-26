@@ -16,6 +16,7 @@ import { resetProject } from '../../redux/reducers/projectSlice.ts';
 import { Map as MapLibreMap } from 'maplibre-gl';
 
 import './style.scss';
+import ProjectVersionControl from '../../components/ProjectVersionControl';
 
 export const SideBarTabs = {
   projectList: 'projectList',
@@ -55,6 +56,7 @@ export default function MapPage() {
   return (
     <div className="map-container-parent">
       <ProjectControl />
+      <ProjectVersionControl />
       <div className="map-left-sidebar">
         {sideBarTab === SideBarTabs.projectDetail && (
           <>
