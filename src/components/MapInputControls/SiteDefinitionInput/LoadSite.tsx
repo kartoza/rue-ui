@@ -5,13 +5,15 @@ import ExtractRoads from '../ExtractRoads.tsx';
 
 interface Props {
   map: Map | null;
-  setRoads: (input: FeatureCollection<LineString> | null) => void;
   setSite: (input: FeatureCollection<Polygon> | null) => void;
+  setRoadArteries: (input: FeatureCollection<LineString> | null) => void;
+  setRoadSecondaries: (input: FeatureCollection<LineString> | null) => void;
 }
 
-export default function LoadSite({ map, setRoads, setSite }: Props) {
-  const [roadsError, setRoadsError] = useState<string | null>(null);
+export default function LoadSite({ map, setSite, setRoadArteries, setRoadSecondaries }: Props) {
   const [siteError, setSiteError] = useState<string | null>(null);
+  const [roadArteriesError, setRoadArteriesError] = useState<string | null>(null);
+  const [roadSecondariesError, setRoadSecondariesError] = useState<string | null>(null);
 
   /** Download roads as GeoJSON file */
   const downloadRoadsAsGeoJSON = (roads: FeatureCollection<LineString>) => {
@@ -59,12 +61,16 @@ export default function LoadSite({ map, setRoads, setSite }: Props) {
     );
   };
 
-  const handleRoadsFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRoadsFileChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setRoad: (errors: FeatureCollection<LineString> | null) => void,
+    setRoadError: (errors: string | null) => void
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setRoadsError(null);
-    setRoads(null);
+    setRoadError(null);
+    setRoad(null);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -73,18 +79,18 @@ export default function LoadSite({ map, setRoads, setSite }: Props) {
         const data = JSON.parse(content);
 
         if (!validateGeoJSON(data, 'LineString')) {
-          setRoadsError('Invalid GeoJSON: Must be a FeatureCollection with LineString features');
+          setRoadError('Invalid GeoJSON: Must be a FeatureCollection with LineString features');
           return;
         }
 
-        setRoads(data as FeatureCollection<LineString>);
+        setRoad(data as FeatureCollection<LineString>);
       } catch {
-        setRoadsError('Failed to parse JSON file. Please ensure it is a valid JSON file.');
+        setRoadError('Failed to parse JSON file. Please ensure it is a valid JSON file.');
       }
     };
 
     reader.onerror = () => {
-      setRoadsError('Failed to read file');
+      setRoadError('Failed to read file');
     };
 
     reader.readAsText(file);
@@ -165,6 +171,8 @@ export default function LoadSite({ map, setRoads, setSite }: Props) {
             </div>
           )}
         </div>
+
+        {/* Road arteries */}
         <div>
           <label
             htmlFor="roads-input"
@@ -174,26 +182,64 @@ export default function LoadSite({ map, setRoads, setSite }: Props) {
               fontWeight: 'bold',
             }}
           >
-            Set roads
+            Set road arteries
           </label>
           <input
             id="roads-input"
             type="file"
             accept=".geojson"
-            onChange={handleRoadsFileChange}
+            onChange={(event) =>
+              handleRoadsFileChange(event, setRoadArteries, setRoadArteriesError)
+            }
             style={{
               display: 'block',
               width: '100%',
             }}
           />
-          {roadsError && (
+          {roadArteriesError && (
             <div
               className="ErrorMessage"
               style={{
                 marginTop: '4px',
               }}
             >
-              {roadsError}
+              {roadArteriesError}
+            </div>
+          )}
+        </div>
+
+        {/* Road decondaries */}
+        <div>
+          <label
+            htmlFor="roads-input"
+            style={{
+              display: 'block',
+              marginBottom: '8px',
+              fontWeight: 'bold',
+            }}
+          >
+            Set road secondaries
+          </label>
+          <input
+            id="roads-input"
+            type="file"
+            accept=".geojson"
+            onChange={(event) =>
+              handleRoadsFileChange(event, setRoadSecondaries, setRoadSecondariesError)
+            }
+            style={{
+              display: 'block',
+              width: '100%',
+            }}
+          />
+          {roadSecondariesError && (
+            <div
+              className="ErrorMessage"
+              style={{
+                marginTop: '4px',
+              }}
+            >
+              {roadSecondariesError}
             </div>
           )}
         </div>
