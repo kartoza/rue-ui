@@ -126,7 +126,7 @@ export default function ProjectList() {
         }}
         onClick={() => {
           dispatch(resetProject());
-          navigate('/map');
+          navigate('/map/create');
         }}
       >
         Create new project

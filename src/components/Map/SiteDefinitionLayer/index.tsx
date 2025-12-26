@@ -54,7 +54,6 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
 
   /** Fetch roads geojson from API */
   useEffect(() => {
-    if (!currentProjectUpdate) return;
     if (!isProjectDone) return;
     if (!map) return;
     if (!uuid) {
@@ -65,6 +64,8 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
 
     dispatch(updateSite(null));
     dispatch(updateRoads(null));
+
+    if (!currentProjectUpdate) return;
 
     const abortController = new AbortController();
 

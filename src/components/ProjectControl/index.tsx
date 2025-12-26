@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   useCurrentProjectState,
   useCurrentProjectUpdate,
@@ -13,6 +14,7 @@ import type { StepState } from '../../redux/reducers/step';
 import { Toaster } from '../Toaster/toaster.ts';
 
 export default function ProjectControl() {
+  const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const currentProjectUpdate = useCurrentProjectUpdate();
   const currentProjectState: ProjectState = useCurrentProjectState();
@@ -31,6 +33,11 @@ export default function ProjectControl() {
     // @ts-expect-error: Expect Step State
     step = currentProject?.steps[firstUndefinedStep];
   }
+
+  useEffect(() => {
+    if (!currentProject?.uuid) return;
+    navigate(`/map/${currentProject.uuid}`);
+  }, [currentProject?.uuid, navigate]);
 
   useEffect(() => {
     if (!currentProjectUpdate) return;

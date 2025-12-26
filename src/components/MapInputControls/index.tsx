@@ -5,6 +5,7 @@ import { Box, Button, Spinner } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
 import { Map } from 'maplibre-gl';
+import turf from 'turf';
 
 import { Toaster } from '../Toaster/toaster';
 import type { ProjectParameters, ProjectPayload } from '../../redux/reducers/project';
@@ -35,7 +36,6 @@ import {
 import projectParametersDefault from '../../general_input.json';
 
 import './style.scss';
-import turf from 'turf';
 
 const DefinitionType = {
   keep_existing: 'keep_existing',

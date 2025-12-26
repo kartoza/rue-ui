@@ -31,6 +31,7 @@ export default function MapPage() {
   const navbarRef = useRef<HTMLDivElement>(null);
   const isOpened = useCurrentRightSideOpened();
   const { uuid } = useParams<{ uuid: string }>();
+  const isCreate = uuid === 'create';
 
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [mapHeight, setMapHeight] = useState<string>('calc(100vh - 60px)'); // Default fallback
@@ -59,17 +60,19 @@ export default function MapPage() {
   // Load project when UUID is provided in the URL
   useEffect(() => {
     if (uuid) {
-      dispatch(
-        getProject({
-          uuid: uuid,
-        })
-      );
       // Switch to project detail view
       setSiteBarTab(SideBarTabs.projectDetail);
+      if (!isCreate) {
+        dispatch(
+          getProject({
+            uuid: uuid,
+          })
+        );
+      }
     } else {
       setSiteBarTab(SideBarTabs.projectList);
     }
-  }, [uuid, dispatch]);
+  }, [uuid, dispatch, isCreate]);
 
   return (
     <div className="map-container-parent">
@@ -80,10 +83,11 @@ export default function MapPage() {
           <>
             <ProjectDescription
               toList={() => {
+                navigate('/map');
+                setSiteBarTab(SideBarTabs.projectList);
+                dispatch(resetProject());
                 dispatch(setDrawingMode(null));
                 dispatch(resetLuckySheet());
-                dispatch(resetProject());
-                navigate('/map');
               }}
             />
             <MapInputControls map={map} />
