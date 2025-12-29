@@ -26,6 +26,16 @@ const AppRoutes: React.FC = () => {
         }
       />
       <Route
+        path="/map/:uuid"
+        element={
+          <ProtectedRoute>
+            <Page title="Map">
+              <MapPage />
+            </Page>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/map"
         element={
           <ProtectedRoute>

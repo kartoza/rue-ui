@@ -105,7 +105,9 @@ const BaseMaps: FC<BaseMapsProps> = ({ map }) => {
 
   // Set default basemap on initial mount
   useEffect(() => {
-    if (map) {
+    if (!map) return;
+
+    const applyBasemap = () => {
       const style = basemaps[selectedBasemap].value;
 
       // Add basemap sources
@@ -123,8 +125,24 @@ const BaseMaps: FC<BaseMapsProps> = ({ map }) => {
           map.addLayer(layer, firstLayerId);
         });
       }
+    };
+
+    // Check if style is already loaded
+    if (map.isStyleLoaded()) {
+      applyBasemap();
+    } else {
+      // Wait for style to load
+      const onStyleLoad = () => {
+        applyBasemap();
+      };
+
+      map.once('style.load', onStyleLoad);
+
+      return () => {
+        map.off('style.load', onStyleLoad);
+      };
     }
-  }, [map, selectedBasemap]);
+  }, [map, selectedBasemap, basemaps]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const index = parseInt(e.target.value, 10);

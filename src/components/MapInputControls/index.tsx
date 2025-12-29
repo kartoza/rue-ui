@@ -5,6 +5,7 @@ import { Box, Button, Spinner } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import type { FeatureCollection, LineString, Polygon } from 'geojson';
 import { Map } from 'maplibre-gl';
+import turf from 'turf';
 
 import { Toaster } from '../Toaster/toaster';
 import type { ProjectParameters, ProjectPayload } from '../../redux/reducers/project';
@@ -156,6 +157,7 @@ export default function MapInputControls({ map }: { map: Map | null }) {
       name: name,
       description: description,
       parameters: parameters,
+      is_using_vmc_demo: siteDefinition === DefinitionType.vmc_demo,
     };
     if (siteDefinition !== DefinitionType.keep_existing && site && roads) {
       payload.site = site;
@@ -173,12 +175,60 @@ export default function MapInputControls({ map }: { map: Map | null }) {
 
   /** Set site */
   const setSite = (site: FeatureCollection<Polygon> | null) => {
+    if (map && site) {
+      // Zoom to the site
+      const bbox = turf.bbox(site);
+      map.fitBounds(
+        [
+          [bbox[0], bbox[1]],
+          [bbox[2], bbox[3]],
+        ],
+        {
+          padding: 50,
+          duration: 1000,
+        }
+      );
+    }
     dispatch(updateSite(site));
   };
 
   /** Set roads */
-  const setRoads = (roads: FeatureCollection<LineString> | null) => {
-    dispatch(updateRoads(roads));
+  const setRoads = (roadInput: FeatureCollection<LineString> | null, type: string) => {
+    const newRoad: FeatureCollection<LineString> = {
+      type: 'FeatureCollection',
+      features: [],
+    };
+
+    // Copy the current features
+    if (roads) {
+      newRoad.features = roads.features;
+    }
+
+    // Remove old data
+    newRoad.features = newRoad.features.filter(
+      (feature) => feature?.properties?.road_type !== type
+    );
+
+    // Road input
+    if (roadInput) {
+      roadInput.features.map((feature) => {
+        newRoad.features.push({
+          type: 'Feature',
+          geometry: feature.geometry,
+          properties: {
+            ...feature.properties,
+            road_type: type,
+            road_pcent: 50,
+          },
+        });
+      });
+    }
+
+    if (newRoad.features.length === 0) {
+      dispatch(updateRoads(null));
+    } else {
+      dispatch(updateRoads(newRoad));
+    }
   };
 
   // Create definitions label
@@ -242,7 +292,16 @@ export default function MapInputControls({ map }: { map: Map | null }) {
                       <Box>
                         {/* Site definition functions */}
                         {siteDefinition === DefinitionType.load_site && (
-                          <LoadSite map={map} setSite={setSite} setRoads={setRoads} />
+                          <LoadSite
+                            map={map}
+                            setSite={setSite}
+                            setRoadArteries={(geometries) => {
+                              setRoads(geometries, 'road_art');
+                            }}
+                            setRoadSecondaries={(geometries) => {
+                              setRoads(geometries, 'road_sec');
+                            }}
+                          />
                         )}
                         {siteDefinition === DefinitionType.draw_your_own && (
                           <DrawYourOwn map={map} />
