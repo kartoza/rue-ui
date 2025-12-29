@@ -5,6 +5,7 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
+  useState,
 } from 'react';
 import type { Map } from 'maplibre-gl';
 import maplibregl from 'maplibre-gl';
@@ -13,9 +14,9 @@ import MaplibreDraw from 'maplibre-gl-draw';
 import { hasLayer } from '../../utils/maplibre.tsx';
 import layerStyle from './layer_style.json';
 import { ROAD_ID } from './SiteDefinitionLayer';
-import { HStack, IconButton } from '@chakra-ui/react';
+import { Box, HStack, IconButton } from '@chakra-ui/react';
 import { FaScissors } from 'react-icons/fa6';
-import { MdDelete, MdDeleteSweep } from 'react-icons/md';
+import { MdDelete, MdDeleteSweep, MdHelp } from 'react-icons/md';
 import polygonToLine from '@turf/polygon-to-line';
 import lineSplit from '@turf/line-split';
 import { polygon as turfPolygon } from '@turf/helpers';
@@ -31,6 +32,7 @@ interface Props {
   enabled: boolean;
   activeByDefault: boolean;
   onFeaturesChanged?: () => void;
+  additionalHelp?: React.ReactNode;
 }
 
 export interface MapLayerEditorRef {
@@ -39,8 +41,9 @@ export interface MapLayerEditorRef {
 
 /** This is editor for layer editor */
 const MapEditor = forwardRef<MapLayerEditorRef, Props>(
-  ({ map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged }, ref) => {
+  ({ map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged, additionalHelp }, ref) => {
     const drawRef = useRef<MaplibreDraw | null>(null);
+    const [showHelp, setShowHelp] = useState(true);
 
     // Expose deleteSelected method to parent components
     useImperativeHandle(
@@ -279,8 +282,8 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
               paint: {
                 'circle-radius': 5,
                 'circle-color': '#FFFFFF',
-                'circle-stroke-width': 2,
-                'circle-stroke-color': '#000000',
+                'circle-stroke-width': 3,
+                'circle-stroke-color': '#fbb03b',
               },
             },
             {
@@ -288,11 +291,11 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
               type: 'circle',
               filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
               paint: {
-                'circle-radius': 4,
+                'circle-radius': 3,
                 'circle-color': '#FFFFFF',
                 'circle-opacity': 0.8,
                 'circle-stroke-width': 1,
-                'circle-stroke-color': '#000000',
+                'circle-stroke-color': '#555555',
               },
             },
           ],
@@ -449,6 +452,125 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
       };
     }, [enabled, map, deleteSelected]);
 
+    /** Handle right-click on vertex to delete it */
+    useEffect(() => {
+      if (!enabled || !map || !drawRef.current) return;
+
+      const handleContextMenu = (e: maplibregl.MapMouseEvent) => {
+        e.preventDefault();
+
+        // Query for vertex features at the click point
+        const features = map.queryRenderedFeatures(e.point, {
+          layers: [
+            'gl-draw-polygon-and-line-vertex-active.hot',
+            'gl-draw-polygon-and-line-vertex-active.cold',
+          ],
+        });
+
+        if (features.length === 0) return;
+
+        const vertexFeature = features[0];
+        const draw = drawRef.current;
+        if (!draw) return;
+
+        // Get the parent feature ID from the vertex properties
+        const parentId = vertexFeature.properties?.parent;
+        if (!parentId) return;
+
+        // Get the parent feature
+        const allFeatures = draw.getAll();
+        const parentFeature = allFeatures.features.find((f) => f.id === parentId);
+        if (!parentFeature) return;
+
+        // Get vertex coordinate path from properties
+        const coordPath = vertexFeature.properties?.coord_path;
+        if (!coordPath) return;
+
+        // Ensure we're working with a supported geometry type
+        if (
+          parentFeature.geometry.type !== 'Polygon' &&
+          parentFeature.geometry.type !== 'LineString'
+        ) {
+          return;
+        }
+
+        // Parse the coordinate path (format: "0.1" means first ring, second coordinate)
+        const pathParts = coordPath.split('.');
+        const coords = JSON.parse(
+          JSON.stringify((parentFeature.geometry as Polygon | LineString).coordinates)
+        );
+
+        // Determine minimum vertices based on geometry type
+        let minVertices = 0;
+        if (parentFeature.geometry.type === 'Polygon') {
+          minVertices = 4; // Minimum 4 vertices for a valid polygon (including closing vertex)
+        } else if (parentFeature.geometry.type === 'LineString') {
+          minVertices = 2; // Minimum 2 vertices for a valid line
+        }
+
+        // Get the current vertex count based on geometry type
+        let currentVertexCount = 0;
+        if (parentFeature.geometry.type === 'Polygon') {
+          currentVertexCount = coords[0].length;
+        } else if (parentFeature.geometry.type === 'LineString') {
+          currentVertexCount = coords.length;
+        }
+
+        // Check if we can delete this vertex
+        if (currentVertexCount <= minVertices) {
+          Toaster.warning(
+            'Cannot delete vertex',
+            `A ${parentFeature.geometry.type.toLowerCase()} must have at least ${minVertices - (parentFeature.geometry.type === 'Polygon' ? 1 : 0)} vertices`
+          );
+          return;
+        }
+
+        // Remove the vertex based on geometry type
+        if (parentFeature.geometry.type === 'Polygon') {
+          const ringIndex = parseInt(pathParts[0], 10);
+          const vertexIndex = parseInt(pathParts[1], 10);
+          coords[ringIndex].splice(vertexIndex, 1);
+
+          // For polygons, ensure first and last coordinates are still the same
+          if (coords[ringIndex].length > 0) {
+            coords[ringIndex][coords[ringIndex].length - 1] = coords[ringIndex][0];
+          }
+        } else if (parentFeature.geometry.type === 'LineString') {
+          const vertexIndex = parseInt(pathParts[0], 10);
+          coords.splice(vertexIndex, 1);
+        }
+
+        // Create updated feature
+        const updatedFeature = {
+          ...parentFeature,
+          geometry: {
+            ...parentFeature.geometry,
+            coordinates: coords,
+          },
+        } as typeof parentFeature;
+
+        // Delete old feature and add updated one
+        draw.delete(parentId);
+        draw.add(updatedFeature);
+
+        // Reselect the feature to keep it active
+        draw.changeMode('direct_select', { featureId: parentId });
+
+        // Trigger features changed callback
+        if (onFeaturesChanged) {
+          onFeaturesChanged();
+        }
+      };
+
+      // Add event listener for right-click
+      map.on('contextmenu', handleContextMenu);
+
+      // Cleanup
+      return () => {
+        map.off('contextmenu', handleContextMenu);
+      };
+    }, [enabled, map, onFeaturesChanged]);
+
     /** cut polygon with line **/
     const cutPolygonWithLine = () => {
       const drawControl = drawRef.current;
@@ -586,40 +708,122 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
 
     if (!enabled) return null;
     return (
-      <HStack className="editor-section">
-        {/* Cut polygon with roads */}
-        {/*TODO: Need to fix this */}
-        <IconButton
-          display={'none'}
-          onClick={cutPolygonWithLine}
-          size="md"
-          // @ts-expect-error: A custom variant
-          variant="danger.basic"
-          title={`Cut polygon with roads`}
-        >
-          <FaScissors />
-        </IconButton>
-        {/* DELETE selected button */}
-        <IconButton
-          onClick={deleteSelected}
-          size="md"
-          // @ts-expect-error: A custom variant
-          variant="danger.basic"
-          title={`Delete selected features`}
-        >
-          <MdDelete />
-        </IconButton>
-        {/* DELETE all button */}
-        <IconButton
-          onClick={deleteAll}
-          size="md"
-          // @ts-expect-error: A custom variant
-          variant="danger.basic"
-          title={`Delete all features`}
-        >
-          <MdDeleteSweep />
-        </IconButton>
-      </HStack>
+      <>
+        <HStack className="editor-section">
+          {/* Cut polygon with roads */}
+          {/*TODO: Need to fix this */}
+          <IconButton
+            display={'none'}
+            onClick={cutPolygonWithLine}
+            size="md"
+            // @ts-expect-error: A custom variant
+            variant="danger.basic"
+            title={`Cut polygon with roads`}
+          >
+            <FaScissors />
+          </IconButton>
+          {/* DELETE selected button */}
+          <IconButton
+            onClick={deleteSelected}
+            size="md"
+            // @ts-expect-error: A custom variant
+            variant="danger.basic"
+            title={`Delete selected features`}
+          >
+            <MdDelete />
+          </IconButton>
+          {/* DELETE all button */}
+          <IconButton
+            onClick={deleteAll}
+            size="md"
+            // @ts-expect-error: A custom variant
+            variant="danger.basic"
+            title={`Delete all features`}
+          >
+            <MdDeleteSweep />
+          </IconButton>
+          <IconButton
+            onClick={() => setShowHelp(!showHelp)}
+            // @ts-expect-error: A custom variant
+            variant={showHelp ? 'base' : 'primary.outline'}
+            size="md"
+            title={showHelp ? 'Hide help' : 'Show help'}
+          >
+            <MdHelp />
+          </IconButton>
+        </HStack>
+        {showHelp && (
+          <Box
+            className="editor-help"
+            bg="blue.50"
+            borderLeft="4px solid"
+            borderColor="blue.400"
+            p={3}
+            borderRadius="md"
+            fontSize="sm"
+            maxWidth={60}
+            onClick={() => setShowHelp(false)}
+            cursor="pointer"
+            _hover={{ bg: 'blue.100' }}
+          >
+            <Box fontWeight="semibold" mb={2} color="blue.700">
+              <MdHelp style={{ display: 'inline', marginRight: '8px' }} />
+              Quick Help
+            </Box>
+            <Box as="ul" pl={4} spaceY={1}>
+              <Box as="li" mb={1}>
+                Select a feature by clicking on it.
+              </Box>
+              <Box as="li" mb={1}>
+                Make multiple selections by holding down Shift and clicking additional features, or
+                use the box selection tool by clicking and dragging on the map.
+              </Box>
+              <Box as="li">
+                <IconButton
+                  size="md"
+                  // @ts-expect-error: A custom variant
+                  variant="danger.basic"
+                  display="inline-flex"
+                  verticalAlign="middle"
+                  mr={-2}
+                >
+                  <MdDelete />
+                </IconButton>{' '}
+                Deletes selected features.
+              </Box>
+              <Box as="li">You can also press the Delete key to delete selected features.</Box>
+              <Box as="li">
+                <IconButton
+                  size="md"
+                  // @ts-expect-error: A custom variant
+                  variant="danger.basic"
+                  display="inline-flex"
+                  verticalAlign="middle"
+                >
+                  <MdDeleteSweep />
+                </IconButton>{' '}
+                Deletes all features.
+              </Box>
+              <Box as="li">
+                To delete a vertex, select a feature and right-click on any vertex (shown as{' '}
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    border: '3px solid #fbb03b',
+                    backgroundColor: '#FFFFFF',
+                    verticalAlign: 'middle',
+                  }}
+                />
+                ) to remove it.
+              </Box>
+              {additionalHelp}
+            </Box>
+          </Box>
+        )}
+      </>
     );
   }
 );

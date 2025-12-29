@@ -159,11 +159,8 @@ export default function StepLayer({ map }: { map: Map | null }) {
   useEffect(() => {
     if (currentStepUpdate.lastRequest) {
       dispatch(resetStepAfter(currentStep));
-      doInit();
-    } else if (currentProjectUpdate) {
-      doInit();
     }
-  }, [currentStepUpdate.lastRequest, currentProjectUpdate]);
+  }, [currentStepUpdate.lastRequest]);
 
   /** When current step update fails, show error toast */
   useEffect(() => {
