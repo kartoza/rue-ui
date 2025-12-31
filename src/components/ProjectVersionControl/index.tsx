@@ -21,7 +21,7 @@ export default function ProjectVersionControl() {
 
   useEffect(() => {
     // Don't poll if there's no UUID
-    if (!uuid || !isProjectDone || !currentProjectUpdate) {
+    if (!uuid || !currentProjectUpdate) {
       lastUpdateRef.current = null;
       return;
     }
@@ -51,11 +51,6 @@ export default function ProjectVersionControl() {
           lastUpdateRef.current !== undefined &&
           serverUpdate !== lastUpdateRef.current
         ) {
-          // Update has changed - call your update handler here
-          console.log('Project updated:', {
-            old: lastUpdateRef.current,
-            new: serverUpdate,
-          });
           handleProjectUpdate();
         }
 
@@ -68,7 +63,9 @@ export default function ProjectVersionControl() {
 
     // Function to handle project updates
     const handleProjectUpdate = () => {
-      Toaster.warning('Project Updated', 'The project has been updated, reloading the project.');
+      if (isProjectDone) {
+        Toaster.warning('Project Updated', 'The project has been updated, reloading the project.');
+      }
       dispatch(
         getProject({
           uuid: uuid,
