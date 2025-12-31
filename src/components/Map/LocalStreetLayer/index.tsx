@@ -21,6 +21,7 @@ import { DrawingMode, setDrawingMode } from '../../../redux/reducers/global.ts';
 import { ConfirmDialog } from '../../ConfirmDialog';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../../redux/store.ts';
+import { updateLocalStreet } from '../../../redux/reducers/stepUpdateSlice.ts';
 
 const API_URL: string = import.meta.env.VITE_API_URL;
 export const LOCAL_ROAD_ID: string = 'local-road-layer';
@@ -157,9 +158,16 @@ export default function LocalStreetLayer({ map }: { map: Map }) {
   const apply = (geojson: FeatureCollection | null) => {
     if (!currentUUID) return;
     if (!geojson) return;
+    if (currentStep !== StepType.streets) return;
     dispatch(setDrawingMode(null));
     // @ts-expect-error: This is correct
     setLocalRoads(geojson);
+    dispatch(
+      updateLocalStreet({
+        uuid: currentUUID,
+        geojson: geojson,
+      })
+    );
   };
 
   const confirmDialogTitle = 'Update local street';

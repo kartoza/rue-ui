@@ -47,6 +47,7 @@ export default function StepLayer({ map }: { map: Map }) {
   const isProjectDone = useCurrentProjectDone();
   const drawMode = useCurrentDrawMode();
   const isEditing = drawMode === DrawingMode.STEP_UPDATE;
+  const isLocalEditing = drawMode === DrawingMode.LOCAL_STREET_UPDATE;
 
   const [geojson, setGeojson] = useState<FeatureCollection | null>(null);
 
@@ -285,7 +286,7 @@ export default function StepLayer({ map }: { map: Map }) {
   const confirmDialogMessage = `This will change the output of the current step and rerun all subsequent steps. Are you sure you want to save to the backend? This action cannot be undone.`;
   return (
     <HStack className="editor-stack" borderRadius="md" boxShadow="md">
-      {!isEditing && (
+      {!isEditing && !isLocalEditing && (
         <>
           {currentStep === StepType.streets.toString() && (
             <HStack className="editor-section">
