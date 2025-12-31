@@ -61,6 +61,7 @@ export default function LocalStreetLayer({ map }: { map: Map }) {
   /** Fetch roads geojson from API */
   useEffect(() => {
     if (!map) return;
+    if (!currentProjectUpdate) return;
     if (!uuid) {
       setLocalRoads(null);
       return;
