@@ -119,7 +119,6 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
               featureId: featureId,
               matchedVertices: matchedVertices,
             };
-            console.log('Vertex drag started:', draggedVertex);
           }
         }
       };
@@ -127,7 +126,6 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
       // Handle mouseup to clear dragged vertex
       const handleVertexMouseUp = () => {
         if (draggedVertex) {
-          console.log('Vertex drag ended:', draggedVertex);
           draggedVertex = null;
         }
       };
