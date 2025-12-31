@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import maplibregl, { Map } from 'maplibre-gl';
 import { useDispatch } from 'react-redux';
 import type { FeatureCollection } from 'geojson';
-import { Box, HStack, Spinner } from '@chakra-ui/react';
+import { Box, HStack, IconButton, Spinner } from '@chakra-ui/react';
 import {
   useCurrentProjectDone,
   useCurrentProjectStep,
@@ -22,8 +22,12 @@ import MapStepLayerEditor from './Editor.tsx';
 import { ROAD_ID } from '../SiteDefinitionLayer';
 
 import layerStyle from '../layer_style.json';
-import { useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
+import { useCurrentDrawMode } from '../../../redux/selectors/globalSelector.ts';
 import { TaskStatus } from '../../../redux/reducers/task.ts';
+import { MdModeEdit } from 'react-icons/md';
+import { ConfirmDialog } from '../../ConfirmDialog';
+import { LOCAL_ROAD_ID } from '../LocalStreetLayer';
+import { DrawingMode, setDrawingMode } from '../../../redux/reducers/global.ts';
 
 const GL_DRAW_POLYGON: string = 'gl-draw-polygon-fill';
 const GLTF_ID: string = '3d-model';
@@ -33,8 +37,7 @@ export const GEOJSON_ID_LINE: string = 'task-layer-line';
 
 let globalCurrentStep: string = '';
 
-export default function StepLayer({ map }: { map: Map | null }) {
-  const isDrawSite = useIsDrawSiteMode();
+export default function StepLayer({ map }: { map: Map }) {
   const dispatch = useDispatch<AppDispatch>();
   const currentStep = useCurrentStep();
   const currentStepState = useCurrentProjectStep(currentStep);
@@ -42,14 +45,35 @@ export default function StepLayer({ map }: { map: Map | null }) {
   const currentStepUpdate = useCurrentStepUpdate();
   const currentProjectUpdate = useCurrentProjectUpdate();
   const isProjectDone = useCurrentProjectDone();
+  const drawMode = useCurrentDrawMode();
+  const isEditing = drawMode === DrawingMode.STEP_UPDATE;
+  const isLocalEditing = drawMode === DrawingMode.LOCAL_STREET_UPDATE;
+
+  const [geojson, setGeojson] = useState<FeatureCollection | null>(null);
 
   const isRunning: boolean = [TaskStatus.running, TaskStatus.pending, undefined].includes(
     // @ts-expect-error: Current step is a string
     currentStepState?.step?.task?.status
   );
 
-  const [geojson, setGeojson] = useState<FeatureCollection | null>(null);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const drawVisibility = useCallback(
+    (map: Map) => {
+      if (!hasLayer(map, GEOJSON_ID_FILL)) return;
+      if (!hasLayer(map, GEOJSON_ID_LINE)) return;
+      if (drawMode) {
+        map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'none');
+        map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'none');
+      } else {
+        map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'visible');
+        map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'visible');
+      }
+    },
+    [drawMode]
+  );
+
+  useEffect(() => {
+    drawVisibility(map);
+  }, [map, isEditing, drawVisibility]);
 
   const style = () => {
     switch (currentStep) {
@@ -75,7 +99,7 @@ export default function StepLayer({ map }: { map: Map | null }) {
   };
 
   /** Initiate the layer */
-  const doInit = () => {
+  const doInit = useCallback(() => {
     if (!map) return;
 
     setGeojson(null);
@@ -96,17 +120,12 @@ export default function StepLayer({ map }: { map: Map | null }) {
           setGeojson(data);
         });
     }
-  };
+  }, [map, isRunning, currentStepState, currentProjectUpdate, currentStep]);
 
   /** When map or current step changes, load GeoJSON */
   useEffect(() => {
     doInit();
-  }, [map, currentStepState, isRunning]);
-
-  /** When map or current step changes, load GeoJSON */
-  useEffect(() => {
-    setIsEditing(false);
-  }, [currentStep]);
+  }, [map, currentStepState, isRunning, doInit]);
 
   /** Render geojson */
   useEffect(() => {
@@ -123,6 +142,9 @@ export default function StepLayer({ map }: { map: Map | null }) {
       }
       if (hasLayer(map, ROAD_ID)) {
         before = ROAD_ID;
+      }
+      if (hasLayer(map, LOCAL_ROAD_ID)) {
+        before = LOCAL_ROAD_ID;
       }
       map.addSource(GEOJSON_ID, {
         type: 'geojson',
@@ -158,7 +180,7 @@ export default function StepLayer({ map }: { map: Map | null }) {
   /** Check current step update status */
   useEffect(() => {
     if (currentStepUpdate.lastRequest) {
-      dispatch(resetStepAfter(currentStep));
+      dispatch(resetStepAfter(StepType.site));
     }
   }, [currentStepUpdate.lastRequest]);
 
@@ -168,13 +190,6 @@ export default function StepLayer({ map }: { map: Map | null }) {
       Toaster.error('Failed', currentStepUpdate.error);
     }
   }, [currentStepUpdate.error]);
-
-  /** When draw site, set editing */
-  useEffect(() => {
-    if (isDrawSite) {
-      setIsEditing(false);
-    }
-  }, [isDrawSite]);
 
   /** Add click handler to show feature properties */
   useEffect(() => {
@@ -237,7 +252,7 @@ export default function StepLayer({ map }: { map: Map | null }) {
   const apply = (geojson: FeatureCollection | null) => {
     if (!currentUUID) return;
     if (!geojson) return;
-    setIsEditing(false);
+    dispatch(setDrawingMode(null));
     setGeojson(geojson);
     dispatch(
       updateStep({
@@ -247,6 +262,13 @@ export default function StepLayer({ map }: { map: Map | null }) {
       })
     );
   };
+
+  /** Cancel edited features */
+  const cancelEditing = useCallback(() => {
+    ConfirmDialog.confirm('Cancel editing', `Are you sure want to discard your changes?`, () => {
+      dispatch(setDrawingMode(null));
+    });
+  }, [dispatch]);
 
   if (currentStep === siteDefinition) return;
   if (geojson === null || isRunning || !isProjectDone) {
@@ -259,14 +281,60 @@ export default function StepLayer({ map }: { map: Map | null }) {
     );
   }
   if (!(geojson && geojson.features.length > 0)) return null;
+
+  const confirmDialogTitle = 'Update step';
+  const confirmDialogMessage = `This will change the output of the current step and rerun all subsequent steps. Are you sure you want to save to the backend? This action cannot be undone.`;
   return (
-    <MapStepLayerEditor
-      map={map}
-      geojson={geojson}
-      isEditing={isEditing}
-      setIsEditing={setIsEditing}
-      editText={'Edit ' + STEP_LABELS[currentStep].toLowerCase() + ' output'}
-      apply={apply}
-    />
+    <HStack className="editor-stack" borderRadius="md" boxShadow="md">
+      {!isEditing && !isLocalEditing && (
+        <>
+          {currentStep === StepType.streets.toString() && (
+            <HStack className="editor-section">
+              <IconButton
+                onClick={() => {
+                  dispatch(setDrawingMode(DrawingMode.LOCAL_STREET_UPDATE));
+                }}
+                size="md"
+                disabled={!map}
+                title={'Edit local streets'}
+                // @ts-expect-error: A custom variant
+                variant={'base'}
+              >
+                <MdModeEdit />
+                {'Edit local streets'}
+              </IconButton>
+            </HStack>
+          )}
+
+          <HStack className="editor-section">
+            <IconButton
+              onClick={() => {
+                dispatch(setDrawingMode(DrawingMode.STEP_UPDATE));
+              }}
+              size="md"
+              disabled={!map}
+              title={'Edit ' + STEP_LABELS[currentStep].toLowerCase() + ' output'}
+              // @ts-expect-error: A custom variant
+              variant={'base'}
+            >
+              <MdModeEdit />
+              {'Edit ' + STEP_LABELS[currentStep].toLowerCase() + ' output'}
+            </IconButton>
+          </HStack>
+        </>
+      )}
+      {isEditing && (
+        <MapStepLayerEditor
+          map={map}
+          geojson={geojson}
+          isEditing={isEditing}
+          cancelEditing={cancelEditing}
+          apply={apply}
+          /* Confirm dialog */
+          confirmDialogTitle={confirmDialogTitle}
+          confirmDialogMessage={confirmDialogMessage}
+        />
+      )}
+    </HStack>
   );
 }

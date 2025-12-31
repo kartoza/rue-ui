@@ -10,7 +10,7 @@ import './style.scss';
 const MAPBOX_TOKEN: string = import.meta.env.VITE_MAPBOX_TOKEN;
 
 interface BaseMapsProps {
-  map?: Map | null;
+  map: Map;
 }
 
 interface BasemapOption {
@@ -105,8 +105,6 @@ const BaseMaps: FC<BaseMapsProps> = ({ map }) => {
 
   // Set default basemap on initial mount
   useEffect(() => {
-    if (!map) return;
-
     const applyBasemap = () => {
       const style = basemaps[selectedBasemap].value;
 
@@ -126,22 +124,7 @@ const BaseMaps: FC<BaseMapsProps> = ({ map }) => {
         });
       }
     };
-
-    // Check if style is already loaded
-    if (map.isStyleLoaded()) {
-      applyBasemap();
-    } else {
-      // Wait for style to load
-      const onStyleLoad = () => {
-        applyBasemap();
-      };
-
-      map.once('style.load', onStyleLoad);
-
-      return () => {
-        map.off('style.load', onStyleLoad);
-      };
-    }
+    applyBasemap();
   }, [map, selectedBasemap, basemaps]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { Map } from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
 import { HStack, IconButton } from '@chakra-ui/react';
-import { MdArrowBack, MdModeEdit, MdSave } from 'react-icons/md';
+import { MdArrowBack, MdSave } from 'react-icons/md';
 import { useIsDrawSiteMode } from '../../../redux/selectors/globalSelector.ts';
 import MapEditor, { type MapLayerEditorRef } from '../MapEditor.tsx';
 import { ConfirmDialog } from '../../ConfirmDialog';
@@ -13,9 +13,11 @@ interface MapStepLayerEditorProps {
   map: Map | null;
   geojson: FeatureCollection | null;
   isEditing: boolean;
-  setIsEditing: (isEditing: boolean) => void;
-  editText: string;
+  cancelEditing: () => void;
+  enableVertexDragging?: boolean;
   apply: (geojson: FeatureCollection | null) => void;
+  confirmDialogTitle: string;
+  confirmDialogMessage: string;
 }
 
 /**
@@ -26,49 +28,40 @@ export default function StepLayerEditor({
   map,
   geojson,
   isEditing,
-  setIsEditing,
-  editText,
+  cancelEditing,
+  enableVertexDragging,
   apply,
+  confirmDialogTitle,
+  confirmDialogMessage,
 }: MapStepLayerEditorProps) {
   const isDrawSite = useIsDrawSiteMode();
   const editorRef = useRef<MapLayerEditorRef | null>(null);
 
-  /** Cancel edited features */
-  const cancelEditing = useCallback(() => {
-    ConfirmDialog.confirm('Cancel editing', `Are you sure want to discard your changes?`, () => {
-      setIsEditing(false);
-    });
-  }, [setIsEditing]);
-
   /** Save edited features */
   const saveEdits = useCallback(() => {
-    ConfirmDialog.confirm(
-      'Update step',
-      `This will change the output of the current step and rerun all subsequent steps. Are you sure you want to save to the backend? This action cannot be undone.`,
-      () => {
-        const drawRef = editorRef.current?.getDrawRef();
-        if (!drawRef?.current) return;
+    ConfirmDialog.confirm(confirmDialogTitle, confirmDialogMessage, () => {
+      const drawRef = editorRef.current?.getDrawRef();
+      if (!drawRef?.current) return;
 
-        const allDrawFeatures = drawRef.current.getAll();
+      const allDrawFeatures = drawRef.current.getAll();
 
-        if (allDrawFeatures.features.length === 0) {
-          console.warn('No edited features found');
-          cancelEditing();
-          return;
-        }
-
-        // Clear draw control
-        // @ts-expect-error: Delete all features
-        drawRef.current.deleteAll();
-        setIsEditing(false);
-
-        apply({
-          type: 'FeatureCollection',
-          features: allDrawFeatures.features,
-        });
+      if (allDrawFeatures.features.length === 0) {
+        console.warn('No edited features found');
+        cancelEditing();
+        return;
       }
-    );
-  }, [cancelEditing]);
+
+      // Clear draw control
+      // @ts-expect-error: Delete all features
+      drawRef.current.deleteAll();
+      cancelEditing();
+
+      apply({
+        type: 'FeatureCollection',
+        features: allDrawFeatures.features,
+      });
+    });
+  }, [apply, cancelEditing, confirmDialogMessage, confirmDialogTitle]);
 
   /** Cancel editing */
   useEffect(() => {
@@ -84,52 +77,36 @@ export default function StepLayerEditor({
     return null;
   }
   return (
-    <HStack className="editor-stack" borderRadius="md" boxShadow="md">
+    <>
       <MapEditor
         map={map}
         defaultGeojson={geojson}
         enabled={isEditing}
         activeByDefault={true}
+        enableVertexDragging={enableVertexDragging}
         ref={editorRef}
       />
-      <HStack className="editor-section">
-        {!isEditing && (
+      {isEditing && (
+        <HStack className="editor-section">
           <IconButton
-            onClick={() => {
-              setIsEditing(true);
-            }}
+            onClick={saveEdits}
             size="md"
-            disabled={!map}
-            title={editText}
             // @ts-expect-error: A custom variant
-            variant={'base'}
+            variant="primary.outline"
+            title={`Apply changes to API permanently.`}
           >
-            <MdModeEdit />
-            {editText}
+            <MdSave />
           </IconButton>
-        )}
-        {isEditing && (
-          <>
-            <IconButton
-              onClick={saveEdits}
-              size="md"
-              // @ts-expect-error: A custom variant
-              variant="primary.outline"
-              title={`Apply changes to API permanently.`}
-            >
-              <MdSave />
-            </IconButton>
-            <IconButton
-              onClick={cancelEditing}
-              size="md"
-              // @ts-expect-error: A custom variant
-              variant="base"
-            >
-              <MdArrowBack />
-            </IconButton>
-          </>
-        )}
-      </HStack>
-    </HStack>
+          <IconButton
+            onClick={cancelEditing}
+            size="md"
+            // @ts-expect-error: A custom variant
+            variant="base"
+          >
+            <MdArrowBack />
+          </IconButton>
+        </HStack>
+      )}
+    </>
   );
 }

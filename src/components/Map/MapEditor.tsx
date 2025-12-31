@@ -13,7 +13,6 @@ import type { FeatureCollection, LineString, Polygon } from 'geojson';
 import MaplibreDraw from 'maplibre-gl-draw';
 import { hasLayer } from '../../utils/maplibre.tsx';
 import layerStyle from './layer_style.json';
-import { ROAD_ID } from './SiteDefinitionLayer';
 import { Box, HStack, IconButton } from '@chakra-ui/react';
 import { FaScissors } from 'react-icons/fa6';
 import { MdDelete, MdDeleteSweep, MdHelp } from 'react-icons/md';
@@ -22,6 +21,12 @@ import lineSplit from '@turf/line-split';
 import { polygon as turfPolygon } from '@turf/helpers';
 import { Toaster } from '../Toaster/toaster.ts';
 import { ConfirmDialog } from '../ConfirmDialog';
+import {
+  type DraggedVertex,
+  findMatchedVertices,
+  getCoordinatesFromPath,
+  updateCoordinatesAtPath,
+} from './MapEditorUtilis';
 
 export const GEOJSON_ID_FILL: string = 'task-layer-fill';
 export const GEOJSON_ID_LINE: string = 'task-layer-line';
@@ -31,6 +36,7 @@ interface Props {
   defaultGeojson: FeatureCollection | null;
   enabled: boolean;
   activeByDefault: boolean;
+  enableVertexDragging?: boolean;
   onFeaturesChanged?: () => void;
   additionalHelp?: React.ReactNode;
 }
@@ -41,7 +47,18 @@ export interface MapLayerEditorRef {
 
 /** This is editor for layer editor */
 const MapEditor = forwardRef<MapLayerEditorRef, Props>(
-  ({ map, defaultGeojson, enabled, activeByDefault, onFeaturesChanged, additionalHelp }, ref) => {
+  (
+    {
+      map,
+      defaultGeojson,
+      enabled,
+      activeByDefault,
+      onFeaturesChanged,
+      additionalHelp,
+      enableVertexDragging = false,
+    },
+    ref
+  ) => {
     const drawRef = useRef<MaplibreDraw | null>(null);
     const [showHelp, setShowHelp] = useState(true);
 
@@ -60,20 +77,12 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
     useEffect(() => {
       if (!map) return;
 
-      // Hide road layer
-      if (hasLayer(map, ROAD_ID) && enabled) {
-        map.setLayoutProperty(ROAD_ID, 'visibility', 'none');
-      }
-
       if (!hasLayer(map, GEOJSON_ID_FILL)) return;
       if (!hasLayer(map, GEOJSON_ID_LINE)) return;
       if (enabled) {
         map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'none');
         map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'none');
       } else {
-        if (hasLayer(map, ROAD_ID)) {
-          map.setLayoutProperty(ROAD_ID, 'visibility', 'visible');
-        }
         map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'visible');
         map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'visible');
       }
@@ -82,6 +91,81 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
     /** Create/remove MaplibreDraw control based on isEditing state */
     useEffect(() => {
       if (!map) return;
+
+      // Track which vertex is being dragged
+      let draggedVertex: DraggedVertex | null = null;
+
+      // Handle mousedown on vertex to track which one is being dragged
+      const handleVertexMouseDown = (e: maplibregl.MapMouseEvent) => {
+        const features = map.queryRenderedFeatures(e.point, {
+          layers: [
+            'gl-draw-polygon-and-line-vertex-active.hot',
+            'gl-draw-polygon-and-line-vertex-active.cold',
+          ],
+        });
+        if (features && features.length > 0) {
+          const vertex = features[0];
+          if (vertex.geometry.type === 'Point') {
+            const coordPath = vertex.properties?.coord_path || '';
+            const featureId = vertex.properties?.parent || '';
+            const vertexCoords = vertex.geometry.coordinates as number[];
+
+            // Find all features that have a vertex at the same coordinates
+            const matchedVertices = findMatchedVertices(drawRef.current, vertexCoords, featureId);
+
+            draggedVertex = {
+              coordinates: vertexCoords,
+              coordPath: coordPath,
+              featureId: featureId,
+              matchedVertices: matchedVertices,
+            };
+            console.log('Vertex drag started:', draggedVertex);
+          }
+        }
+      };
+
+      // Handle mouseup to clear dragged vertex
+      const handleVertexMouseUp = () => {
+        if (draggedVertex) {
+          console.log('Vertex drag ended:', draggedVertex);
+          draggedVertex = null;
+        }
+      };
+
+      // Handle vertex dragging in real-time
+      const handleVertexDrag = () => {
+        if (!draggedVertex) return;
+        // This fires continuously while dragging
+        if (drawRef.current) {
+          // Get all features and find the current feature being dragged
+          const allFeatures = drawRef.current.getAll();
+          const currentFeature = allFeatures.features.find(
+            // @ts-expect-error : featureId is a string
+            (f) => f.id?.toString() === draggedVertex.featureId.toString()
+          );
+          if (!currentFeature) return;
+
+          // Get the new coordinates from the dragged vertex
+          const newCoords = getCoordinatesFromPath(currentFeature, draggedVertex.coordPath);
+          if (!newCoords) return;
+
+          // If we found the new coordinates, update all matched vertices
+          if (draggedVertex.matchedVertices.length > 0) {
+            draggedVertex.matchedVertices.forEach((matchedVertex) => {
+              const feature = allFeatures.features.find(
+                (f) => f.id?.toString() === matchedVertex.featureId
+              );
+              if (!feature) return;
+
+              // Update coordinates at the matched vertex path
+              updateCoordinatesAtPath(feature, matchedVertex.coordPath, newCoords);
+
+              // Update the feature in the draw control
+              drawRef.current!.add(feature);
+            });
+          }
+        }
+      };
 
       // Only create draw control when editing is active and not in draw site mode
       if (!enabled) {
@@ -319,6 +403,15 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
           map.on('draw.update', onFeaturesChanged);
           map.on('draw.delete', onFeaturesChanged);
         }
+
+        // Track vertex drag start and end only if vertex dragging is enabled
+        if (enableVertexDragging) {
+          map.on('mousedown', handleVertexMouseDown);
+          map.on('mouseup', handleVertexMouseUp);
+
+          // Handle vertex dragging in real-time
+          map.on('draw.render', handleVertexDrag);
+        }
       }
 
       return () => {
@@ -326,6 +419,13 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
         if (onFeaturesChanged) {
           map.off('draw.update', onFeaturesChanged);
           map.off('draw.delete', onFeaturesChanged);
+        }
+
+        // Clean up vertex dragging event listeners if they were enabled
+        if (enableVertexDragging) {
+          map.off('mousedown', handleVertexMouseDown);
+          map.off('mouseup', handleVertexMouseUp);
+          map.off('draw.render', handleVertexDrag);
         }
 
         // Clean up draw control
@@ -382,7 +482,7 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
           drawRef.current = null;
         }
       };
-    }, [map, defaultGeojson, enabled]);
+    }, [map, defaultGeojson, enabled, enableVertexDragging]);
 
     /** Delete selected features **/
     const deleteSelected = useCallback(() => {

@@ -35,7 +35,7 @@ const API_URL: string = import.meta.env.VITE_API_URL;
 export const ROAD_ID: string = 'road-layer';
 export const SITE_ID: string = 'site-layer';
 
-export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
+export default function SiteDefinitionLayer({ map }: { map: Map }) {
   const dispatch = useDispatch<AppDispatch>();
   const uuid = useCurrentProjectUUID();
   const parameters = useCurrentProjectInputParameters();
@@ -55,7 +55,6 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
   /** Fetch roads geojson from API */
   useEffect(() => {
     if (!isProjectDone) return;
-    if (!map) return;
     if (!uuid) {
       dispatch(updateSite(null));
       dispatch(updateRoads(null));
@@ -113,20 +112,30 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
     return () => {
       abortController.abort();
     };
-  }, [map, uuid, isProjectDone, currentProjectUpdate]);
+  }, [uuid, isProjectDone, currentProjectUpdate, dispatch]);
 
   /** Render roads layer */
-  useEffect(() => {
-    if (!map) return;
-    if (!parameters) return;
-    if (isDrawSite) {
-      map.setLayoutProperty(ROAD_ID, 'visibility', 'none');
-      return;
-    }
-    // Remove existing layer and source
-    const arteries = parameters?.neighbourhood?.public_roads?.width_of_arteries_m;
-    const secondaries = parameters?.neighbourhood?.public_roads?.width_of_secondaries_m;
+  const arteries = parameters?.neighbourhood?.public_roads?.width_of_arteries_m;
+  const secondaries = parameters?.neighbourhood?.public_roads?.width_of_secondaries_m;
 
+  const drawVisibility = useCallback(
+    (map: Map) => {
+      if (!hasLayer(map, ROAD_ID)) return;
+      if (isDrawSite) {
+        map.setLayoutProperty(ROAD_ID, 'visibility', 'none');
+      } else {
+        map.setLayoutProperty(ROAD_ID, 'visibility', 'visible');
+      }
+    },
+    [isDrawSite]
+  );
+
+  useEffect(() => {
+    drawVisibility(map);
+  }, [map, isDrawSite, drawVisibility]);
+
+  useEffect(() => {
+    if (isDrawSite) return;
     if (!arteries || !secondaries) return;
 
     let before: string | undefined = undefined;
@@ -182,9 +191,7 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
         },
         before
       );
-      if (uuid) {
-        map.setLayoutProperty(ROAD_ID, 'visibility', 'visible');
-      }
+      drawVisibility(map);
     }
 
     return () => {
@@ -196,11 +203,11 @@ export default function SiteDefinitionLayer({ map }: { map: Map | null }) {
 
   /** Render site layer */
   useEffect(() => {
-    if (!map) return;
     if (!site) return;
     if (!isSiteDefinition) return;
 
     if (isDrawSite) {
+      if (!hasLayer(map, ROAD_ID)) return;
       map.setLayoutProperty(ROAD_ID, 'visibility', 'none');
       return;
     }
