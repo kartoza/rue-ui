@@ -18,8 +18,6 @@ interface MapStepLayerEditorProps {
   apply: (geojson: FeatureCollection | null) => void;
   confirmDialogTitle: string;
   confirmDialogMessage: string;
-  // Hide layers when editing
-  hideRoadLayer: boolean;
 }
 
 /**
@@ -35,7 +33,6 @@ export default function StepLayerEditor({
   apply,
   confirmDialogTitle,
   confirmDialogMessage,
-  hideRoadLayer,
 }: MapStepLayerEditorProps) {
   const isDrawSite = useIsDrawSiteMode();
   const editorRef = useRef<MapLayerEditorRef | null>(null);
@@ -88,7 +85,6 @@ export default function StepLayerEditor({
         activeByDefault={true}
         enableVertexDragging={enableVertexDragging}
         ref={editorRef}
-        hideRoadLayer={hideRoadLayer}
       />
       {isEditing && (
         <HStack className="editor-section">

@@ -42,9 +42,9 @@ export default function SiteEditor({
 
   /** Update editor when roads updated */
   useEffect(() => {
-    if (!isDrawSite) return;
+    if (isDrawSite) return;
     setGeojson(geojsonInput);
-  }, [isDrawSite]);
+  }, [geojsonInput, isDrawSite]);
 
   /** Update editor when roads updated */
   useEffect(() => {
@@ -360,6 +360,7 @@ export default function SiteEditor({
           );
         })}
         <MapEditor
+          key="SiteDefinitionLayer"
           map={map}
           defaultGeojson={geojson}
           enabled={isDrawSite}

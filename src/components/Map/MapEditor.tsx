@@ -13,7 +13,6 @@ import type { FeatureCollection, LineString, Polygon } from 'geojson';
 import MaplibreDraw from 'maplibre-gl-draw';
 import { hasLayer } from '../../utils/maplibre.tsx';
 import layerStyle from './layer_style.json';
-import { ROAD_ID } from './SiteDefinitionLayer';
 import { Box, HStack, IconButton } from '@chakra-ui/react';
 import { FaScissors } from 'react-icons/fa6';
 import { MdDelete, MdDeleteSweep, MdHelp } from 'react-icons/md';
@@ -39,8 +38,6 @@ interface Props {
   activeByDefault: boolean;
   enableVertexDragging?: boolean;
   onFeaturesChanged?: () => void;
-  // Hide layers when editing
-  hideRoadLayer?: boolean;
   additionalHelp?: React.ReactNode;
 }
 
@@ -59,7 +56,6 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
       onFeaturesChanged,
       additionalHelp,
       enableVertexDragging = false,
-      hideRoadLayer = true,
     },
     ref
   ) => {
@@ -81,24 +77,16 @@ const MapEditor = forwardRef<MapLayerEditorRef, Props>(
     useEffect(() => {
       if (!map) return;
 
-      // Hide road layer
-      if (hideRoadLayer && hasLayer(map, ROAD_ID) && enabled) {
-        map.setLayoutProperty(ROAD_ID, 'visibility', 'none');
-      }
-
       if (!hasLayer(map, GEOJSON_ID_FILL)) return;
       if (!hasLayer(map, GEOJSON_ID_LINE)) return;
       if (enabled) {
         map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'none');
         map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'none');
       } else {
-        if (hasLayer(map, ROAD_ID)) {
-          map.setLayoutProperty(ROAD_ID, 'visibility', 'visible');
-        }
         map.setLayoutProperty(GEOJSON_ID_FILL, 'visibility', 'visible');
         map.setLayoutProperty(GEOJSON_ID_LINE, 'visibility', 'visible');
       }
-    }, [map, enabled, hideRoadLayer]);
+    }, [map, enabled]);
 
     /** Create/remove MaplibreDraw control based on isEditing state */
     useEffect(() => {

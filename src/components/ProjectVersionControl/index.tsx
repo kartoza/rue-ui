@@ -41,10 +41,8 @@ export default function ProjectVersionControl() {
 
         // Check if UUID is still the same after the async request
         if (requestUuid !== uuid) {
-          console.log('UUID changed during request, ignoring response');
           return;
         }
-        console.log('Response:', response);
         const serverUpdate = typeof response === 'string' ? response : response.updated_at;
 
         // Compare with last known update

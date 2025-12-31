@@ -8,6 +8,7 @@ import StepLayer from './StepLayer';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.scss';
+import LocalStreetLayer from './LocalStreetLayer';
 
 interface Props {
   map: Map | null;
@@ -46,7 +47,10 @@ export default function MapLibre({ map, setMap }: Props) {
       });
 
       newMap.addControl(new maplibregl.NavigationControl(), 'bottom-left');
-      setMap(newMap);
+
+      newMap.once('load', () => {
+        setMap(newMap);
+      });
     }, 100);
     return () => clearTimeout(timer);
   }, [map]);
@@ -55,6 +59,7 @@ export default function MapLibre({ map, setMap }: Props) {
     <Box position="relative" width="100%" height="100%" minHeight="400px">
       <Box id="map" width="100%" height="100%" />
       {map && <SiteDefinitionLayer map={map} />}
+      {map && <LocalStreetLayer map={map} />}
       {map && <StepLayer map={map} />}
       {map && <MapLocation map={map} />}
       {map && <BaseMaps map={map} />}
