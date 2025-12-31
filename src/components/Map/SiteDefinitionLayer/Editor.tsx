@@ -74,23 +74,6 @@ export default function SiteEditor({
     }
   }, [roads]);
 
-  /** Log properties when a feature is clicked */
-  useEffect(() => {
-    if (!map) return;
-
-    const onSelectionChange = (e: { features: GeoJSON.Feature[] }) => {
-      if (e.features && e.features.length > 0) {
-        console.log('Selected feature properties:', e.features[0].properties);
-      }
-    };
-
-    map.on('draw.selectionchange', onSelectionChange);
-
-    return () => {
-      map.off('draw.selectionchange', onSelectionChange);
-    };
-  }, [map]);
-
   const getRoads = (): FeatureCollection<LineString> | null => {
     const drawRef = editorRef.current?.getDrawRef();
     if (!drawRef?.current) return null;
