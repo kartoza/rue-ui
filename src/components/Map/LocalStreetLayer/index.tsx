@@ -66,28 +66,24 @@ export default function LocalStreetLayer({ map }: { map: Map }) {
       return;
     }
 
+    if (!isSuccess) return;
+
     setLocalRoads(null);
     const abortController = new AbortController();
-
-    if (isSuccess) {
-      // Fetch the roads input
-      fetch(
-        `${API_URL}projects/${uuid}/streets/file/local_streets.geojson?` + currentProjectUpdate,
-        {
-          headers: getAuthHeaders(),
-          signal: abortController.signal,
+    // Fetch the roads input
+    fetch(`${API_URL}projects/${uuid}/streets/file/local_streets.geojson?` + currentProjectUpdate, {
+      headers: getAuthHeaders(),
+      signal: abortController.signal,
+    })
+      .then((res) => res.json())
+      .then((data: FeatureCollection<LineString>) => {
+        setLocalRoads(data);
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          Toaster.error('Failed to load local roads', err);
         }
-      )
-        .then((res) => res.json())
-        .then((data: FeatureCollection<LineString>) => {
-          setLocalRoads(data);
-        })
-        .catch((err) => {
-          if (err.name !== 'AbortError') {
-            Toaster.error('Failed to load local roads', err);
-          }
-        });
-    }
+      });
 
     return () => {
       abortController.abort();
