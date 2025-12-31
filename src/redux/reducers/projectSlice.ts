@@ -92,9 +92,8 @@ export const patchProject = createAsyncThunk(
 // Async thunk for project
 export const getProject = createAsyncThunk(
   'project/get',
-  // @ts-expect-error: Name is for args
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async ({ uuid, name }: { uuid: string; name: string }, thunkAPI) => {
+
+  async ({ uuid }: { uuid: string }, thunkAPI) => {
     // -----------------------------
     try {
       return await api.get('projects/' + uuid);
@@ -212,9 +211,9 @@ const projectSlice = createSlice({
       // getProject
       // ----------------------------------
       .addCase(getProject.pending, (state, action) => {
-        const { uuid, name } = action.meta.arg;
+        const { uuid } = action.meta.arg;
         // @ts-expect-error: Save by step
-        state.project = { uuid, name, parameters: null, steps: {} };
+        state.project = { uuid, parameters: null, steps: {} };
         state.loading = true;
         state.error = null;
       })

@@ -15,9 +15,9 @@ import {
 } from '../../redux/selectors/projectSelector.ts';
 import { useCurrentStepUpdateLoading } from '../../redux/selectors/stepUpdateSelector.ts';
 import { TaskStatus } from '../../redux/reducers/task.ts';
+import { setDrawingMode } from '../../redux/reducers/global.ts';
 
 import './style.scss';
-import { setDrawingMode } from '../../redux/reducers/global.ts';
 
 interface TabPanelProps {
   value: string;

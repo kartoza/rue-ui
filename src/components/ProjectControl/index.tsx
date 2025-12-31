@@ -1,5 +1,9 @@
 import { useEffect } from 'react';
-import { useCurrentProjectState } from '../../redux/selectors/projectSelector.ts';
+import { useNavigate } from 'react-router-dom';
+import {
+  useCurrentProjectState,
+  useCurrentProjectUpdate,
+} from '../../redux/selectors/projectSelector.ts';
 import { StepType } from '../../redux/reducers/stepSlice.ts';
 import type { Project, ProjectState } from '../../redux/reducers/project';
 import { TaskStatus } from '../../redux/reducers/task.ts';
@@ -10,7 +14,9 @@ import type { StepState } from '../../redux/reducers/step';
 import { Toaster } from '../Toaster/toaster.ts';
 
 export default function ProjectControl() {
+  const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+  const currentProjectUpdate = useCurrentProjectUpdate();
   const currentProjectState: ProjectState = useCurrentProjectState();
   const currentProject: Project | null = currentProjectState.project;
 
@@ -29,6 +35,12 @@ export default function ProjectControl() {
   }
 
   useEffect(() => {
+    if (!currentProject?.uuid) return;
+    navigate(`/map/${currentProject.uuid}`);
+  }, [currentProject?.uuid, navigate]);
+
+  useEffect(() => {
+    if (!currentProjectUpdate) return;
     if (!currentProjectState.loading && firstUndefinedStep) {
       if (step && !step?.loading) {
         if (step.step?.task?.status === TaskStatus.failed) {
@@ -57,7 +69,14 @@ export default function ProjectControl() {
         }
       }
     }
-  }, [currentProjectState.loading, currentProject?.uuid, firstUndefinedStep, step]);
+  }, [
+    currentProjectState.loading,
+    currentProject?.uuid,
+    firstUndefinedStep,
+    step,
+    currentProjectUpdate,
+    dispatch,
+  ]);
 
   return null;
 }
